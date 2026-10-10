@@ -422,3 +422,21 @@ def test_dependency_addresses_follow_the_windows_abi():
     ]
     # an artifact built for a different ABI has no such pair
     assert aliases.closure_profiles("gcc") == []
+
+
+def test_old_eras_use_an_xmake_of_their_own_line_that_works():
+    """An era's xmake may be bumped inside its line, never across lines.
+
+    xmake 2.9.4 asks CMake for the platform toolset v144 (a Visual Studio 2026
+    toolset) while the image only has v143, which makes every CMake package fail
+    with MSB8020; 2.9.7 is the same line and gets it right. The 2.8 line must stay
+    put: a newer xmake renamed directories that those projects refer to.
+    """
+    ll = next(
+        item for item in plugins.load_all(util.load_config()) if item.name == "ll"
+    )
+    floor = ll.module.line_floor
+    assert floor("2.9.4") == "2.9.7"
+    assert floor("2.9.7") == "2.9.7"
+    assert floor("2.8.6") == "2.8.6"
+    assert floor("3.0.1") == "3.0.1"

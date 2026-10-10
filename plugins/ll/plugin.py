@@ -121,9 +121,30 @@ def xmake_version(ctx, version: str, commit: str) -> str:
     """
     from lib import xmake_env
 
-    return xmake_env.xmake_version_for_date(
+    era = xmake_env.xmake_version_for_date(
         ctx.config, commit_date(ctx, commit), floor="0.0.0"
     )
+    return line_floor(era)
+
+
+#: Per release line: the oldest xmake of that line that still understands the CI
+#: images we can actually get. xmake 2.9.4 asks CMake for the platform toolset
+#: ``v144`` when it sees MSVC 14.4x -- but v144 belongs to Visual Studio 2026 and
+#: the windows-2022 image only has v143, so every CMake package dies with MSB8020.
+#: 2.9.7 is the same line (same recipes, same build layout) and maps it correctly.
+#: Nothing older is bumped: the 2.8 line has to stay on 2.8, because a newer xmake
+#: renamed directories that those projects' own link scripts refer to.
+LINE_FLOORS = {"2.9": "2.9.7"}
+
+
+def line_floor(era: str) -> str:
+    """Raise an era's xmake to the floor of its own release line, if there is one."""
+    from lib import semver
+
+    floor = LINE_FLOORS.get(".".join(str(era).split(".")[:2]))
+    if floor and not semver.ge(era, floor):
+        return floor
+    return era
 
 
 def recipe_cutoff(ctx, version: str, commit: str) -> str:
