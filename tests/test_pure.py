@@ -321,3 +321,56 @@ def test_failed_install_logs_are_found(tmp_path: Path):
     assert [item["version"] for item in found] == ["v4.0.0"]
     assert [path.name for path in found[0]["logs"]] == ["install.txt"]
     assert build._failed_packages(FakeSandbox()) == [("gsl", "v4.0.0")]
+
+
+def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
+    """Only the project's own package has an entry dimension."""
+    config = dict(util.load_config())
+    config["_index_dir"] = str(tmp_path / "index")
+    ctx = plugins.Context(config)
+
+    def artifact(package: str, buildhash: str, entry: str) -> dict:
+        return {
+            "package": package,
+            "upstream_package": package.replace("mifcache_", ""),
+            "version": "11.2.0" if package == "mifcache_fmt" else "26.51.6",
+            "buildhash": buildhash,
+            "key": f"windows-x64-vc-{buildhash}",
+            "toolset": "14.44.35207",
+            "url": f"https://example.invalid/{package}-{buildhash}.7z",
+            "sha256": "ab" * 32,
+            "aliases": [],
+        }
+
+    shared = artifact("mifcache_fmt", "ee1902dd", "server")
+    results = [
+        {
+            "package": "levilamina",
+            "version": "26.51.6",
+            "entry": entry,
+            "revision": 1,
+            "toolchain": "msvc",
+            "upstream_toolchain": "clang-cl",
+            "alias_profiles": ["msvc", "clang-cl"],
+            "artifacts": [artifact("mifcache_levilamina", f"ll{entry}", entry), shared],
+        }
+        for entry in ("server", "client")
+    ]
+    finalize.write_ledger(config, ctx, results)
+
+    owned = index_store.entries(
+        index_store.version_meta(ctx.index_root, "mifcache_levilamina", "26.51.6")
+    )
+    assert set(owned) == {"server", "client"}, owned
+    assert owned["server"]["compiled_with"] == "clang-cl"
+    assert owned["server"]["revision"] == 1
+    # the project's record holds its own artifact, not the whole closure
+    assert [item["package"] for item in owned["server"]["artifacts"]] == [
+        "mifcache_levilamina"
+    ]
+
+    dependency = index_store.entries(
+        index_store.version_meta(ctx.index_root, "mifcache_fmt", "11.2.0")
+    )
+    assert set(dependency) == {"default"}, dependency
+    assert len(dependency["default"]["artifacts"]) == 1

@@ -31,6 +31,11 @@ def main() -> int:
     if args.refresh:
         for source in config["recipes"]["sources"]:
             ctx.mirror(source["name"], source["url"])
+    if args.push:
+        # Vendoring writes into the checkout, and a rebase cannot run over
+        # unstaged changes -- so get onto the remote's tip first, otherwise the
+        # push below is rejected as non-fast-forward.
+        gitops.sync_branch(Path(ctx.package_repo))
     marker = vendoring.vendor(config, ctx, plugin, refresh=args.refresh)
     util.log(f"vendored {len(marker['packages'])} packages under '{marker['prefix']}'")
     if args.push:

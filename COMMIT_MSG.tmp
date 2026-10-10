@@ -1,0 +1,20 @@
+fix: the entry dimension belongs to the project, not to its closure
+
+Every dependency was recorded once per build entry (server/client), so the ledger
+claimed two builds for something built once and put an entry name, and an implied
+target_type, on packages that know nothing about either. Only the project's own
+package has entries now; a dependency is recorded once (entry 'default'), and only
+its artifacts live in that record.
+
+The project's record also used to absorb the whole closure, which meant the release
+notes row for a dependency could be rendered from the project's record -- levilamina
+is compiled with clang-cl, so fmt showed up as a clang-cl build. A record now only
+holds the artifacts of its own package (or of its upstream name, which is what
+publishes packages/l/levilamina/<version>/manifest.txt for projects that require
+the upstream package from their own repository).
+
+Also: commit_and_push syncs onto the remote before pushing and retries, because a
+silently failed fetch leaves a stale remote-tracking ref, the push is rejected as
+non-fast-forward, and a round ends up half published. The fetches name the branch
+and rebase onto FETCH_HEAD, since a checkout made for one generated branch need not
+have an origin/<branch> ref at all.

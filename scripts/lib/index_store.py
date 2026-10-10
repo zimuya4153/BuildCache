@@ -113,7 +113,15 @@ def write_entry(index_root: Path, package: str, version: str, entry_id: str, met
     existing = entries(document)
     previous = existing.get(entry_id) or {}
     merged = dict(meta)
-    by_key = {item["key"]: item for item in previous.get("artifacts") or []}
+    # A record only holds the artifacts of its own package: the build that
+    # produced it also knows its whole closure, and storing all of it here would
+    # make the project's record claim every dependency (and hand its toolchain
+    # metadata to release notes about those dependencies).
+    by_key = {
+        item["key"]: item
+        for item in previous.get("artifacts") or []
+        if _owns(package, item)
+    }
     for item in meta.get("artifacts", []):
         by_key[item["key"]] = item
     merged["artifacts"] = sorted(by_key.values(), key=lambda item: item["key"])
@@ -124,6 +132,43 @@ def write_entry(index_root: Path, package: str, version: str, entry_id: str, met
     document["package"] = package
     document["version"] = version
     document["entries"] = existing
+    document.pop("artifacts", None)
+    util.write_json(path, document)
+    index = load_package(index_root, package)
+    versions = set(index.get("versions") or [])
+    versions.add(version)
+    ordered = semver.sort_desc(versions)
+    index["package"] = package
+    index["versions"] = ordered
+    index["latest"] = ordered[0] if ordered else None
+    util.write_json(package_dir(index_root, package) / "index.json", index)
+
+
+def _owns(package: str, artifact: dict) -> bool:
+    """Does this artifact belong in the record of ``package``?
+
+    Both the published name and the upstream name count: the ledger is keyed by
+    the published one, and the upstream name keeps the same artifacts so that
+    ``packages/<letter>/<name>/<version>/manifest.txt`` can be published for it.
+    """
+    return package in (artifact.get("package"), artifact.get("upstream_package"))
+
+
+def write_single(index_root: Path, package: str, version: str, entry_id: str, meta: dict) -> None:
+    """Store a package that has no build-entry dimension of its own.
+
+    A dependency is the same artifact whichever entry of the project pulled it
+    in, so it is recorded once. Anything another entry had written for it is
+    dropped, which is what removes the ``server``/``client`` records that used to
+    be created for every dependency simply because the project had entries.
+    """
+    path = package_dir(index_root, package) / "versions" / f"{version}.json"
+    document = util.read_json(path, None) or {}
+    document.update({key: value for key, value in meta.items() if key != "artifacts"})
+    document["package"] = package
+    document["version"] = version
+    document["entries"] = {entry_id: meta}
+    document.pop("variants", None)
     document.pop("artifacts", None)
     util.write_json(path, document)
     index = load_package(index_root, package)

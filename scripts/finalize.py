@@ -50,66 +50,11 @@ def main() -> int:
         package_cfg = config["repos"]["package"]
         url = f"https://github.com/{package_cfg['owner']}/{package_cfg['repo']}.git"
         gitops.ensure_checkout(config, url, package_repo, branch=package_cfg.get("branch"))
+        # CI may have published since this checkout was made; the manifests are
+        # regenerated below anyway, and the recipes stay as they are.
+        gitops.sync_branch(package_repo)
 
-    entries = 0
-    for result in results:
-        version = result["version"]
-        variant = result.get("entry", "default")
-        if not args.dry_run:
-            index_store.write_entry(
-                ctx.index_root, result["package"], version, variant, result
-            )
-            # Also index every artifact under its own package so that each
-            # component can be queried (and consumed) on its own.
-            per_package: dict[str, list] = {}
-            for artifact in result.get("artifacts", []):
-                per_package.setdefault(artifact["package"], []).append(artifact)
-            # The record of the package that was built is the one `discover` and
-            # the release notes read, so it has to carry what only the build
-            # knows: the revision it is current for, and which toolchain compiled
-            # its sources (for LeviLamina that is clang-cl, forced by its own
-            # xmake.lua, even though the package resolves under msvc).
-            root_package = ctx.package_name(result["package"])
-            root_compiler = result.get("upstream_toolchain") or result.get("toolchain")
-            for package, artifacts in per_package.items():
-                # The entry of the package that was built is already written in
-                # full above; rewriting it here with the per-component shape
-                # would drop what only the build knows (which consumer profiles
-                # it was published for), and `discover` would queue it forever.
-                if package == result["package"]:
-                    continue
-                for artifact in artifacts:
-                    index_store.write_entry(
-                        ctx.index_root,
-                        package,
-                        artifact["version"],
-                        variant,
-                        {
-                            "package": package,
-                            "version": artifact["version"],
-                            "prefix": result.get("prefix"),
-                            "built_at": result.get("built_at"),
-                            "xmake_version": result.get("xmake_version"),
-                            "toolchain": result.get("toolchain"),
-                            "vs_toolset": result.get("vs_toolset"),
-                            "revision": result.get("revision"),
-                            "configs": result.get("configs"),
-                            "alias_profiles": result.get("alias_profiles") or [],
-                            "compiled_with": (
-                                root_compiler
-                                if package == root_package
-                                else result.get("toolchain")
-                            ),
-                            "produced_for": f"{result['package']}@{version}",
-                            "artifacts": [artifact],
-                        },
-                    )
-        for artifact in result.get("artifacts", []):
-            entries += 1
-        util.log(
-            f"{result['package']}@{version} [{variant}]: "
-            f"{len(result.get('artifacts', []))} artifact(s)"
-        )
+    entries = write_ledger(config, ctx, results, dry_run=args.dry_run)
 
     if not args.dry_run:
         # A dependency shared by two entries is packed by both jobs; the digest
@@ -157,6 +102,111 @@ def main() -> int:
         util.log(f"index pushed to branch '{index_branch}'")
         _remove_legacy_index(config)
     return 0
+
+
+def _component_record(result: dict, package: str, version: str) -> dict:
+    """The ledger record for a package that came in as a dependency.
+
+    It carries what the build knows about it (how it was built, with what, and
+    for which project), but no entry id: the entry dimension belongs to the
+    project that has one, not to everything that project pulled in.
+    """
+    return {
+        "package": package,
+        "version": version,
+        "prefix": result.get("prefix"),
+        "built_at": result.get("built_at"),
+        "xmake_version": result.get("xmake_version"),
+        "toolchain": result.get("toolchain"),
+        "vs_toolset": result.get("vs_toolset"),
+        "revision": result.get("revision"),
+        "configs": result.get("configs"),
+        "alias_profiles": result.get("alias_profiles") or [],
+        "compiled_with": result.get("toolchain"),
+        "produced_for": f"{result['package']}@{version}",
+        "artifacts": [],
+    }
+
+
+def write_ledger(config: dict, ctx, results: list[dict], dry_run: bool = False) -> int:
+    """Write the index records for one round and return how many artifacts were seen.
+
+    The *entry* dimension (LeviLamina's server/client) belongs to the project that
+    has one, so only its own package is recorded per entry. A dependency is the
+    same artifact whichever entry pulled it in: recording it per entry would claim
+    two builds for something built once and would put an entry name, and an
+    implied ``target_type``, on packages that know nothing about either.
+    """
+    own_packages = {
+        ctx.package_name(plugin.call("metadata")["package"])
+        for plugin in plugins.load_all(config)
+    }
+    components: dict[tuple[str, str], dict] = {}
+    entries = 0
+    for result in results:
+        version = result["version"]
+        variant = result.get("entry", "default")
+        published = ctx.package_name(result["package"])
+        if not dry_run:
+            # What compiled the sources, which is not the toolchain the package
+            # was resolved with: LeviLamina's own xmake.lua forces clang-cl while
+            # the package (and therefore the build hash) uses msvc.
+            result["compiled_with"] = result.get("upstream_toolchain") or result.get(
+                "toolchain"
+            )
+            # The record of the project is about the project's own package; the
+            # rest of the closure is recorded per dependency further down.
+            own = [
+                artifact
+                for artifact in result.get("artifacts", [])
+                if artifact.get("package") == published
+            ]
+            record = dict(result, artifacts=own)
+            # The ledger is keyed by the published name, because that is what
+            # `discover`, `verify` and the release notes read. The same build is
+            # also recorded under the upstream name, which is what makes
+            # `packages/l/levilamina/<version>/manifest.txt` appear in the
+            # consumer repository: a project that requires the upstream package
+            # from its own repository can then be served by our artifacts too.
+            index_store.write_entry(ctx.index_root, published, version, variant, record)
+            if result["package"] != published:
+                index_store.write_entry(
+                    ctx.index_root, result["package"], version, variant, record
+                )
+            for artifact in result.get("artifacts", []):
+                record = components.setdefault(
+                    (artifact["package"], artifact["version"]),
+                    _component_record(result, artifact["package"], artifact["version"]),
+                )
+                # The same dependency comes out of every entry of the project;
+                # it is one artifact, so it is listed once.
+                if artifact["key"] not in {item["key"] for item in record["artifacts"]}:
+                    record["artifacts"].append(artifact)
+        entries += len(result.get("artifacts", []))
+        util.log(
+            f"{result['package']}@{version} [{variant}]: "
+            f"{len(result.get('artifacts', []))} artifact(s)"
+        )
+    if dry_run:
+        return entries
+    for (package, version), record in sorted(components.items()):
+        known = {
+            artifact.get("key")
+            for artifact in index_store.all_artifacts(
+                index_store.version_meta(ctx.index_root, package, version)
+            )
+        }
+        if package in own_packages and {item["key"] for item in record["artifacts"]} <= known:
+            # Another plugin's build owns this package and records it per entry,
+            # and it already knows exactly this artifact.
+            continue
+        if package in own_packages:
+            util.warn(
+                f"{package} {version}: this build produced an artifact the owning "
+                f"plugin does not have; recorded it as well"
+            )
+        index_store.write_single(ctx.index_root, package, version, "default", record)
+    return entries
 
 
 def refresh_release_notes(config: dict, ctx) -> None:

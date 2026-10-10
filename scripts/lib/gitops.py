@@ -38,14 +38,29 @@ def commit_and_push(
     staged = util.run(
         ["git", "-C", str(repo), "diff", "--cached", "--quiet"], check=False, quiet=True
     )
-    if staged.returncode == 0:
+    committed = staged.returncode != 0
+    if not committed:
         util.log(f"{repo.name}: nothing to commit")
-        return False
-    util.run(["git", "-C", str(repo), "-c", f"user.name={name}", "-c", f"user.email={email}", "commit", "-m", message], quiet=True)
+    else:
+        util.run(["git", "-C", str(repo), "-c", f"user.name={name}", "-c", f"user.email={email}", "commit", "-m", message], quiet=True)
     if push:
         branch = current_branch(repo)
-        util.run(["git", "-C", str(repo), "push", remote, branch], quiet=True)
-    return True
+        # Someone else (CI, or another checkout) may have published while this one
+        # was writing, and a failed fetch would leave a stale remote-tracking ref --
+        # then the push is rejected, half the round is published and the rest is
+        # not. Sync and try again instead, and push even when this round had
+        # nothing new to commit: an earlier attempt may have committed locally and
+        # died before the push.
+        for attempt in (1, 2):
+            sync_branch(repo, remote)
+            result = util.run(
+                ["git", "-C", str(repo), "push", remote, branch], quiet=True, check=False
+            )
+            if result.returncode == 0:
+                return committed
+            util.warn(f"{repo.name}: push to {remote}/{branch} failed, retrying (attempt {attempt})")
+        util.die(f"{repo.name}: could not push {remote}/{branch} after two attempts")
+    return committed
 
 
 def ensure_checkout(
@@ -90,6 +105,39 @@ def branch_exists(config: dict, owner: str, repo: str, branch: str) -> bool:
 
     data = gh.api_or_none(f"repos/{owner}/{repo}/branches/{branch}", config=config)
     return isinstance(data, dict) and bool(data.get("name"))
+
+
+def sync_branch(repo: Path, remote: str = "origin") -> None:
+    """Put the local branch on top of the remote, keeping local commits.
+
+    The generated repositories are written from more than one place (CI and a
+    developer's machine), so a checkout is routinely behind -- and a plain push
+    then fails with "non-fast-forward", which is how a local finalize ends up
+    doing half its work. Rebasing instead of resetting keeps whatever this
+    checkout produced (a vendored recipe, say) and still fast-forwards.
+    """
+    repo = Path(repo)
+    if not (repo / ".git").is_dir():
+        return
+    branch = current_branch(repo)
+    # Fetch the branch explicitly and rebase onto FETCH_HEAD: a checkout made for
+    # a single generated branch does not necessarily have an origin/<branch>
+    # remote-tracking ref at all.
+    util.run(["git", "-C", str(repo), "fetch", remote, branch], quiet=True, check=False)
+    result = util.run(
+        ["git", "-C", str(repo), "rebase", "FETCH_HEAD"],
+        capture=True,
+        quiet=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        # A conflict here means the same generated files were written twice, from
+        # two checkouts. Leave the repo usable and let the caller decide.
+        util.run(["git", "-C", str(repo), "rebase", "--abort"], quiet=True, check=False)
+        util.warn(
+            f"{repo.name}: cannot rebase onto {remote}/{branch} "
+            f"(another publish wrote the same files?); push will be attempted as is"
+        )
 
 
 def ensure_orphan_branch(config: dict, owner: str, repo: str, branch: str, proxy: str | None = None) -> bool:
@@ -174,7 +222,15 @@ def ensure_branch(
         util.ensure_dir(directory.parent)
         util.run(["git", "clone", "--branch", branch, url, str(directory)], env=env, quiet=True)
         return directory
-    util.run(["git", "-C", str(directory), "fetch", "origin"], env=env, quiet=True, check=False)
+    # Fetch the branch explicitly: a checkout made for a single generated branch
+    # does not necessarily carry an origin/<branch> remote-tracking ref, and a
+    # stale (or silently failed) fetch is how a publish ends up half done.
+    util.run(
+        ["git", "-C", str(directory), "fetch", "origin", branch],
+        env=env,
+        quiet=True,
+        check=False,
+    )
     util.run(
         ["git", "-C", str(directory), "checkout", "--quiet", branch],
         env=env,
@@ -183,7 +239,7 @@ def ensure_branch(
         check=False,
     )
     util.run(
-        ["git", "-C", str(directory), "reset", "--hard", f"origin/{branch}"],
+        ["git", "-C", str(directory), "reset", "--hard", "FETCH_HEAD"],
         env=env,
         capture=True,
         quiet=True,
