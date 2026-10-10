@@ -168,10 +168,28 @@ def entries(ctx, version: str, commit: str) -> list[dict]:
     # One build per configuration pair. Additional *toolchain* flavours are not
     # built twice: they are published as manifest aliases for the same artifact,
     # because the build hash can be recomputed offline (see toolchain_aliases).
-    return [
-        {"id": "server", "configs": {"target_type": "server"}},
-        {"id": "client", "configs": {"target_type": "client"}},
-    ]
+    found = [{"id": "server", "configs": {"target_type": "server"}}]
+    if client_supported(upstream_xmake_lua(ctx, commit)):
+        found.append({"id": "client", "configs": {"target_type": "client"}})
+    return found
+
+
+#: A tag only builds a client SDK if it has the option *and* honours it. Tags
+#: from the 1.0-1.7 era keep the plumbing but hardcode ``local is_client =
+#: false``, and their client-only dependencies were never published, so asking
+#: for ``target_type=client`` dies while resolving (``bedrockdata ...-client ...
+#: not found``); older tags (0.8.x, 0.13.x) have no ``target_type`` option at all
+#: and would silently build the server flavour.
+_CLIENT_OPTION = re.compile(r'^\s*option\("target_type"\)\s*$', re.M)
+_CLIENT_DISABLED = re.compile(r"^\s*local\s+is_client\s*=\s*false\b", re.M)
+
+
+def client_supported(xmake_lua: str) -> bool:
+    """Does this tag of LeviLamina really build a client SDK?"""
+    text = xmake_lua or ""
+    if not _CLIENT_OPTION.search(text):
+        return False
+    return not _CLIENT_DISABLED.search(text)
 
 
 def toolchain_aliases(ctx, version: str, commit: str) -> list[dict]:
@@ -194,10 +212,13 @@ def toolchain_aliases(ctx, version: str, commit: str) -> list[dict]:
     # It has to sit in the project file: `xmake f --toolchain=clang-cl` hashes
     # the same, but xmake then never checks an MSVC toolchain, and its
     # precompiled-artifact selection (which requires a checked one) is skipped.
-    return [
-        {"id": "msvc", "toolchain": "msvc"},
-        {"id": "clang-cl", "toolchain": "clang-cl"},
-    ]
+    found = [{"id": "msvc", "toolchain": "msvc"}]
+    # LeviLamina only started compiling itself with clang-cl at 26.20; older tags
+    # are msvc builds, and no clang-cl plugin project exists for them. Publishing
+    # that address anyway would hand a project a build its own version never had.
+    if native_toolchain(ctx, version, commit) == "clang-cl":
+        found.append({"id": "clang-cl", "toolchain": "clang-cl"})
+    return found
 
 
 def extra_deps(ctx, version: str, commit: str) -> list[dict]:

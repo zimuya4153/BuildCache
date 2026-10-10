@@ -215,20 +215,55 @@ def test_finalize_publishes_aliases_into_the_manifest(tmp_path: Path):
     assert entries["windows-x64-vc-df51e1a2"] == entries["windows-x64-vc-ee1902dd"]
 
 
-def test_shipped_plugins_declare_their_consumer_profiles():
-    """Every configured project has to say which toolchains its artifacts serve.
+def test_shipped_plugins_declare_the_profiles_they_can_serve(monkeypatch):
+    """Every project says which toolchains its artifacts answer to.
 
-    The profiles are what the build recomputes hashes for, so a project that
-    declares none silently serves only the toolchain it was built with.
+    The profiles are what the build recomputes hashes for; a project that declares
+    none only serves the toolchain it was built with. The ll plugin reads
+    LeviLamina's own xmake.lua to decide, so the text is stubbed to keep this
+    test offline.
     """
+    modern = 'local is_server = is_config("target_type", "server")\nset_toolchains("clang-cl")\n'
+    found = {}
     for plugin in plugins.load_all(util.load_config()):
+        monkeypatch.setattr(
+            plugin.module, "upstream_xmake_lua", lambda ctx, commit: modern, raising=False
+        )
         profiles = plugin.call("toolchain_aliases", None, "26.51.6", "") or []
-        found = {item["id"]: item["toolchain"] for item in profiles}
-        assert found, f"{plugin.name} declares no consumer profile"
-        # the shapes a consumer can declare: nothing (the built profile), msvc,
-        # clang-cl -- see docs/tutorial.md, section 5
-        assert set(found) >= {"msvc", "clang-cl"}, plugin.name
-        assert all(found.values())
+        found[plugin.name] = {item["id"] for item in profiles}
+    # LeviLamina is a clang-cl build at this version, so both addresses make sense
+    assert found["ll"] == {"msvc", "clang-cl"}, found
+    # the config-driven projects are msvc builds: no clang-cl address for them
+    assert found["moredimensions"] == {"msvc"}, found
+    assert found["bsci"] == {"msvc"}, found
+
+
+def test_ll_entries_follow_the_upstream_build_shape(monkeypatch):
+    """Old tags have no client SDK and are not clang-cl builds."""
+    config = util.load_config()
+    ll = next(item for item in plugins.load_all(config) if item.name == "ll")
+
+    modern = 'local is_server = is_config("target_type", "server")\nset_toolchains("clang-cl")\n'
+    legacy = (
+        '-- local is_client = is_config("target_type", "client")\n'
+        "local is_client = false\n"
+        'add_requires("bedrockdata 1.21.0.3-client")\n'
+    )
+
+    monkeypatch.setattr(ll.module, "upstream_xmake_lua", lambda ctx, commit: modern)
+    assert [entry["id"] for entry in ll.module.entries(None, "26.51.6", "")] == [
+        "server",
+        "client",
+    ]
+    assert [item["id"] for item in ll.module.toolchain_aliases(None, "26.51.6", "")] == [
+        "msvc",
+        "clang-cl",
+    ]
+
+    monkeypatch.setattr(ll.module, "upstream_xmake_lua", lambda ctx, commit: legacy)
+    assert [entry["id"] for entry in ll.module.entries(None, "1.4.4", "")] == ["server"]
+    # an msvc build predates clang-cl support, so it gets no clang-cl address
+    assert [item["id"] for item in ll.module.toolchain_aliases(None, "1.4.4", "")] == ["msvc"]
 
 
 # ------------------------------------------------------------- failed installs

@@ -98,6 +98,11 @@ class _UpstreamPlugin:
         Opt-in per project (``"toolchainAliases": [{"id": "clang-cl",
         "toolchain": "clang-cl"}]``): whether the same archive can serve another
         toolchain is a property of the project's artifacts, not of the framework.
+
+        Only addresses that make sense for how this version is built survive: the
+        toolchain that compiled its sources, and the one the package is resolved
+        with. A project still compiled by msvc predates clang-cl support, and no
+        clang-cl consumer exists for it, so that address is dropped.
         """
         found = []
         for item in self.settings.get("toolchainAliases") or []:
@@ -105,7 +110,8 @@ class _UpstreamPlugin:
                 found.append({"id": item, "toolchain": item})
             elif item.get("toolchain"):
                 found.append({"id": item.get("id") or item["toolchain"], "toolchain": item["toolchain"]})
-        return found
+        allowed = {self.native_toolchain(ctx, version, commit), self.toolchain(ctx, version, commit)}
+        return [item for item in found if item["toolchain"] in allowed]
 
     def xmake_version(self, ctx, version: str, commit: str) -> str:
         from lib import xmake_env
