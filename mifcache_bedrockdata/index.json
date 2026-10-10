@@ -3,6 +3,7 @@
   "latest": "v26.51.1-server.7",
   "versions": [
     "v26.51.1-server.7",
-    "v26.51.1-client.7"
+    "v26.51.1-client.7",
+    "v1.21.93-server.6"
   ]
 }

@@ -2,10 +2,10 @@
   "package": "mifcache_fmt",
   "version": "11.2.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:06:26Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-10T15:49:20Z",
+  "xmake_version": "3.0.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "configs": {
     "target_type": "server"
   },
@@ -13,7 +13,7 @@
     "msvc",
     "clang-cl"
   ],
-  "produced_for": "levilamina@26.51.6",
+  "produced_for": "levilamina@1.4.4",
   "entries": {
     "client": {
       "package": "mifcache_fmt",
@@ -44,8 +44,8 @@
           "release": "fmt_0",
           "asset": "fmt-ee1902dd7cff4195a287949f80dbce70.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/fmt_0/fmt-ee1902dd7cff4195a287949f80dbce70.7z",
-          "sha256": "b9cb57cd11758538a3f32f9fd42ca1177fa57cae2b96c6621c985302b00b4d38",
-          "size": 284503,
+          "sha256": "1a5fcd86fe7ee51ceaa567df5a20f4f1457895a49ac864d717397bb21367c217",
+          "size": 285183,
           "container": "7z",
           "aliases": [
             {
@@ -70,10 +70,10 @@
       "package": "mifcache_fmt",
       "version": "11.2.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:06:26Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-10T15:49:20Z",
+      "xmake_version": "3.0.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
+      "vs_toolset": "14.44.35207",
       "revision": 1,
       "configs": {
         "target_type": "server"
@@ -83,7 +83,7 @@
         "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
+      "produced_for": "levilamina@1.4.4",
       "artifacts": [
         {
           "package": "mifcache_fmt",
@@ -91,12 +91,12 @@
           "version": "11.2.0",
           "buildhash": "ee1902dd7cff4195a287949f80dbce70",
           "key": "windows-x64-vc-ee1902dd7cff4195a287949f80dbce70",
-          "toolset": "14.51.36231",
+          "toolset": "14.44.35207",
           "release": "fmt_0",
           "asset": "fmt-ee1902dd7cff4195a287949f80dbce70.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/fmt_0/fmt-ee1902dd7cff4195a287949f80dbce70.7z",
-          "sha256": "b9cb57cd11758538a3f32f9fd42ca1177fa57cae2b96c6621c985302b00b4d38",
-          "size": 284503,
+          "sha256": "1a5fcd86fe7ee51ceaa567df5a20f4f1457895a49ac864d717397bb21367c217",
+          "size": 285183,
           "container": "7z",
           "aliases": [
             {
@@ -104,14 +104,14 @@
               "toolchain": "msvc",
               "buildhash": "b7405442b25445eab2a3dbd4c6478c78",
               "key": "windows-x64-vc-b7405442b25445eab2a3dbd4c6478c78",
-              "toolset": "14.51.36231"
+              "toolset": "14.44.35207"
             },
             {
               "id": "clang-cl",
               "toolchain": "clang-cl",
               "buildhash": "df51e1a2e20b4137a9912f841398f0d3",
               "key": "windows-x64-vc-df51e1a2e20b4137a9912f841398f0d3",
-              "toolset": "14.51.36231"
+              "toolset": "14.44.35207"
             }
           ]
         }

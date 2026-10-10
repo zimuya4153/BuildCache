@@ -2,10 +2,10 @@
   "package": "mifcache_pcg_cpp",
   "version": "v1.0.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:06:26Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-10T15:49:20Z",
+  "xmake_version": "3.0.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "configs": {
     "target_type": "server"
   },
@@ -13,7 +13,7 @@
     "msvc",
     "clang-cl"
   ],
-  "produced_for": "levilamina@26.51.6",
+  "produced_for": "levilamina@1.4.4",
   "entries": {
     "client": {
       "package": "mifcache_pcg_cpp",
@@ -44,8 +44,8 @@
           "release": "pcg_cpp_0",
           "asset": "pcg_cpp-6c550fbfc1bb49fbbed872829f6090b0.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/pcg_cpp_0/pcg_cpp-6c550fbfc1bb49fbbed872829f6090b0.7z",
-          "sha256": "5204b0501252bb1458e498a37d27d5e215815103f330612605f725af17a327ce",
-          "size": 21456,
+          "sha256": "f1746b460d26c5a3e333e93c91d00e4906e6c30eb7d7969a4bb73b096ccea8ba",
+          "size": 21446,
           "container": "7z",
           "aliases": []
         }
@@ -55,10 +55,10 @@
       "package": "mifcache_pcg_cpp",
       "version": "v1.0.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:06:26Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-10T15:49:20Z",
+      "xmake_version": "3.0.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
+      "vs_toolset": "14.44.35207",
       "revision": 1,
       "configs": {
         "target_type": "server"
@@ -68,7 +68,7 @@
         "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
+      "produced_for": "levilamina@1.4.4",
       "artifacts": [
         {
           "package": "mifcache_pcg_cpp",
@@ -76,12 +76,12 @@
           "version": "v1.0.0",
           "buildhash": "6c550fbfc1bb49fbbed872829f6090b0",
           "key": "windows-x64-vc-6c550fbfc1bb49fbbed872829f6090b0",
-          "toolset": "14.51.36231",
+          "toolset": "14.44.35207",
           "release": "pcg_cpp_0",
           "asset": "pcg_cpp-6c550fbfc1bb49fbbed872829f6090b0.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/pcg_cpp_0/pcg_cpp-6c550fbfc1bb49fbbed872829f6090b0.7z",
-          "sha256": "5204b0501252bb1458e498a37d27d5e215815103f330612605f725af17a327ce",
-          "size": 21456,
+          "sha256": "f1746b460d26c5a3e333e93c91d00e4906e6c30eb7d7969a4bb73b096ccea8ba",
+          "size": 21446,
           "container": "7z",
           "aliases": []
         }

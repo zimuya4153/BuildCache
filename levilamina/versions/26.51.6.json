@@ -70,8 +70,8 @@
           "release": "magic_enum_0",
           "asset": "magic_enum-03e2990032db4ea08102d17ff8a57da7.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/magic_enum_0/magic_enum-03e2990032db4ea08102d17ff8a57da7.7z",
-          "sha256": "a5d8da88841c19b12259fe2a40f9ac804f7b581a26e7e2e3e9f41908c36c7136",
-          "size": 23838,
+          "sha256": "557311cf68bea7366c992d95303af188b52918be6e5b914b1a4393e97e987168",
+          "size": 23821,
           "container": "7z",
           "aliases": []
         },
@@ -85,8 +85,8 @@
           "release": "concurrentqueue_0",
           "asset": "concurrentqueue-0cd923cdfb6a4256954a994422b17de9.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/concurrentqueue_0/concurrentqueue-0cd923cdfb6a4256954a994422b17de9.7z",
-          "sha256": "b45523a30a2c38f763a19478566921025b2336af4687576f34bda0d9565c041d",
-          "size": 36863,
+          "sha256": "22c8f3f7dc485101c26208fa3bb46945a815379a541674f06b98326f786a65b3",
+          "size": 36841,
           "container": "7z",
           "aliases": [
             {
@@ -130,8 +130,8 @@
           "release": "glm_0",
           "asset": "glm-18615f0387cd4e2ab2e9ea9965afc784.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/glm_0/glm-18615f0387cd4e2ab2e9ea9965afc784.7z",
-          "sha256": "d105d7fbdf49a1bbf5046679f6e5fd854bc89bc75704663d3ff7f859102ccfd9",
-          "size": 162206,
+          "sha256": "be097d60da59db6c4aca2051f1a7e40f39476b9f6392f7f15eadbb6c57858a7e",
+          "size": 162200,
           "container": "7z",
           "aliases": [
             {
@@ -160,8 +160,8 @@
           "release": "leveldb_0",
           "asset": "leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/leveldb_0/leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
-          "sha256": "7212d783b8fba44faeb27cdf92596d94aec01d7bac82321f679902a73d8a4a70",
-          "size": 445164,
+          "sha256": "5b5e04c7ef7ac94c22df2f4b40a82589a5e28add6e27b7311f1138b54c512de9",
+          "size": 506964,
           "container": "7z",
           "aliases": [
             {
@@ -220,8 +220,8 @@
           "release": "expected-lite_0",
           "asset": "expected-lite-36ca3aab48a04473a0b2d34e01875b34.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/expected-lite_0/expected-lite-36ca3aab48a04473a0b2d34e01875b34.7z",
-          "sha256": "dd03af4154c8420646085dd67c1d7ab7a06d49cb2a9526737a77413aabbab52b",
-          "size": 12329,
+          "sha256": "2cd5e60daefe826abc6d78c15ff9b382415d6b6324e795adab0269ecd1859fdf",
+          "size": 12321,
           "container": "7z",
           "aliases": []
         },
@@ -265,8 +265,8 @@
           "release": "pfr_0",
           "asset": "pfr-45e5102591a649fda279e67eaf92482a.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/pfr_0/pfr-45e5102591a649fda279e67eaf92482a.7z",
-          "sha256": "dfc6b4e79fc97f1289daa4ff7c9878afe59fef13cf96f3a7e79431edc8dd7a5a",
-          "size": 29772,
+          "sha256": "67b614861987c83417cc07e9088631f4e453a4686802520663f3a227b1fa8e92",
+          "size": 29686,
           "container": "7z",
           "aliases": [
             {
@@ -295,8 +295,8 @@
           "release": "parallel-hashmap_0",
           "asset": "parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/parallel-hashmap_0/parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
-          "sha256": "8437ed7178f235fd56ea115b8f316fb19c1e85d857e0bbdfa0ce07ec1e4b36f8",
-          "size": 92932,
+          "sha256": "32ed47a292448b7bf9f666e17a2344e718f134976c8c6ee3c362a4dc1165aba3",
+          "size": 92924,
           "container": "7z",
           "aliases": []
         },
@@ -310,8 +310,8 @@
           "release": "type_safe_0",
           "asset": "type_safe-4b33a9a5c8154bd58b7d4007150f50b7.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/type_safe_0/type_safe-4b33a9a5c8154bd58b7d4007150f50b7.7z",
-          "sha256": "5a43a74156a60fbc3f5c8e97bfbfde3909da1abe1963b452a82be8a6f6ce99d6",
-          "size": 52889,
+          "sha256": "be8306fa2d0e1bcb8d33650135f1f6d270a62f985b979ec68c5bba18d5501e14",
+          "size": 52880,
           "container": "7z",
           "aliases": []
         },
@@ -355,8 +355,8 @@
           "release": "pcg_cpp_0",
           "asset": "pcg_cpp-6c550fbfc1bb49fbbed872829f6090b0.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/pcg_cpp_0/pcg_cpp-6c550fbfc1bb49fbbed872829f6090b0.7z",
-          "sha256": "5204b0501252bb1458e498a37d27d5e215815103f330612605f725af17a327ce",
-          "size": 21456,
+          "sha256": "f1746b460d26c5a3e333e93c91d00e4906e6c30eb7d7969a4bb73b096ccea8ba",
+          "size": 21446,
           "container": "7z",
           "aliases": []
         },
@@ -415,8 +415,8 @@
           "release": "snappy_0",
           "asset": "snappy-b3244272357b4994abb43dc0aa939d28.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/snappy_0/snappy-b3244272357b4994abb43dc0aa939d28.7z",
-          "sha256": "d2cbb0cdd3e8cbbbd34b3f013b907ab36259c7d001ddbfb2cedef1a3a3de0b4c",
-          "size": 56149,
+          "sha256": "601367866d5a15e6a01aaa8a7f769c9470dfee9dda887ad27a5ff04d1fdec313",
+          "size": 59595,
           "container": "7z",
           "aliases": [
             {
@@ -490,8 +490,8 @@
           "release": "debug_assert_0",
           "asset": "debug_assert-e3515434506a445792c1c83600bcf899.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/debug_assert_0/debug_assert-e3515434506a445792c1c83600bcf899.7z",
-          "sha256": "a9ba90111ce63cd663292917772d4ccd692a5097a8c8f168cec41f390e1a0240",
-          "size": 6164,
+          "sha256": "05827db670f8080325d5358189f0c4ec86d0d2b9753997e48c008f07f8099aba",
+          "size": 6152,
           "container": "7z",
           "aliases": []
         },
@@ -505,8 +505,8 @@
           "release": "fmt_0",
           "asset": "fmt-ee1902dd7cff4195a287949f80dbce70.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/fmt_0/fmt-ee1902dd7cff4195a287949f80dbce70.7z",
-          "sha256": "b9cb57cd11758538a3f32f9fd42ca1177fa57cae2b96c6621c985302b00b4d38",
-          "size": 284503,
+          "sha256": "1a5fcd86fe7ee51ceaa567df5a20f4f1457895a49ac864d717397bb21367c217",
+          "size": 285183,
           "container": "7z",
           "aliases": [
             {
@@ -568,8 +568,8 @@
           "release": "magic_enum_0",
           "asset": "magic_enum-03e2990032db4ea08102d17ff8a57da7.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/magic_enum_0/magic_enum-03e2990032db4ea08102d17ff8a57da7.7z",
-          "sha256": "a5d8da88841c19b12259fe2a40f9ac804f7b581a26e7e2e3e9f41908c36c7136",
-          "size": 23838,
+          "sha256": "557311cf68bea7366c992d95303af188b52918be6e5b914b1a4393e97e987168",
+          "size": 23821,
           "container": "7z",
           "aliases": []
         },
@@ -583,8 +583,8 @@
           "release": "concurrentqueue_0",
           "asset": "concurrentqueue-0cd923cdfb6a4256954a994422b17de9.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/concurrentqueue_0/concurrentqueue-0cd923cdfb6a4256954a994422b17de9.7z",
-          "sha256": "b45523a30a2c38f763a19478566921025b2336af4687576f34bda0d9565c041d",
-          "size": 36863,
+          "sha256": "22c8f3f7dc485101c26208fa3bb46945a815379a541674f06b98326f786a65b3",
+          "size": 36841,
           "container": "7z",
           "aliases": [
             {
@@ -628,8 +628,8 @@
           "release": "glm_0",
           "asset": "glm-18615f0387cd4e2ab2e9ea9965afc784.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/glm_0/glm-18615f0387cd4e2ab2e9ea9965afc784.7z",
-          "sha256": "d105d7fbdf49a1bbf5046679f6e5fd854bc89bc75704663d3ff7f859102ccfd9",
-          "size": 162206,
+          "sha256": "be097d60da59db6c4aca2051f1a7e40f39476b9f6392f7f15eadbb6c57858a7e",
+          "size": 162200,
           "container": "7z",
           "aliases": [
             {
@@ -658,8 +658,8 @@
           "release": "leveldb_0",
           "asset": "leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/leveldb_0/leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
-          "sha256": "7212d783b8fba44faeb27cdf92596d94aec01d7bac82321f679902a73d8a4a70",
-          "size": 445164,
+          "sha256": "5b5e04c7ef7ac94c22df2f4b40a82589a5e28add6e27b7311f1138b54c512de9",
+          "size": 506964,
           "container": "7z",
           "aliases": [
             {
@@ -718,8 +718,8 @@
           "release": "expected-lite_0",
           "asset": "expected-lite-36ca3aab48a04473a0b2d34e01875b34.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/expected-lite_0/expected-lite-36ca3aab48a04473a0b2d34e01875b34.7z",
-          "sha256": "dd03af4154c8420646085dd67c1d7ab7a06d49cb2a9526737a77413aabbab52b",
-          "size": 12329,
+          "sha256": "2cd5e60daefe826abc6d78c15ff9b382415d6b6324e795adab0269ecd1859fdf",
+          "size": 12321,
           "container": "7z",
           "aliases": []
         },
@@ -733,8 +733,8 @@
           "release": "pfr_0",
           "asset": "pfr-45e5102591a649fda279e67eaf92482a.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/pfr_0/pfr-45e5102591a649fda279e67eaf92482a.7z",
-          "sha256": "dfc6b4e79fc97f1289daa4ff7c9878afe59fef13cf96f3a7e79431edc8dd7a5a",
-          "size": 29772,
+          "sha256": "67b614861987c83417cc07e9088631f4e453a4686802520663f3a227b1fa8e92",
+          "size": 29686,
           "container": "7z",
           "aliases": [
             {
@@ -763,8 +763,8 @@
           "release": "parallel-hashmap_0",
           "asset": "parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/parallel-hashmap_0/parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
-          "sha256": "8437ed7178f235fd56ea115b8f316fb19c1e85d857e0bbdfa0ce07ec1e4b36f8",
-          "size": 92932,
+          "sha256": "32ed47a292448b7bf9f666e17a2344e718f134976c8c6ee3c362a4dc1165aba3",
+          "size": 92924,
           "container": "7z",
           "aliases": []
         },
@@ -778,8 +778,8 @@
           "release": "type_safe_0",
           "asset": "type_safe-4b33a9a5c8154bd58b7d4007150f50b7.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/type_safe_0/type_safe-4b33a9a5c8154bd58b7d4007150f50b7.7z",
-          "sha256": "5a43a74156a60fbc3f5c8e97bfbfde3909da1abe1963b452a82be8a6f6ce99d6",
-          "size": 52889,
+          "sha256": "be8306fa2d0e1bcb8d33650135f1f6d270a62f985b979ec68c5bba18d5501e14",
+          "size": 52880,
           "container": "7z",
           "aliases": []
         },
@@ -823,8 +823,8 @@
           "release": "pcg_cpp_0",
           "asset": "pcg_cpp-6c550fbfc1bb49fbbed872829f6090b0.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/pcg_cpp_0/pcg_cpp-6c550fbfc1bb49fbbed872829f6090b0.7z",
-          "sha256": "5204b0501252bb1458e498a37d27d5e215815103f330612605f725af17a327ce",
-          "size": 21456,
+          "sha256": "f1746b460d26c5a3e333e93c91d00e4906e6c30eb7d7969a4bb73b096ccea8ba",
+          "size": 21446,
           "container": "7z",
           "aliases": []
         },
@@ -913,8 +913,8 @@
           "release": "snappy_0",
           "asset": "snappy-b3244272357b4994abb43dc0aa939d28.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/snappy_0/snappy-b3244272357b4994abb43dc0aa939d28.7z",
-          "sha256": "d2cbb0cdd3e8cbbbd34b3f013b907ab36259c7d001ddbfb2cedef1a3a3de0b4c",
-          "size": 56149,
+          "sha256": "601367866d5a15e6a01aaa8a7f769c9470dfee9dda887ad27a5ff04d1fdec313",
+          "size": 59595,
           "container": "7z",
           "aliases": [
             {
@@ -958,8 +958,8 @@
           "release": "debug_assert_0",
           "asset": "debug_assert-e3515434506a445792c1c83600bcf899.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/debug_assert_0/debug_assert-e3515434506a445792c1c83600bcf899.7z",
-          "sha256": "a9ba90111ce63cd663292917772d4ccd692a5097a8c8f168cec41f390e1a0240",
-          "size": 6164,
+          "sha256": "05827db670f8080325d5358189f0c4ec86d0d2b9753997e48c008f07f8099aba",
+          "size": 6152,
           "container": "7z",
           "aliases": []
         },
@@ -1003,8 +1003,8 @@
           "release": "fmt_0",
           "asset": "fmt-ee1902dd7cff4195a287949f80dbce70.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/fmt_0/fmt-ee1902dd7cff4195a287949f80dbce70.7z",
-          "sha256": "b9cb57cd11758538a3f32f9fd42ca1177fa57cae2b96c6621c985302b00b4d38",
-          "size": 284503,
+          "sha256": "1a5fcd86fe7ee51ceaa567df5a20f4f1457895a49ac864d717397bb21367c217",
+          "size": 285183,
           "container": "7z",
           "aliases": [
             {

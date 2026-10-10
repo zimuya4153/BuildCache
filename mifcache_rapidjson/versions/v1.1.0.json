@@ -1,0 +1,57 @@
+{
+  "package": "mifcache_rapidjson",
+  "version": "v1.1.0",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-10T15:49:20Z",
+  "xmake_version": "3.0.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 1,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc",
+    "clang-cl"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@1.4.4",
+  "entries": {
+    "server": {
+      "package": "mifcache_rapidjson",
+      "version": "v1.1.0",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-10T15:49:20Z",
+      "xmake_version": "3.0.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 1,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@1.4.4",
+      "artifacts": [
+        {
+          "package": "mifcache_rapidjson",
+          "upstream_package": "rapidjson",
+          "version": "v1.1.0",
+          "buildhash": "541d06a92bbb4f8fac523353c2426c15",
+          "key": "windows-x64-vc-541d06a92bbb4f8fac523353c2426c15",
+          "toolset": "14.44.35207",
+          "release": "rapidjson_0",
+          "asset": "rapidjson-541d06a92bbb4f8fac523353c2426c15.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/rapidjson_0/rapidjson-541d06a92bbb4f8fac523353c2426c15.7z",
+          "sha256": "79143a8d0f0cbc5c6365b5e6d233b38b973414c37de7a18bed4b8d249045edaf",
+          "size": 97958,
+          "container": "7z",
+          "aliases": []
+        }
+      ]
+    }
+  }
+}

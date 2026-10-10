@@ -2,10 +2,10 @@
   "package": "mifcache_magic_enum",
   "version": "v0.9.7",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:06:26Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-10T15:49:20Z",
+  "xmake_version": "3.0.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "configs": {
     "target_type": "server"
   },
@@ -13,7 +13,7 @@
     "msvc",
     "clang-cl"
   ],
-  "produced_for": "levilamina@26.51.6",
+  "produced_for": "levilamina@1.4.4",
   "entries": {
     "client": {
       "package": "mifcache_magic_enum",
@@ -44,8 +44,8 @@
           "release": "magic_enum_0",
           "asset": "magic_enum-03e2990032db4ea08102d17ff8a57da7.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/magic_enum_0/magic_enum-03e2990032db4ea08102d17ff8a57da7.7z",
-          "sha256": "a5d8da88841c19b12259fe2a40f9ac804f7b581a26e7e2e3e9f41908c36c7136",
-          "size": 23838,
+          "sha256": "557311cf68bea7366c992d95303af188b52918be6e5b914b1a4393e97e987168",
+          "size": 23821,
           "container": "7z",
           "aliases": []
         }
@@ -55,10 +55,10 @@
       "package": "mifcache_magic_enum",
       "version": "v0.9.7",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:06:26Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-10T15:49:20Z",
+      "xmake_version": "3.0.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
+      "vs_toolset": "14.44.35207",
       "revision": 1,
       "configs": {
         "target_type": "server"
@@ -68,7 +68,7 @@
         "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
+      "produced_for": "levilamina@1.4.4",
       "artifacts": [
         {
           "package": "mifcache_magic_enum",
@@ -76,12 +76,12 @@
           "version": "v0.9.7",
           "buildhash": "03e2990032db4ea08102d17ff8a57da7",
           "key": "windows-x64-vc-03e2990032db4ea08102d17ff8a57da7",
-          "toolset": "14.51.36231",
+          "toolset": "14.44.35207",
           "release": "magic_enum_0",
           "asset": "magic_enum-03e2990032db4ea08102d17ff8a57da7.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/magic_enum_0/magic_enum-03e2990032db4ea08102d17ff8a57da7.7z",
-          "sha256": "a5d8da88841c19b12259fe2a40f9ac804f7b581a26e7e2e3e9f41908c36c7136",
-          "size": 23838,
+          "sha256": "557311cf68bea7366c992d95303af188b52918be6e5b914b1a4393e97e987168",
+          "size": 23821,
           "container": "7z",
           "aliases": []
         }

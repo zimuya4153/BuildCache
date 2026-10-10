@@ -2,10 +2,10 @@
   "package": "mifcache_parallel-hashmap",
   "version": "v1.3.12",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:06:26Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-10T15:49:20Z",
+  "xmake_version": "3.0.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "configs": {
     "target_type": "server"
   },
@@ -13,7 +13,7 @@
     "msvc",
     "clang-cl"
   ],
-  "produced_for": "levilamina@26.51.6",
+  "produced_for": "levilamina@1.4.4",
   "entries": {
     "client": {
       "package": "mifcache_parallel-hashmap",
@@ -44,8 +44,8 @@
           "release": "parallel-hashmap_0",
           "asset": "parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/parallel-hashmap_0/parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
-          "sha256": "8437ed7178f235fd56ea115b8f316fb19c1e85d857e0bbdfa0ce07ec1e4b36f8",
-          "size": 92932,
+          "sha256": "32ed47a292448b7bf9f666e17a2344e718f134976c8c6ee3c362a4dc1165aba3",
+          "size": 92924,
           "container": "7z",
           "aliases": []
         }
@@ -55,10 +55,10 @@
       "package": "mifcache_parallel-hashmap",
       "version": "v1.3.12",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:06:26Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-10T15:49:20Z",
+      "xmake_version": "3.0.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
+      "vs_toolset": "14.44.35207",
       "revision": 1,
       "configs": {
         "target_type": "server"
@@ -68,7 +68,7 @@
         "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
+      "produced_for": "levilamina@1.4.4",
       "artifacts": [
         {
           "package": "mifcache_parallel-hashmap",
@@ -76,12 +76,12 @@
           "version": "v1.3.12",
           "buildhash": "47b4dd3f84f34e9d98b4cde1eedee54d",
           "key": "windows-x64-vc-47b4dd3f84f34e9d98b4cde1eedee54d",
-          "toolset": "14.51.36231",
+          "toolset": "14.44.35207",
           "release": "parallel-hashmap_0",
           "asset": "parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/parallel-hashmap_0/parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
-          "sha256": "8437ed7178f235fd56ea115b8f316fb19c1e85d857e0bbdfa0ce07ec1e4b36f8",
-          "size": 92932,
+          "sha256": "32ed47a292448b7bf9f666e17a2344e718f134976c8c6ee3c362a4dc1165aba3",
+          "size": 92924,
           "container": "7z",
           "aliases": []
         }

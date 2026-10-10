@@ -2,6 +2,7 @@
   "package": "mifcache_gsl",
   "latest": "v4.2.0",
   "versions": [
-    "v4.2.0"
+    "v4.2.0",
+    "v4.0.0"
   ]
 }
