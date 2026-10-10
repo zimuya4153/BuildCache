@@ -30,19 +30,34 @@ def commit_and_push(
 ) -> bool:
     """Stage, commit and push; returns False when there was nothing to commit."""
     repo = Path(repo)
+    # The generated files are written with LF on purpose; without this the run
+    # drowns in one "LF will be replaced by CRLF" warning per file.
+    env = util.subprocess_env(util.load_config())
     name, email = util.git_identity(util.load_config())
     add_args = ["git", "-C", str(repo), "add", "-A"]
     if paths:
         add_args = ["git", "-C", str(repo), "add", "--"] + list(paths)
-    util.run(add_args, quiet=True)
+    util.run(add_args, env=env, quiet=True)
     staged = util.run(
-        ["git", "-C", str(repo), "diff", "--cached", "--quiet"], check=False, quiet=True
+        ["git", "-C", str(repo), "diff", "--cached", "--quiet"],
+        env=env,
+        check=False,
+        quiet=True,
     )
     committed = staged.returncode != 0
     if not committed:
         util.log(f"{repo.name}: nothing to commit")
     else:
-        util.run(["git", "-C", str(repo), "-c", f"user.name={name}", "-c", f"user.email={email}", "commit", "-m", message], quiet=True)
+        util.run(
+            [
+                "git", "-C", str(repo),
+                "-c", f"user.name={name}",
+                "-c", f"user.email={email}",
+                "commit", "-m", message,
+            ],
+            env=env,
+            quiet=True,
+        )
     if push:
         branch = current_branch(repo)
         # Someone else (CI, or another checkout) may have published while this one
@@ -54,7 +69,10 @@ def commit_and_push(
         for attempt in (1, 2):
             sync_branch(repo, remote)
             result = util.run(
-                ["git", "-C", str(repo), "push", remote, branch], quiet=True, check=False
+                ["git", "-C", str(repo), "push", remote, branch],
+                env=env,
+                quiet=True,
+                check=False,
             )
             if result.returncode == 0:
                 return committed
@@ -119,13 +137,17 @@ def sync_branch(repo: Path, remote: str = "origin") -> None:
     repo = Path(repo)
     if not (repo / ".git").is_dir():
         return
+    env = util.subprocess_env(util.load_config())
     branch = current_branch(repo)
     # Fetch the branch explicitly and rebase onto FETCH_HEAD: a checkout made for
     # a single generated branch does not necessarily have an origin/<branch>
     # remote-tracking ref at all.
-    util.run(["git", "-C", str(repo), "fetch", remote, branch], quiet=True, check=False)
+    util.run(
+        ["git", "-C", str(repo), "fetch", remote, branch], env=env, quiet=True, check=False
+    )
     result = util.run(
         ["git", "-C", str(repo), "rebase", "FETCH_HEAD"],
+        env=env,
         capture=True,
         quiet=True,
         check=False,
@@ -133,7 +155,9 @@ def sync_branch(repo: Path, remote: str = "origin") -> None:
     if result.returncode != 0:
         # A conflict here means the same generated files were written twice, from
         # two checkouts. Leave the repo usable and let the caller decide.
-        util.run(["git", "-C", str(repo), "rebase", "--abort"], quiet=True, check=False)
+        util.run(
+            ["git", "-C", str(repo), "rebase", "--abort"], env=env, quiet=True, check=False
+        )
         util.warn(
             f"{repo.name}: cannot rebase onto {remote}/{branch} "
             f"(another publish wrote the same files?); push will be attempted as is"
