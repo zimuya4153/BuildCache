@@ -149,16 +149,21 @@ def release_notes(tag: str, rows: list[dict] | None = None, prefix: str = "") ->
         ]
         for row in rows:
             also = ", ".join(f"`{item}`" for item in row.get("aliases") or []) or "-"
+            # A direct link, so the artifact is one click away: the asset name
+            # alone is not clickable, and browsing the release to find it means
+            # scrolling through every shard member.
+            name = row.get("asset", "")
+            asset = f"[{name}]({row['url']})" if row.get("url") else name
             lines.append(
                 "| `{version}` | `{entry}` | `{toolchain}` | `{toolset}` | "
-                "`{buildhash}` | {also} | `{asset}` |".format(
+                "`{buildhash}` | {also} | {asset} |".format(
                     version=row.get("version", ""),
                     entry=row.get("entry", row.get("variant", "")),
                     toolchain=row.get("compiled_with") or row.get("toolchain", ""),
                     toolset=row.get("toolset") or "-",
                     buildhash=row.get("buildhash", ""),
                     also=also,
-                    asset=row.get("asset", ""),
+                    asset=asset,
                 )
             )
         lines += [

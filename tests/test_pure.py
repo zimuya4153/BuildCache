@@ -16,6 +16,7 @@ import build  # noqa: E402
 import finalize  # noqa: E402
 from lib import (  # noqa: E402
     aliases,
+    gh,
     hashprobe,
     index_store,
     manifest,
@@ -278,6 +279,31 @@ def test_ll_entries_follow_the_upstream_build_shape(monkeypatch):
 
 
 # ------------------------------------------------------------- failed installs
+def test_release_body_links_the_asset_directly():
+    """The asset name alone is not clickable; the body links to the download."""
+    notes = gh.release_notes(
+        "levilamina_0",
+        [
+            {
+                "version": "26.51.6",
+                "entry": "server",
+                "compiled_with": "clang-cl",
+                "toolset": "14.44.35207",
+                "buildhash": "906b0696836741eda5b5749d54146a8c",
+                "asset": "levilamina-906b0696836741eda5b5749d54146a8c.7z",
+                "url": "https://github.com/zimuya4153/BuildCache/releases/download/"
+                "levilamina_0/levilamina-906b0696836741eda5b5749d54146a8c.7z",
+                "aliases": ["msvc", "clang-cl"],
+            }
+        ],
+    )
+    assert (
+        "[levilamina-906b0696836741eda5b5749d54146a8c.7z]"
+        "(https://github.com/zimuya4153/BuildCache/releases/download/levilamina_0/"
+        "levilamina-906b0696836741eda5b5749d54146a8c.7z)"
+    ) in notes
+
+
 def test_failed_install_logs_are_found(tmp_path: Path):
     """xmake only points at a log inside the sandbox, so we print it ourselves."""
     logs = (

@@ -190,6 +190,7 @@ def refresh_release_notes(config: dict, ctx) -> None:
                         "toolset": artifact.get("toolset"),
                         "buildhash": artifact.get("buildhash") or "",
                         "asset": artifact.get("asset") or "",
+                        "url": artifact.get("url") or "",
                         "aliases": sorted(
                             item.get("id") or item.get("toolchain") or ""
                             for item in artifact.get("aliases") or []
