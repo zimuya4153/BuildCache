@@ -2,16 +2,15 @@
   "package": "mifcache_snappy",
   "version": "1.2.2",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-10T16:18:48Z",
+  "xmake_version": "3.0.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "configs": {
-    "target_type": "client"
+    "target_type": "server"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "produced_for": "levilamina@1.2.2",
   "entries": {
@@ -19,17 +18,16 @@
       "package": "mifcache_snappy",
       "version": "1.2.2",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-10T16:18:48Z",
+      "xmake_version": "3.0.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
+      "vs_toolset": "14.44.35207",
       "revision": 1,
       "configs": {
-        "target_type": "client"
+        "target_type": "server"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
       "produced_for": "levilamina@1.2.2",
@@ -40,12 +38,12 @@
           "version": "1.2.2",
           "buildhash": "b3244272357b4994abb43dc0aa939d28",
           "key": "windows-x64-vc-b3244272357b4994abb43dc0aa939d28",
-          "toolset": "14.51.36231",
+          "toolset": "14.44.35207",
           "release": "snappy_0",
           "asset": "snappy-b3244272357b4994abb43dc0aa939d28.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/snappy_0/snappy-b3244272357b4994abb43dc0aa939d28.7z",
-          "sha256": "601367866d5a15e6a01aaa8a7f769c9470dfee9dda887ad27a5ff04d1fdec313",
-          "size": 59595,
+          "sha256": "813f80cfd5b00ab48a58b49aee359d4593535b2b7aa810978a6c1c4e15391775",
+          "size": 59548,
           "container": "7z",
           "aliases": [
             {
@@ -53,14 +51,7 @@
               "toolchain": "msvc",
               "buildhash": "bdeb174513c34de5a36994eac93f7031",
               "key": "windows-x64-vc-bdeb174513c34de5a36994eac93f7031",
-              "toolset": "14.51.36231"
-            },
-            {
-              "id": "clang-cl",
-              "toolchain": "clang-cl",
-              "buildhash": "a5be866e5c894f39b8cc9d37aa1f5774",
-              "key": "windows-x64-vc-a5be866e5c894f39b8cc9d37aa1f5774",
-              "toolset": "14.51.36231"
+              "toolset": "14.44.35207"
             }
           ]
         }

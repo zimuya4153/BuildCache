@@ -2,16 +2,15 @@
   "package": "mifcache_debug_assert",
   "version": "v1.3.4",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-10T16:18:48Z",
+  "xmake_version": "3.0.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "configs": {
-    "target_type": "client"
+    "target_type": "server"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "produced_for": "levilamina@v1.3.4",
   "entries": {
@@ -19,17 +18,16 @@
       "package": "mifcache_debug_assert",
       "version": "v1.3.4",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-10T16:18:48Z",
+      "xmake_version": "3.0.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
+      "vs_toolset": "14.44.35207",
       "revision": 1,
       "configs": {
-        "target_type": "client"
+        "target_type": "server"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
       "produced_for": "levilamina@v1.3.4",
@@ -40,12 +38,12 @@
           "version": "v1.3.4",
           "buildhash": "e3515434506a445792c1c83600bcf899",
           "key": "windows-x64-vc-e3515434506a445792c1c83600bcf899",
-          "toolset": "14.51.36231",
+          "toolset": "14.44.35207",
           "release": "debug_assert_0",
           "asset": "debug_assert-e3515434506a445792c1c83600bcf899.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/debug_assert_0/debug_assert-e3515434506a445792c1c83600bcf899.7z",
-          "sha256": "05827db670f8080325d5358189f0c4ec86d0d2b9753997e48c008f07f8099aba",
-          "size": 6152,
+          "sha256": "077647c4e6f5b65366616791289588c2755bcc380f33b0aeea773ecadeadbb4c",
+          "size": 6150,
           "container": "7z",
           "aliases": []
         }

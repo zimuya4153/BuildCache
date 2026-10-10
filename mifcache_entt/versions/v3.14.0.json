@@ -2,7 +2,7 @@
   "package": "mifcache_entt",
   "version": "v3.14.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:49:20Z",
+  "built_at": "2026-10-10T16:18:48Z",
   "xmake_version": "3.0.1",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
@@ -11,17 +11,16 @@
     "target_type": "server"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.4.4",
+  "produced_for": "levilamina@v3.14.0",
   "entries": {
-    "server": {
+    "default": {
       "package": "mifcache_entt",
       "version": "v3.14.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:49:20Z",
+      "built_at": "2026-10-10T16:18:48Z",
       "xmake_version": "3.0.1",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
@@ -30,11 +29,10 @@
         "target_type": "server"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.4.4",
+      "produced_for": "levilamina@v3.14.0",
       "artifacts": [
         {
           "package": "mifcache_entt",
@@ -46,8 +44,8 @@
           "release": "entt_0",
           "asset": "entt-3822e64c6ba14bb99ba35d14302954bf.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/entt_0/entt-3822e64c6ba14bb99ba35d14302954bf.7z",
-          "sha256": "24dc130a9bdf6d3e846a0257b100e38f1121f5bc0e342fb0ea8330fdafe80116",
-          "size": 101353,
+          "sha256": "d058552ba829de0d628220e5ea0db1df6d6d7bceaf07db3965e03ffd44863491",
+          "size": 101360,
           "container": "7z",
           "aliases": []
         }

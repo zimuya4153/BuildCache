@@ -2,7 +2,7 @@
   "package": "mifcache_gsl",
   "version": "v4.0.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:49:20Z",
+  "built_at": "2026-10-10T16:18:48Z",
   "xmake_version": "3.0.1",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
@@ -11,17 +11,16 @@
     "target_type": "server"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.4.4",
+  "produced_for": "levilamina@v4.0.0",
   "entries": {
-    "server": {
+    "default": {
       "package": "mifcache_gsl",
       "version": "v4.0.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:49:20Z",
+      "built_at": "2026-10-10T16:18:48Z",
       "xmake_version": "3.0.1",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
@@ -30,11 +29,10 @@
         "target_type": "server"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.4.4",
+      "produced_for": "levilamina@v4.0.0",
       "artifacts": [
         {
           "package": "mifcache_gsl",
@@ -46,8 +44,8 @@
           "release": "gsl_0",
           "asset": "gsl-cc4533ab1d88423b98d8fbee7dce0557.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/gsl_0/gsl-cc4533ab1d88423b98d8fbee7dce0557.7z",
-          "sha256": "f73ccb8a0daf179657de1a45effd4f1313a1af382ce6dfc14d8d36bfa21ebcef",
-          "size": 17528,
+          "sha256": "7e697d82ce25a05644b7c556cefaaa5f9861a686ad781638aec753764d4b7177",
+          "size": 17526,
           "container": "7z",
           "aliases": []
         }

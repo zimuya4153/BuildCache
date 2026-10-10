@@ -2,16 +2,15 @@
   "package": "mifcache_concurrentqueue",
   "version": "v1.0.4",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-10T16:18:48Z",
+  "xmake_version": "3.0.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "configs": {
-    "target_type": "client"
+    "target_type": "server"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "produced_for": "levilamina@v1.0.4",
   "entries": {
@@ -19,17 +18,16 @@
       "package": "mifcache_concurrentqueue",
       "version": "v1.0.4",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-10T16:18:48Z",
+      "xmake_version": "3.0.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
+      "vs_toolset": "14.44.35207",
       "revision": 1,
       "configs": {
-        "target_type": "client"
+        "target_type": "server"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
       "produced_for": "levilamina@v1.0.4",
@@ -40,12 +38,12 @@
           "version": "v1.0.4",
           "buildhash": "0cd923cdfb6a4256954a994422b17de9",
           "key": "windows-x64-vc-0cd923cdfb6a4256954a994422b17de9",
-          "toolset": "14.51.36231",
+          "toolset": "14.44.35207",
           "release": "concurrentqueue_0",
           "asset": "concurrentqueue-0cd923cdfb6a4256954a994422b17de9.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/concurrentqueue_0/concurrentqueue-0cd923cdfb6a4256954a994422b17de9.7z",
-          "sha256": "22c8f3f7dc485101c26208fa3bb46945a815379a541674f06b98326f786a65b3",
-          "size": 36841,
+          "sha256": "411f92d26da29684987367351c4da1c8cc1133cd8f8c81780615a6cdadbddc52",
+          "size": 36836,
           "container": "7z",
           "aliases": [
             {
@@ -53,14 +51,7 @@
               "toolchain": "msvc",
               "buildhash": "e90a4a6221f94c9f92cdc45390e08c32",
               "key": "windows-x64-vc-e90a4a6221f94c9f92cdc45390e08c32",
-              "toolset": "14.51.36231"
-            },
-            {
-              "id": "clang-cl",
-              "toolchain": "clang-cl",
-              "buildhash": "597699490f7c43de98f4ebd5386a2299",
-              "key": "windows-x64-vc-597699490f7c43de98f4ebd5386a2299",
-              "toolset": "14.51.36231"
+              "toolset": "14.44.35207"
             }
           ]
         }

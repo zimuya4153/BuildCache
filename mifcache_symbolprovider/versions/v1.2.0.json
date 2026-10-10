@@ -2,7 +2,7 @@
   "package": "mifcache_symbolprovider",
   "version": "v1.2.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:49:20Z",
+  "built_at": "2026-10-10T16:18:48Z",
   "xmake_version": "3.0.1",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
@@ -11,17 +11,16 @@
     "target_type": "server"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.4.4",
+  "produced_for": "levilamina@v1.2.0",
   "entries": {
-    "server": {
+    "default": {
       "package": "mifcache_symbolprovider",
       "version": "v1.2.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:49:20Z",
+      "built_at": "2026-10-10T16:18:48Z",
       "xmake_version": "3.0.1",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
@@ -30,11 +29,10 @@
         "target_type": "server"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.4.4",
+      "produced_for": "levilamina@v1.2.0",
       "artifacts": [
         {
           "package": "mifcache_symbolprovider",
@@ -46,8 +44,8 @@
           "release": "symbolprovider_0",
           "asset": "symbolprovider-716edebcb0f14dbbbc97a0d6aa352593.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/symbolprovider_0/symbolprovider-716edebcb0f14dbbbc97a0d6aa352593.7z",
-          "sha256": "218a83334116dcac43c5a9e98f9fab2ead61f1a43d32e4e80d09786097617128",
-          "size": 5468,
+          "sha256": "a6c8de750fbf03328267df54aa61225fe973736f0e88c0d3e8f675522d5126b0",
+          "size": 5467,
           "container": "7z",
           "aliases": [
             {
@@ -55,13 +53,6 @@
               "toolchain": "msvc",
               "buildhash": "52b6260e3d2e49ea82371231a1e55fe5",
               "key": "windows-x64-vc-52b6260e3d2e49ea82371231a1e55fe5",
-              "toolset": "14.44.35207"
-            },
-            {
-              "id": "clang-cl",
-              "toolchain": "clang-cl",
-              "buildhash": "af97984e8d7745fd88fb577b3c5c759d",
-              "key": "windows-x64-vc-af97984e8d7745fd88fb577b3c5c759d",
               "toolset": "14.44.35207"
             }
           ]

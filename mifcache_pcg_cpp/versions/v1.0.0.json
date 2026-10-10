@@ -2,16 +2,15 @@
   "package": "mifcache_pcg_cpp",
   "version": "v1.0.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-10T16:18:48Z",
+  "xmake_version": "3.0.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "configs": {
-    "target_type": "client"
+    "target_type": "server"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "produced_for": "levilamina@v1.0.0",
   "entries": {
@@ -19,17 +18,16 @@
       "package": "mifcache_pcg_cpp",
       "version": "v1.0.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-10T16:18:48Z",
+      "xmake_version": "3.0.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
+      "vs_toolset": "14.44.35207",
       "revision": 1,
       "configs": {
-        "target_type": "client"
+        "target_type": "server"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
       "produced_for": "levilamina@v1.0.0",
@@ -40,12 +38,12 @@
           "version": "v1.0.0",
           "buildhash": "6c550fbfc1bb49fbbed872829f6090b0",
           "key": "windows-x64-vc-6c550fbfc1bb49fbbed872829f6090b0",
-          "toolset": "14.51.36231",
+          "toolset": "14.44.35207",
           "release": "pcg_cpp_0",
           "asset": "pcg_cpp-6c550fbfc1bb49fbbed872829f6090b0.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/pcg_cpp_0/pcg_cpp-6c550fbfc1bb49fbbed872829f6090b0.7z",
-          "sha256": "f1746b460d26c5a3e333e93c91d00e4906e6c30eb7d7969a4bb73b096ccea8ba",
-          "size": 21446,
+          "sha256": "369281dd9319f3d24719635544cf115a4c51fb7f3adf67f838e32704ee52a0a7",
+          "size": 21444,
           "container": "7z",
           "aliases": []
         }
