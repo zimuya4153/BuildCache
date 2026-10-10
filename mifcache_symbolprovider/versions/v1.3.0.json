@@ -2,7 +2,7 @@
   "package": "mifcache_symbolprovider",
   "version": "v1.3.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T16:55:27Z",
+  "built_at": "2026-10-10T15:09:48Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
@@ -19,11 +19,11 @@
       "package": "mifcache_symbolprovider",
       "version": "v1.3.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T16:55:27Z",
+      "built_at": "2026-10-10T15:09:48Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
-      "revision": 2,
+      "revision": 1,
       "configs": {
         "target_type": "client"
       },
@@ -67,6 +67,6 @@
       ]
     }
   },
-  "revision": 2,
+  "revision": 1,
   "compiled_with": "msvc"
 }

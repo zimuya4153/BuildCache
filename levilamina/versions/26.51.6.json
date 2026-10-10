@@ -6,7 +6,7 @@
   "configs": {
     "target_type": "server"
   },
-  "revision": 2,
+  "revision": 1,
   "upstream_commit": "32fcaa02baa38371b705358801c7d185c284233e",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
@@ -27,7 +27,7 @@
     "arch": "x64",
     "mode": "release"
   },
-  "built_at": "2026-10-10T16:54:59Z",
+  "built_at": "2026-10-10T15:06:26Z",
   "entries": {
     "client": {
       "plugin": "ll",
@@ -37,7 +37,7 @@
       "configs": {
         "target_type": "client"
       },
-      "revision": 2,
+      "revision": 1,
       "upstream_commit": "32fcaa02baa38371b705358801c7d185c284233e",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
@@ -58,7 +58,7 @@
         "arch": "x64",
         "mode": "release"
       },
-      "built_at": "2026-10-10T16:55:27Z",
+      "built_at": "2026-10-10T15:09:48Z",
       "artifacts": [
         {
           "package": "mifcache_levilamina",
@@ -101,7 +101,7 @@
       "configs": {
         "target_type": "server"
       },
-      "revision": 2,
+      "revision": 1,
       "upstream_commit": "32fcaa02baa38371b705358801c7d185c284233e",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
@@ -122,7 +122,7 @@
         "arch": "x64",
         "mode": "release"
       },
-      "built_at": "2026-10-10T16:54:59Z",
+      "built_at": "2026-10-10T15:06:26Z",
       "artifacts": [
         {
           "package": "mifcache_levilamina",
