@@ -89,7 +89,7 @@ def _source_snapshots(config: dict, ctx, env: dict | None = None, refresh: bool 
         mirror = ctx.mirror(source["name"], source["url"])
         commit = repos.commit_at(mirror, env=env)
         dest = root / f"{source['name']}@{commit[:12]}"
-        if mode in ("head", "version") and not dest.is_dir():
+        if mode in ("head", "version"):
             util.log(f"snapshot {source['name']} @ {commit[:12]}")
             repos.snapshot(mirror, dest, commit=commit, env=env)
         target = dest if dest.is_dir() else mirror

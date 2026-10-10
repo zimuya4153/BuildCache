@@ -8,8 +8,9 @@ vendored under our own package prefix.
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
-from lib import repos, semver
+from lib import repos, semver, util
 
 # Where the LL recipe lives upstream (LiteLDev's package repository).
 RECIPE_SOURCE = "levimc-repo"
@@ -219,4 +220,107 @@ def repair_recipes(config, source_name: str, snapshot) -> list[str]:
     alias, and rename the matching dependency strings in our vendored version
     files.
     """
-    return []
+    return _repair_legacy_versions(snapshot)
+
+
+_LEGACY_VERSION = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)\.(\d+)(.*)$")
+_ADD_VERSIONS = re.compile(r'add_versions\(\s*"([^"]+)"\s*,\s*"([^"]*)"\s*\)')
+_ADD_VERSIONFILES = re.compile(r'add_versionfiles\(\s*"([^"]+)"\s*\)')
+_ADD_URLS = re.compile(r'add_urls\(\s*"([^"]+)"')
+
+
+def _legal_version(version: str) -> str | None:
+    """``1.21.3.01`` -> ``1.21.3-r01`` (valid SemVer, keeps the ordering)."""
+    match = _LEGACY_VERSION.match(version)
+    if not match:
+        return None
+    major, minor, patch, fourth, rest = match.groups()
+    return f"{major}.{minor}.{patch}-r{fourth}{rest}"
+
+
+def _repair_legacy_versions(snapshot) -> list[str]:
+    """Make four-component versions usable again, in the recipe snapshot.
+
+    xmake's own parser rejects versions such as ``1.21.3.01`` and refuses to
+    load the whole repository. They cannot simply be renamed either, because the
+    upstream release tag is part of the download URL — so each one gets a
+    literal URL (the tag stays) behind its own alias, and is re-added under a
+    legal name. The dependency strings in LeviLamina's own version files are
+    renamed to match, which keeps the two sides consistent.
+    """
+    snapshot = Path(snapshot)
+    notes: list[str] = []
+    renames: dict[str, dict[str, str]] = {}
+    for recipe in sorted(snapshot.glob("packages/*/*/xmake.lua")):
+        text = util.read_text(recipe)
+        templates = [url for url in _ADD_URLS.findall(text) if "$(version)" in url]
+        if not templates:
+            continue
+        entries: dict[str, str] = {}
+        for match in _ADD_VERSIONS.finditer(text):
+            entries[match.group(1)] = match.group(2)
+        for match in _ADD_VERSIONFILES.finditer(text):
+            listing = recipe.parent / match.group(1)
+            if listing.is_file():
+                for line in util.read_text(listing).splitlines():
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        entries[parts[0]] = parts[1]
+        mapping = {}
+        for version in entries:
+            legal = _legal_version(version.split(":", 1)[-1])
+            if legal and legal != version:
+                mapping[version] = legal
+        if not mapping:
+            continue
+
+        additions = []
+        for index, (version, legal) in enumerate(sorted(mapping.items())):
+            alias = f"legacy{index}"
+            for template in templates:
+                literal = template.replace("$(version)", version.split(":", 1)[-1])
+                additions.append(f'    add_urls("{literal}", {{alias = "{alias}"}})')
+            additions.append(f'    add_versions("{alias}:{legal}", "{entries[version]}")')
+
+        updated = text
+        for version in mapping:
+            updated = updated.replace(
+                f'add_versions("{version}", "{entries[version]}")', ""
+            )
+        updated = updated.rstrip("\n") + "\n\n    -- BuildCache: legacy versions repaired\n" + "\n".join(additions) + "\n"
+        util.write_text(recipe, updated)
+        for match in _ADD_VERSIONFILES.finditer(text):
+            listing = recipe.parent / match.group(1)
+            if not listing.is_file():
+                continue
+            kept = [
+                line
+                for line in util.read_text(listing).splitlines()
+                if line.split() and line.split()[0] not in mapping
+            ]
+            util.write_text(listing, "\n".join(kept) + "\n")
+        renames[recipe.parent.name] = mapping
+        notes.append(
+            f"{snapshot.name}/{recipe.parent.name}: repaired {len(mapping)} legacy version(s), "
+            f"e.g. {sorted(mapping.items())[0][0]} -> {sorted(mapping.items())[0][1]}"
+        )
+
+    if renames:
+        notes += _rename_dependents(snapshot, renames)
+    return notes
+
+
+def _rename_dependents(snapshot, renames: dict[str, dict[str, str]]) -> list[str]:
+    """Rewrite dependency strings that point at a repaired version."""
+    notes = []
+    for path in sorted(Path(snapshot).glob("packages/l/levilamina/versions/*.lua")):
+        text = util.read_text(path)
+        updated = text
+        for package, mapping in renames.items():
+            for old, new in mapping.items():
+                updated = updated.replace(f'"{package} {old}"', f'"{package} {new}"')
+                updated = updated.replace(f'"{package} v{old}"', f'"{package} v{new}"')
+        if updated != text:
+            util.write_text(path, updated)
+            notes.append(f"{path.name}: dependency versions updated")
+    return notes
