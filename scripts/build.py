@@ -244,7 +244,8 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
                             config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
                             name, published_name, version, hash_dir, plat, arch,
                             toolset_for_key(vs_toolset, name),
-                            repo_order=repo_order or [], commit=commit,
+                            repo_order=repo_order or [], commit=commit, toolchain=toolchain,
+                            root_package=package_name,
                             target_branch=target_branch, dry_run=dry_run,
                         )
                     )
@@ -308,7 +309,8 @@ def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
 
 def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
                  name, published_name, version, hash_dir, plat, arch, toolset,
-                 repo_order=None, commit="", target_branch=None, dry_run=False) -> dict:
+                 repo_order=None, commit="", toolchain="msvc", root_package="",
+                 target_branch=None, dry_run=False) -> dict:
     from lib import manifest as manifest_lib
 
     container = container_for(config, name)
@@ -334,10 +336,13 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
     # decides which ones, the hash is recomputed offline (never rebuilt).
     derived: list[dict] = []
     if plugin is not None and not dry_run:
+        # The plugin decides the addresses of *its* package; a dependency's
+        # addresses follow from its own build (see aliases.closure_profiles).
+        profiles = None if name == root_package else aliases.closure_profiles(toolchain)
         derived = aliases.for_artifact(
             ctx, plugin, sandbox, list(repo_order or []), plat, arch,
             package=name, version=version, commit=commit, hash_dir=hash_dir,
-            toolset=toolset,
+            toolset=toolset, profiles=profiles,
         )
     url = ""
     release = ""

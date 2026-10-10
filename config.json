@@ -1,6 +1,6 @@
 {
   "prefix": "mifcache_",
-  "revision": 1,
+  "revision": 2,
   "platform": {
     "plat": "windows",
     "arch": "x64",

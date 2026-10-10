@@ -24,6 +24,28 @@ from pathlib import Path
 from . import hashprobe, manifest as manifest_lib, util
 
 
+#: Toolchains that share one ABI on Windows, so an artifact built with one of
+#: them is addressable by a consumer that declares the other.
+MSVC_ABI_TOOLCHAINS = ("msvc", "clang-cl")
+
+
+def closure_profiles(toolchain: str) -> list[dict]:
+    """Consumer toolchains a *dependency* artifact can answer to.
+
+    A dependency is built with the toolchain of the build and, on Windows, is a
+    static library that a clang-cl project can link just as well as an msvc one:
+    the two share the ABI. That is platform knowledge, not project knowledge, and
+    it must not depend on which version of the project pulled the package in.
+
+    The project's *own* artifact is a different story -- whether it can be served
+    to a clang-cl project is project knowledge, so that one is decided by the
+    plugin (``toolchain_aliases``).
+    """
+    if toolchain not in MSVC_ABI_TOOLCHAINS:
+        return []
+    return [{"id": name, "toolchain": name} for name in MSVC_ABI_TOOLCHAINS]
+
+
 def for_artifact(
     ctx,
     plugin,
@@ -37,9 +59,11 @@ def for_artifact(
     commit: str,
     hash_dir: Path,
     toolset: str | None,
+    profiles: list[dict] | None = None,
 ) -> list[dict]:
     """Manifest entries that make ``hash_dir`` reachable for other toolchains."""
-    profiles = plugin.call("toolchain_aliases", ctx, version, commit) or []
+    if profiles is None:
+        profiles = plugin.call("toolchain_aliases", ctx, version, commit) or []
     if not profiles:
         return []
     manifest = Path(hash_dir) / "manifest.txt"

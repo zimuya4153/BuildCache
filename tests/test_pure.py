@@ -376,3 +376,19 @@ def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     )
     assert set(dependency) == {"default"}, dependency
     assert len(dependency["default"]["artifacts"]) == 1
+
+
+def test_dependency_addresses_follow_the_windows_abi():
+    """A dependency serves both msvc and clang-cl, whatever the project's era.
+
+    LeviLamina before 26.20 is an msvc build and gets no clang-cl address, but the
+    packages it pulls in are ordinary Windows static libraries: the same archive
+    is perfectly addressable by a clang-cl project, and the address must not be
+    dropped just because an older version of the project rebuilt that package.
+    """
+    assert aliases.closure_profiles("msvc") == [
+        {"id": "msvc", "toolchain": "msvc"},
+        {"id": "clang-cl", "toolchain": "clang-cl"},
+    ]
+    # an artifact built for a different ABI has no such pair
+    assert aliases.closure_profiles("gcc") == []
