@@ -2,15 +2,16 @@
   "package": "mifcache_glm",
   "version": "1.0.1",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T17:18:12Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-10T15:09:48Z",
+  "xmake_version": "3.1.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.44.35207",
+  "vs_toolset": "14.51.36231",
   "configs": {
-    "target_type": "server"
+    "target_type": "client"
   },
   "alias_profiles": [
-    "msvc"
+    "msvc",
+    "clang-cl"
   ],
   "produced_for": "levilamina@1.0.1",
   "entries": {
@@ -18,16 +19,17 @@
       "package": "mifcache_glm",
       "version": "1.0.1",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T17:18:12Z",
-      "xmake_version": "2.9.7",
+      "built_at": "2026-10-10T15:09:48Z",
+      "xmake_version": "3.1.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.44.35207",
-      "revision": 2,
+      "vs_toolset": "14.51.36231",
+      "revision": 1,
       "configs": {
-        "target_type": "server"
+        "target_type": "client"
       },
       "alias_profiles": [
-        "msvc"
+        "msvc",
+        "clang-cl"
       ],
       "compiled_with": "msvc",
       "produced_for": "levilamina@1.0.1",
@@ -38,7 +40,7 @@
           "version": "1.0.1",
           "buildhash": "18615f0387cd4e2ab2e9ea9965afc784",
           "key": "windows-x64-vc-18615f0387cd4e2ab2e9ea9965afc784",
-          "toolset": "14.44.35207",
+          "toolset": "14.51.36231",
           "release": "glm_0",
           "asset": "glm-18615f0387cd4e2ab2e9ea9965afc784.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/glm_0/glm-18615f0387cd4e2ab2e9ea9965afc784.7z",
@@ -51,20 +53,20 @@
               "toolchain": "msvc",
               "buildhash": "0837f5285eec477891add461f07f461c",
               "key": "windows-x64-vc-0837f5285eec477891add461f07f461c",
-              "toolset": "14.44.35207"
+              "toolset": "14.51.36231"
             },
             {
               "id": "clang-cl",
               "toolchain": "clang-cl",
               "buildhash": "b35502c78b9847ab89a7994a4f750c71",
               "key": "windows-x64-vc-b35502c78b9847ab89a7994a4f750c71",
-              "toolset": "14.44.35207"
+              "toolset": "14.51.36231"
             }
           ]
         }
       ]
     }
   },
-  "revision": 2,
+  "revision": 1,
   "compiled_with": "msvc"
 }

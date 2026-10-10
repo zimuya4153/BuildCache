@@ -2,15 +2,16 @@
   "package": "mifcache_parallel-hashmap",
   "version": "v1.3.12",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T17:18:12Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-10T15:09:48Z",
+  "xmake_version": "3.1.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.44.35207",
+  "vs_toolset": "14.51.36231",
   "configs": {
-    "target_type": "server"
+    "target_type": "client"
   },
   "alias_profiles": [
-    "msvc"
+    "msvc",
+    "clang-cl"
   ],
   "produced_for": "levilamina@v1.3.12",
   "entries": {
@@ -18,16 +19,17 @@
       "package": "mifcache_parallel-hashmap",
       "version": "v1.3.12",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T17:18:12Z",
-      "xmake_version": "2.9.7",
+      "built_at": "2026-10-10T15:09:48Z",
+      "xmake_version": "3.1.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.44.35207",
-      "revision": 2,
+      "vs_toolset": "14.51.36231",
+      "revision": 1,
       "configs": {
-        "target_type": "server"
+        "target_type": "client"
       },
       "alias_profiles": [
-        "msvc"
+        "msvc",
+        "clang-cl"
       ],
       "compiled_with": "msvc",
       "produced_for": "levilamina@v1.3.12",
@@ -38,7 +40,7 @@
           "version": "v1.3.12",
           "buildhash": "47b4dd3f84f34e9d98b4cde1eedee54d",
           "key": "windows-x64-vc-47b4dd3f84f34e9d98b4cde1eedee54d",
-          "toolset": "14.44.35207",
+          "toolset": "14.51.36231",
           "release": "parallel-hashmap_0",
           "asset": "parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/parallel-hashmap_0/parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
@@ -50,6 +52,6 @@
       ]
     }
   },
-  "revision": 2,
+  "revision": 1,
   "compiled_with": "msvc"
 }
