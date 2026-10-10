@@ -1,0 +1,24 @@
+{
+  "package": "mifcahce_pfr",
+  "version": "2.1.1",
+  "prefix": "mifcahce_",
+  "built_at": "2026-10-10T10:08:07Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "clang-cl",
+  "vs_toolset": "14.51.36231",
+  "produced_for": "mifcahce_levilamina@26.51.6",
+  "artifacts": [
+    {
+      "package": "mifcahce_pfr",
+      "version": "2.1.1",
+      "buildhash": "5852f339501b4d989496547ea53996ac",
+      "key": "windows-x64-vc14.51.36231-5852f339501b4d989496547ea53996ac",
+      "toolset": "14.51.36231",
+      "release": "mifcahce_pfr_0",
+      "asset": "mifcahce_pfr-2.1.1-windows-x64-14.51.36231-5852f339501b4d989496547ea53996ac.tar.zst",
+      "url": "https://github.com/zimuya4153/BuildCache/releases/download/mifcahce_pfr_0/mifcahce_pfr-2.1.1-windows-x64-14.51.36231-5852f339501b4d989496547ea53996ac.tar.zst",
+      "sha256": "be477c4f92a680e86cff6adfa7d947b864bcb08c79d9498e44a3929fc50ecaac",
+      "size": 33327
+    }
+  ]
+}

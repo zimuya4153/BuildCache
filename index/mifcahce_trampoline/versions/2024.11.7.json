@@ -1,0 +1,24 @@
+{
+  "package": "mifcahce_trampoline",
+  "version": "2024.11.7",
+  "prefix": "mifcahce_",
+  "built_at": "2026-10-10T10:08:07Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "clang-cl",
+  "vs_toolset": "14.51.36231",
+  "produced_for": "mifcahce_levilamina@26.51.6",
+  "artifacts": [
+    {
+      "package": "mifcahce_trampoline",
+      "version": "2024.11.7",
+      "buildhash": "ffbe8ea734a749ecb026f1d6e5160632",
+      "key": "windows-x64-vc14.51.36231-ffbe8ea734a749ecb026f1d6e5160632",
+      "toolset": "14.51.36231",
+      "release": "mifcahce_trampoline_0",
+      "asset": "mifcahce_trampoline-2024.11.7-windows-x64-14.51.36231-ffbe8ea734a749ecb026f1d6e5160632.tar.zst",
+      "url": "https://github.com/zimuya4153/BuildCache/releases/download/mifcahce_trampoline_0/mifcahce_trampoline-2024.11.7-windows-x64-14.51.36231-ffbe8ea734a749ecb026f1d6e5160632.tar.zst",
+      "sha256": "14af4421edd77381a2a314b1f425122090e37dc96e75ddd7227bbc6a45130be8",
+      "size": 6139
+    }
+  ]
+}

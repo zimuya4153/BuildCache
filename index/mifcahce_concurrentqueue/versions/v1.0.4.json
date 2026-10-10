@@ -1,0 +1,24 @@
+{
+  "package": "mifcahce_concurrentqueue",
+  "version": "v1.0.4",
+  "prefix": "mifcahce_",
+  "built_at": "2026-10-10T10:08:07Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "clang-cl",
+  "vs_toolset": "14.51.36231",
+  "produced_for": "mifcahce_levilamina@26.51.6",
+  "artifacts": [
+    {
+      "package": "mifcahce_concurrentqueue",
+      "version": "v1.0.4",
+      "buildhash": "597699490f7c43de98f4ebd5386a2299",
+      "key": "windows-x64-vc14.51.36231-597699490f7c43de98f4ebd5386a2299",
+      "toolset": "14.51.36231",
+      "release": "mifcahce_concurrentqueue_0",
+      "asset": "mifcahce_concurrentqueue-v1.0.4-windows-x64-14.51.36231-597699490f7c43de98f4ebd5386a2299.tar.zst",
+      "url": "https://github.com/zimuya4153/BuildCache/releases/download/mifcahce_concurrentqueue_0/mifcahce_concurrentqueue-v1.0.4-windows-x64-14.51.36231-597699490f7c43de98f4ebd5386a2299.tar.zst",
+      "sha256": "40fc3c186f743a7cd31d5376cd0765f095a0f0b7fb63b20e94e57f535e82c350",
+      "size": 38751
+    }
+  ]
+}

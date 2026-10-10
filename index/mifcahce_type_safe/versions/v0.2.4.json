@@ -1,0 +1,24 @@
+{
+  "package": "mifcahce_type_safe",
+  "version": "v0.2.4",
+  "prefix": "mifcahce_",
+  "built_at": "2026-10-10T10:08:07Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "clang-cl",
+  "vs_toolset": "14.51.36231",
+  "produced_for": "mifcahce_levilamina@26.51.6",
+  "artifacts": [
+    {
+      "package": "mifcahce_type_safe",
+      "version": "v0.2.4",
+      "buildhash": "4b33a9a5c8154bd58b7d4007150f50b7",
+      "key": "windows-x64-vc14.51.36231-4b33a9a5c8154bd58b7d4007150f50b7",
+      "toolset": "14.51.36231",
+      "release": "mifcahce_type_safe_0",
+      "asset": "mifcahce_type_safe-v0.2.4-windows-x64-14.51.36231-4b33a9a5c8154bd58b7d4007150f50b7.tar.zst",
+      "url": "https://github.com/zimuya4153/BuildCache/releases/download/mifcahce_type_safe_0/mifcahce_type_safe-v0.2.4-windows-x64-14.51.36231-4b33a9a5c8154bd58b7d4007150f50b7.tar.zst",
+      "sha256": "cc6f8363ad0f97bc827d55b00777b0d4c0c9d99bf90bd6991e26aedb1b1477fb",
+      "size": 56722
+    }
+  ]
+}

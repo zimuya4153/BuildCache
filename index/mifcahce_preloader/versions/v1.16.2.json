@@ -1,0 +1,24 @@
+{
+  "package": "mifcahce_preloader",
+  "version": "v1.16.2",
+  "prefix": "mifcahce_",
+  "built_at": "2026-10-10T10:08:07Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "clang-cl",
+  "vs_toolset": "14.51.36231",
+  "produced_for": "mifcahce_levilamina@26.51.6",
+  "artifacts": [
+    {
+      "package": "mifcahce_preloader",
+      "version": "v1.16.2",
+      "buildhash": "e7ad469d089e4781af7219c826eee86a",
+      "key": "windows-x64-vc14.51.36231-e7ad469d089e4781af7219c826eee86a",
+      "toolset": "14.51.36231",
+      "release": "mifcahce_preloader_0",
+      "asset": "mifcahce_preloader-v1.16.2-windows-x64-14.51.36231-e7ad469d089e4781af7219c826eee86a.tar.zst",
+      "url": "https://github.com/zimuya4153/BuildCache/releases/download/mifcahce_preloader_0/mifcahce_preloader-v1.16.2-windows-x64-14.51.36231-e7ad469d089e4781af7219c826eee86a.tar.zst",
+      "sha256": "75beeb652ddb55d5922e9d4a955266f45439e571786b91a4c00309a65866dcef",
+      "size": 9963809
+    }
+  ]
+}
