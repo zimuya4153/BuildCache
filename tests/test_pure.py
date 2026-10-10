@@ -243,12 +243,20 @@ def test_ll_entries_follow_the_upstream_build_shape(monkeypatch):
     config = util.load_config()
     ll = next(item for item in plugins.load_all(config) if item.name == "ll")
 
-    modern = 'local is_server = is_config("target_type", "server")\nset_toolchains("clang-cl")\n'
+    modern = (
+        'option("target_type")\n' 'set_values("server", "client")\n'
+        'local is_server = is_config("target_type", "server")\n'
+        'set_toolchains("clang-cl")\n'
+    )
     legacy = (
         '-- local is_client = is_config("target_type", "client")\n'
         "local is_client = false\n"
         'add_requires("bedrockdata 1.21.0.3-client")\n'
+        'option("target_type")\n'
     )
+    # 0.8/0.13 have no client mechanism at all: asking for it would silently
+    # produce the server flavour, so the entry must not be declared either.
+    ancient = 'add_defines("LL_PLAT_CLIENT")\n'
 
     monkeypatch.setattr(ll.module, "upstream_xmake_lua", lambda ctx, commit: modern)
     assert [entry["id"] for entry in ll.module.entries(None, "26.51.6", "")] == [
@@ -264,6 +272,9 @@ def test_ll_entries_follow_the_upstream_build_shape(monkeypatch):
     assert [entry["id"] for entry in ll.module.entries(None, "1.4.4", "")] == ["server"]
     # an msvc build predates clang-cl support, so it gets no clang-cl address
     assert [item["id"] for item in ll.module.toolchain_aliases(None, "1.4.4", "")] == ["msvc"]
+
+    monkeypatch.setattr(ll.module, "upstream_xmake_lua", lambda ctx, commit: ancient)
+    assert [entry["id"] for entry in ll.module.entries(None, "0.8.3", "")] == ["server"]
 
 
 # ------------------------------------------------------------- failed installs
