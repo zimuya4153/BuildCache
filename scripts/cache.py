@@ -73,7 +73,12 @@ def parse_args() -> argparse.Namespace:
     trigger.add_argument("--no-push", action="store_true", help="local only: skip finalize push")
     trigger.add_argument("--dry-run", action="store_true", help="print what would be built")
 
-    sub.add_parser("verify", help="check published artifacts against the index")
+    verify_cmd = sub.add_parser("verify", help="check published artifacts against the index")
+    verify_cmd.add_argument(
+        "--push",
+        action="store_true",
+        help="push the index after requeueing stale entries",
+    )
     return parser.parse_args()
 
 
@@ -84,7 +89,16 @@ def main() -> int:
     ctx = plugins.Context(config, proxy=proxy)
     if args.command == "verify":
         ctx.ensure_index()
-        verify.verify_or_die(config, ctx.index_root)
+        problems = verify.check_index_entries(config, ctx.index_root)
+        if not problems:
+            util.log("verify: every indexed artifact matches its published release asset")
+            return 0
+        for item in problems:
+            util.warn(f"{item['asset']}: {item['problem']}")
+        requeued = verify.requeue(config, ctx.index_root, problems)
+        util.log(f"requeued {len(requeued)} entry/entries: " + ", ".join(sorted(requeued)))
+        if requeued and args.push:
+            gitops.commit_and_push(ctx.index_root, "index: requeue stale entries")
         return 0
     if args.command == "list":
         return cmd_list(ctx, args)

@@ -93,7 +93,18 @@ def main() -> int:
 
     if not args.dry_run:
         regenerate_manifests(config, ctx, index_root=ctx.index_root, package_repo=package_repo)
-        verify.verify_or_die(config, ctx.index_root)
+        problems = verify.check_index_entries(config, ctx.index_root)
+        if problems:
+            for item in problems:
+                util.warn(f"{item['asset']}: {item['problem']}")
+            requeued = verify.requeue(config, ctx.index_root, problems)
+            util.log(
+                f"verify: {len(problems)} artifact(s) are stale; "
+                f"requeued {len(requeued)} entry/entries for the next round: "
+                + ", ".join(sorted(requeued))
+            )
+        else:
+            util.log("verify: every indexed artifact matches its published release asset")
 
     util.log(f"indexed {entries} artifact entr(ies)")
     if args.dry_run:
