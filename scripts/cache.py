@@ -302,7 +302,7 @@ def cmd_trigger(config: dict, ctx, args) -> int:
         cache_cfg = config["repos"]["cache"]
         cmdline = ["gh", "workflow", "run", "build.yml",
                    "--repo", f"{cache_cfg['owner']}/{cache_cfg['repo']}"]
-        for flag, value in (("dep", args.plugin), ("version", args.version), ("batch", args.batch)):
+        for flag, value in (("plugin", args.plugin), ("version", args.version), ("batch", args.batch)):
             if value:
                 cmdline += ["-f", f"{flag}={value}"]
         if args.first_only:
