@@ -73,6 +73,22 @@ jobs:
         uses: ZhongRuoyu/setup-llvm@v0
         with:
           llvm-version: 22
+      # Temporary: which MSVC generations and platform toolsets does this image
+      # actually have? An era's xmake can only drive the ones that are installed.
+      - name: MSVC diagnostics
+        if: always()
+        shell: pwsh
+        run: |
+          $vs = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          foreach ($path in @("$vs\VC\Tools\MSVC",
+                              "$vs\MSBuild\Microsoft\VC\v170\Platforms\x64\PlatformToolsets")) {
+            Write-Output "== $path"
+            if (Test-Path $path) { Get-ChildItem $path | Select-Object -ExpandProperty Name }
+            else { Write-Output "  (missing)" }
+          }
+          Write-Output "== vswhere"
+          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" `
+            -products * -latest -property installationVersion
       - name: Build ${{ matrix.package }} ${{ matrix.version }}
         timeout-minutes: 180
         env:
