@@ -316,11 +316,13 @@ def test_failed_install_logs_are_found(tmp_path: Path):
     class FakeSandbox:
         root_dir = tmp_path / "root"
 
-    found = build._failed_install_logs(FakeSandbox())
+    from lib import xmake_env
+
+    found = xmake_env.failed_install_logs(FakeSandbox())
     assert [item["package"] for item in found] == ["gsl"]
     assert [item["version"] for item in found] == ["v4.0.0"]
     assert [path.name for path in found[0]["logs"]] == ["install.txt"]
-    assert build._failed_packages(FakeSandbox()) == [("gsl", "v4.0.0")]
+    assert xmake_env.failed_packages(FakeSandbox()) == [("gsl", "v4.0.0")]
 
 
 def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):

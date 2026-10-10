@@ -120,7 +120,11 @@ jobs:
         run: python scripts/finalize.py --push
 
   verify:
-    needs: finalize
+    needs: [discover, build, finalize]
+    # Runs even when there was nothing to build: triggering a round for a version
+    # that is already published is how the consumer side gets re-checked, and a
+    # broken artifact must fail the round rather than be skipped silently.
+    if: always() && needs.discover.result == 'success'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4

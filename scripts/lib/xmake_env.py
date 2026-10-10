@@ -352,3 +352,54 @@ def create_sandbox(
         heartbeat=float(config.get("xmake", {}).get("heartbeatSeconds", 30)),
         silent_timeout=float(config.get("xmake", {}).get("silentTimeoutSeconds", 1800)),
     )
+
+
+def failed_packages(sandbox) -> list[tuple[str, str]]:
+    """Every package whose install left an ``installdir.failed`` marker.
+
+    The layout under the sandbox cache is ``packages/<key>/<letter>/<name>/<version>/``,
+    so the marker tells us exactly which package to retry on its own.
+    """
+    found: list[tuple[str, str]] = []
+    cache = Path(sandbox.root_dir) / ".xmake" / "cache" / "packages"
+    for marker in sorted(cache.glob("*/*/*/*/installdir.failed")):
+        found.append((marker.parent.parent.name, marker.parent.name))
+    return found
+
+
+def failed_install_logs(sandbox) -> list[dict]:
+    """The logs xmake writes next to a package it failed to install.
+
+    xmake's own advice is "if you want to get more verbose errors, please see:
+    <path>", and that path is inside the sandbox -- which nobody can open from a
+    CI runner. So the logs are read here and printed by :func:`dump_failed_logs`.
+    """
+    cache = Path(sandbox.root_dir) / ".xmake" / "cache" / "packages"
+    found: list[dict] = []
+    for marker in sorted(cache.glob("*/*/*/*/installdir.failed")):
+        directory = marker / "logs"
+        found.append(
+            {
+                "package": marker.parent.parent.name,
+                "version": marker.parent.name,
+                "logs": sorted(directory.glob("*.txt")) if directory.is_dir() else [],
+            }
+        )
+    return found
+
+
+def dump_failed_logs(config: dict, sandbox) -> None:
+    """Print why every failed package failed, instead of pointing into the sandbox."""
+    limit = int(config.get("xmake", {}).get("failedLogLines", 120))
+    for item in failed_install_logs(sandbox):
+        if not item["logs"]:
+            util.warn(f"{item['package']} {item['version']}: no install log was written")
+            continue
+        for path in item["logs"]:
+            lines = util.read_text(path).splitlines()
+            util.log(f"--- {item['package']} {item['version']} install log ({path})")
+            hidden = len(lines) - limit
+            for line in lines[-limit:] if limit else lines:
+                util.log("  | " + line)
+            if hidden > 0:
+                util.log(f"  | ... ({hidden} earlier line(s) not shown)")

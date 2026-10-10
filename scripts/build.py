@@ -157,7 +157,7 @@ def main() -> int:
         if result.returncode == 0:
             break
         util.warn(f"configure failed (attempt {attempt}/{attempts})")
-        _dump_failed_logs(config, sandbox)
+        xmake_env.dump_failed_logs(config, sandbox)
         if attempt == attempts:
             util.die(f"configure failed after {attempts} attempt(s)")
         _retry_failed_packages(config, sandbox, attempts)
@@ -176,7 +176,7 @@ def main() -> int:
         if result.returncode == 0:
             break
         util.warn(f"install closure failed (attempt {attempt}/{attempts})")
-        _dump_failed_logs(config, sandbox)
+        xmake_env.dump_failed_logs(config, sandbox)
         if attempt == attempts:
             util.die(f"install closure failed after {attempts} attempt(s)")
         _retry_failed_packages(config, sandbox, attempts)
@@ -283,64 +283,9 @@ def container_for(config: dict, package: str) -> str:
     return override or artifacts_cfg.get("container") or packer.default_container()
 
 
-def _failed_packages(sandbox) -> list[tuple[str, str]]:
-    """Every package whose install left an ``installdir.failed`` marker.
-
-    The layout under the sandbox cache is ``packages/<key>/<letter>/<name>/<version>/``,
-    so the marker tells us exactly which package to retry on its own.
-    """
-    found: list[tuple[str, str]] = []
-    cache = sandbox.root_dir / ".xmake" / "cache" / "packages"
-    for marker in sorted(cache.glob("*/*/*/*/installdir.failed")):
-        version = marker.parent.name
-        name = marker.parent.parent.name
-        found.append((name, version))
-    return found
-
-
-def _failed_install_logs(sandbox) -> list[dict]:
-    """The logs xmake writes next to a package it failed to install.
-
-    xmake's own advice is "if you want to get more verbose errors, please see:
-    <path>", and that path is inside the sandbox -- which nobody can open from a
-    CI runner. Both the package and the files are returned so the caller can
-    print them.
-    """
-    cache = sandbox.root_dir / ".xmake" / "cache" / "packages"
-    found: list[dict] = []
-    for marker in sorted(cache.glob("*/*/*/*/installdir.failed")):
-        directory = marker / "logs"
-        logs = sorted(directory.glob("*.txt")) if directory.is_dir() else []
-        found.append(
-            {
-                "package": marker.parent.parent.name,
-                "version": marker.parent.name,
-                "logs": logs,
-            }
-        )
-    return found
-
-
-def _dump_failed_logs(config: dict, sandbox) -> None:
-    """Print why every failed package failed, instead of pointing into the sandbox."""
-    limit = int(config.get("xmake", {}).get("failedLogLines", 120))
-    for item in _failed_install_logs(sandbox):
-        if not item["logs"]:
-            util.warn(f"{item['package']} {item['version']}: no install log was written")
-            continue
-        for path in item["logs"]:
-            lines = util.read_text(path).splitlines()
-            util.log(f"--- {item['package']} {item['version']} install log ({path})")
-            hidden = len(lines) - limit
-            for line in lines[-limit:] if limit else lines:
-                util.log("  | " + line)
-            if hidden > 0:
-                util.log(f"  | ... ({hidden} earlier line(s) not shown)")
-
-
 def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
     """Rebuild the packages that failed, one by one, before retrying the whole step."""
-    failed = _failed_packages(sandbox)
+    failed = xmake_env.failed_packages(sandbox)
     if not failed:
         return
     util.log(
@@ -358,7 +303,7 @@ def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
                 break
             util.warn(f"{name} {version} failed (attempt {attempt}/{attempts})")
         else:
-            _dump_failed_logs(config, sandbox)
+            xmake_env.dump_failed_logs(config, sandbox)
 
 
 def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,

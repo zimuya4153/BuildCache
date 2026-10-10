@@ -87,7 +87,11 @@ def main() -> int:
     # Deliberately no command line toolchain: the sandbox project file already
     # declares it, and xmake only selects precompiled artifacts when it checked
     # an msvc toolchain itself, which a `--toolchain=` argument prevents.
-    result = sandbox.configure(None, toolset, plat, arch, capture=True)
+    result = sandbox.configure(None, toolset, plat, arch, capture=True, check=False)
+    if result.returncode != 0:
+        # A failing consumer run is the one case where the reason matters most,
+        # and xmake only points at a log inside the sandbox.
+        xmake_env.dump_failed_logs(config, sandbox)
     log = result.stdout or ""
     expected_assets = [item["asset"] for item in variant_meta.get("artifacts", [])]
     fetched = any(f"/{asset}" in log for asset in expected_assets)
