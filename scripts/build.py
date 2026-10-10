@@ -159,7 +159,7 @@ def main() -> int:
         util.ensure_dir(sandbox.export_dir)
         result = sandbox.xmake(
             ["require", "-y", "--build", "--export", f"--packagedir={sandbox.export_dir}"],
-            tail=30,
+            stream=True,
             check=False,
         )
         if result.returncode == 0:
@@ -175,7 +175,7 @@ def main() -> int:
                 for package_attempt in range(1, attempts + 1):
                     single = sandbox.xmake(
                         ["require", "-y", "--build", f"{name} {version}"],
-                        tail=15,
+                        stream=True,
                         check=False,
                     )
                     if single.returncode == 0:

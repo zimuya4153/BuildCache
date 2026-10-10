@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -36,7 +37,10 @@ class Sandbox:
         check: bool = True,
         tail: int = 0,
         capture: bool = False,
+        stream: bool = False,
     ):
+        if stream:
+            return self._xmake_streaming(args, cwd=cwd, check=check)
         result = util.run(
             [str(self.xmake_exe)] + [str(a) for a in args],
             cwd=cwd or self.project_dir,
@@ -53,6 +57,36 @@ class Sandbox:
             for line in output.splitlines()[-tail:]:
                 util.log("  | " + line)
         return result
+
+    def _xmake_streaming(self, args: list, cwd: Path | None = None, check: bool = True):
+        """Run xmake and print its output while it happens.
+
+        Buffering the child's output (``capture=True``) makes a long package
+        build look like a hang both locally and in CI, where a step that prints
+        nothing for many minutes may be treated as dead.
+        """
+        cmd = [str(self.xmake_exe)] + [str(a) for a in args]
+        util.log("+ " + " ".join(cmd))
+        process = subprocess.Popen(
+            cmd,
+            cwd=str(cwd or self.project_dir),
+            env=self.env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
+        )
+        collected = []
+        for line in process.stdout or []:
+            util.log("  | " + line.rstrip())
+            collected.append(line)
+        code = process.wait()
+        output = "".join(collected)
+        if check and code != 0:
+            util.die(f"command failed ({code}): {' '.join(cmd)}")
+        return subprocess.CompletedProcess(cmd, code, output, None)
 
     def configure(
         self,

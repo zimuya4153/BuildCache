@@ -62,7 +62,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+      # LeviLamina's newer tags want clang-cl of the same generation; the
+        with:
+      # Newer LeviLamina tags want clang-cl of the same generation; the
+      # image's own LLVM is older than that.
+      - name: Setup LLVM
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
       - name: Build ${{ matrix.package }} ${{ matrix.version }}
+        timeout-minutes: 180
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
