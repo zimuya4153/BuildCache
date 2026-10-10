@@ -100,9 +100,9 @@
         "extra_packages": [
           "levilamina"
         ],
-        "variants": [
+        "entries": [
           {
-            "name": "default",
+            "id": "default",
             "configs": {}
           }
         ]
@@ -123,15 +123,15 @@
         "extra_packages": [
           "levilamina"
         ],
-        "variants": [
+        "entries": [
           {
-            "name": "server",
+            "id": "server",
             "configs": {
               "target_type": "server"
             }
           },
           {
-            "name": "client",
+            "id": "client",
             "configs": {
               "target_type": "client"
             }

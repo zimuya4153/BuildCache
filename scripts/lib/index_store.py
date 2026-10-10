@@ -25,11 +25,15 @@ def version_meta(index_root: Path, package: str, version: str) -> dict | None:
     return util.read_json(path, None)
 
 
-def variants(meta: dict | None) -> dict:
-    """Variant map of a version document, migrating the pre-variant layout."""
+def entries(meta: dict | None) -> dict:
+    """Build-entry map of a version document (default when a plugin defines none).
+
+    Older documents used `variants` for the same thing; that key is still
+    accepted so existing indexes keep working.
+    """
     if not meta:
         return {}
-    found = meta.get("variants")
+    found = meta.get("entries") or meta.get("variants")
     if isinstance(found, dict) and found:
         return found
     legacy = meta.get("artifacts")
@@ -47,28 +51,28 @@ def variants(meta: dict | None) -> dict:
     return {}
 
 
-def built_variants(index_root: Path, package: str, version: str) -> set[str]:
-    return set(variants(version_meta(index_root, package, version)).keys())
+def built_entries(index_root: Path, package: str, version: str) -> set[str]:
+    return set(entries(version_meta(index_root, package, version)).keys())
 
 
-def variant_artifacts(index_root: Path, package: str, version: str, variant: str) -> list[dict]:
-    entry = variants(version_meta(index_root, package, version)).get(variant) or {}
+def entry_artifacts(index_root: Path, package: str, version: str, entry_id: str) -> list[dict]:
+    entry = entries(version_meta(index_root, package, version)).get(entry_id) or {}
     return list(entry.get("artifacts") or [])
 
 
 def all_artifacts(meta: dict) -> list[dict]:
     collected: list[dict] = []
-    for entry in variants(meta).values():
+    for entry in entries(meta).values():
         collected.extend(entry.get("artifacts") or [])
     return collected
 
 
-def write_variant(index_root: Path, package: str, version: str, variant: str, meta: dict) -> None:
+def write_entry(index_root: Path, package: str, version: str, entry_id: str, meta: dict) -> None:
     """Store one built variant; artifacts are merged by manifest key."""
     path = package_dir(index_root, package) / "versions" / f"{version}.json"
     document = util.read_json(path, None) or {}
-    existing = variants(document)
-    previous = existing.get(variant) or {}
+    existing = entries(document)
+    previous = existing.get(entry_id) or {}
     merged = dict(meta)
     by_key = {item["key"]: item for item in previous.get("artifacts") or []}
     for item in meta.get("artifacts", []):
@@ -76,11 +80,11 @@ def write_variant(index_root: Path, package: str, version: str, variant: str, me
     merged["artifacts"] = sorted(by_key.values(), key=lambda item: item["key"])
     if previous.get("built_at") and not merged.get("built_at"):
         merged["built_at"] = previous["built_at"]
-    existing[variant] = merged
+    existing[entry_id] = merged
     document.update({key: value for key, value in meta.items() if key != "artifacts"})
     document["package"] = package
     document["version"] = version
-    document["variants"] = existing
+    document["entries"] = existing
     document.pop("artifacts", None)
     util.write_json(path, document)
     index = load_package(index_root, package)

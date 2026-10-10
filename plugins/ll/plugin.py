@@ -137,15 +137,16 @@ def configs(ctx, version: str, commit: str) -> dict:
     return {"target_type": "server"}
 
 
-def variants(ctx, version: str, commit: str) -> list[dict]:
+def entries(ctx, version: str, commit: str) -> list[dict]:
     """LeviLamina builds a *server* and a *client* SDK; both are packaged.
 
-    The variant is part of the package configs, so each one gets its own build
-    hash and therefore its own set of artifacts.
+    This is project knowledge, so it lives here and not in the framework: the
+    server/client split is reflected in the package configs, which gives each
+    build its own hash and therefore its own set of artifacts.
     """
     return [
-        {"name": "server", "configs": {"target_type": "server"}},
-        {"name": "client", "configs": {"target_type": "client"}},
+        {"id": "server", "configs": {"target_type": "server"}},
+        {"id": "client", "configs": {"target_type": "client"}},
     ]
 
 

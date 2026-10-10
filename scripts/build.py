@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plugin", default="ll")
     parser.add_argument("--version", required=True)
-    parser.add_argument("--variant", default="", help="variant name (e.g. server/client)")
+    parser.add_argument("--entry", default="", help="variant name (e.g. server/client)")
     parser.add_argument("--commit", default="", help="upstream commit (defaults to the recipe listing)")
     parser.add_argument("--profile", default="", help="profile from the config (platform/toolset overrides)")
     parser.add_argument("--toolchain", default="", help="override the detected toolchain")
@@ -81,16 +81,12 @@ def main() -> int:
         args.xmake_version or plugin.call("xmake_version", ctx, args.version, commit)
     )
     cutoff = plugin.call("git_cutoff", ctx, args.version, commit) or ""
-    variants = plugin.call("variants", ctx, args.version, commit) or [
-        {"name": "default", "configs": plugin.call("configs", ctx, args.version, commit) or {}}
-    ]
-    variant = next(
-        (item for item in variants if item["name"] == args.variant), variants[0]
-    )
-    configs = variant.get("configs") or {}
+    entries = plugin.entries(ctx, args.version, commit)
+    entry = next((item for item in entries if item["id"] == args.entry), entries[0])
+    configs = entry.get("configs") or {}
     upstream_package = plugin.call("metadata")["package"]
     require = f"{ctx.package_name(upstream_package)} {args.version}"
-    util.log(f"variant: {variant['name']}  configs: {configs}")
+    util.log("entry: " + entry["id"] + "  configs: " + str(configs))
 
     snapshot_mode = str(config.get("recipes", {}).get("snapshotMode", "head"))
     recipe_commits: dict[str, str] = {}
@@ -118,7 +114,7 @@ def main() -> int:
 
     sandbox = xmake_env.create_sandbox(
         config,
-        name=_slug(f"{plugin.name}-{args.version}-{variant['name']}"),
+        name=_slug(f"{plugin.name}-{args.version}-{entry['id']}"),
         xmake_version=xmake_version,
         proxy=proxy,
         toolchain=None if toolchain == "msvc" else toolchain,
@@ -155,7 +151,7 @@ def main() -> int:
     )
     out = Path(args.results)
     util.ensure_dir(out)
-    result_file = out / f"build-result-{plugin.name}-{args.version}-{variant['name']}.json"
+    result_file = out / f"build-result-{plugin.name}-{args.version}-{entry['id']}.json"
     util.write_json(result_file, results)
     util.log(f"wrote {result_file} ({len(results['artifacts'])} artifact(s))")
 
@@ -213,10 +209,10 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
         "plugin": plugin_name,
         "package": package_name,
         "version": args.version,
-        "variant": variant["name"],
+        "entry": entry["id"],
         "configs": configs,
         "upstream_commit": commit,
-        "upstream_date": cutoff,
+        "entry": entry["id"],
         "xmake_version": xmake_version,
         "toolchain": toolchain,
         "upstream_toolchain": upstream_toolchain,
@@ -247,15 +243,15 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
 
     container = container_for(config, name)
     suffix = "tar.zst" if container == "tar.zst" else "7z"
-    # The build hash already encodes plat/arch/toolchain/configs and shards are
-    # per package, so the asset name only needs to be unique inside its shard.
-    # Everything a human needs lives in the release body instead.
+    # The build hash already encodes plat/arch/toolchain/configs and the source
+    # revision, and shards are per package, so the asset name only needs the
+    # upstream name plus the hash. The prefix stays out of it on purpose.
     asset = None
     if plugin is not None:
         asset = plugin.call(
             "asset_name", ctx, name, version, toolset, hash_dir.name, container
         )
-    asset = asset or f"{hash_dir.name}.{suffix}"
+    asset = asset or f"{name.removeprefix(ctx.prefix)}-{hash_dir.name}.{suffix}"
     archive = dist / asset
     util.log(f"pack {name} {version} ({hash_dir.name})")
     # xmake strips one level while extracting precompiled artifacts, so the

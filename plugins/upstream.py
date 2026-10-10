@@ -116,11 +116,15 @@ class _UpstreamPlugin:
         return text
 
     def configs(self, ctx, version: str, commit: str) -> dict:
-        variants = self.variants(ctx, version, commit)
-        return variants[0]["configs"] if variants else {}
+        entries = self.entries(ctx, version, commit)
+        return entries[0]["configs"] if entries else {}
 
-    def variants(self, ctx, version: str, commit: str) -> list[dict]:
-        return self.settings.get("variants") or [{"name": "default", "configs": {}}]
+    def entries(self, ctx, version: str, commit: str) -> list[dict]:
+        """Entries declared by the settings (``id`` + package ``configs``)."""
+        declared = self.settings.get("entries")
+        if declared:
+            return declared
+        return [{"id": "default", "configs": self.settings.get("configs") or {}}]
 
     def extra_deps(self, ctx, version: str, commit: str) -> list[dict]:
         """Dependencies only named by the upstream project's own xmake.lua."""

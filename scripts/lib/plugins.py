@@ -23,6 +23,41 @@ class Plugin:
     def has(self, function: str) -> bool:
         return hasattr(self.module, function)
 
+    # ---------------------------------------------------------------- entries
+    # A "build entry" is whatever a plugin needs to build one package version
+    # more than once (LeviLamina uses server/client, another project may use
+    # debug/release or nothing at all). The framework only ever sees opaque ids
+    # plus the package configs that belong to them.
+    DEFAULT_ENTRY = "default"
+
+    def entries(self, ctx, version: str, commit: str, settings: dict | None = None) -> list[dict]:
+        """``[{id, configs}, ...]`` for one version, provided by the plugin."""
+        handler = getattr(self.module, "entries", None)
+        if handler is not None:
+            found = handler(ctx, version, commit)
+            if found:
+                return [self._normalise_entry(item) for item in found]
+        settings = settings or getattr(self.module, "SETTINGS", {}) or {}
+        declared = settings.get("entries")
+        if declared:
+            return [self._normalise_entry(item) for item in declared]
+        configs = getattr(self.module, "configs", None)
+        return [
+            {
+                "id": self.DEFAULT_ENTRY,
+                "configs": configs(ctx, version, commit) if configs else {},
+            }
+        ]
+
+    @staticmethod
+    def _normalise_entry(item: dict) -> dict:
+        if isinstance(item, str):
+            return {"id": item, "configs": {}}
+        entry = dict(item)
+        entry["id"] = str(entry.get("id") or entry.get("name") or Plugin.DEFAULT_ENTRY)
+        entry.setdefault("configs", {})
+        return entry
+
 
 def load_all(config: dict) -> list[Plugin]:
     plugins = []

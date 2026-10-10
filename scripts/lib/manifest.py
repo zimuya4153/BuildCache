@@ -16,7 +16,9 @@ from . import util
 def build_id(plat: str, arch: str, toolset: str | None, build_hash: str) -> str:
     """Compose the manifest key exactly like xmake's own artifacts mirror."""
     if toolset:
-        return f"{plat}-{arch}-vc{toolset}-{build_hash}"
+        # The toolset itself is carried by the entry's ``toolset`` field, which
+        # is what xmake compares; the key only has to start with "vc".
+        return f"{plat}-{arch}-vc-{build_hash}"
     return f"{plat}-{arch}-{build_hash}"
 
 

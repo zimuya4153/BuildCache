@@ -26,15 +26,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _variants(plugin, ctx, version: str, commit: str) -> list[dict]:
-    """Variants a plugin wants for this version (configs change the build id)."""
-    found = plugin.call("variants", ctx, version, commit)
-    if found:
-        return found
-    configs = plugin.call("configs", ctx, version, commit) or {}
-    return [{"name": "default", "configs": configs}]
-
-
 def main() -> int:
     args = parse_args()
     config = util.load_config()
@@ -75,11 +66,11 @@ def main() -> int:
             if not args.rebuild_all and version in built and not args.version:
                 continue
             item = by_version[version]
-            done = set() if args.rebuild_all else index_store.built_variants(
+            done = set() if args.rebuild_all else index_store.built_entries(
                 ctx.index_root, package, version
             )
-            for variant in _variants(plugin, ctx, version, item["commit"]):
-                if variant["name"] in done:
+            for entry in plugin.entries(ctx, version, item["commit"]):
+                if entry["id"] in done:
                     continue
                 matrix.append(
                     {
@@ -87,7 +78,7 @@ def main() -> int:
                         "package": package,
                         "recipe_package": metadata["package"],
                         "version": version,
-                        "variant": variant["name"],
+                        "entry": entry["id"],
                         "commit": item["commit"],
                     }
                 )

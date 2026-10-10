@@ -64,7 +64,7 @@ def parse_args() -> argparse.Namespace:
     trigger = sub.add_parser("trigger", help="run one build round")
     trigger.add_argument("--plugin", default="")
     trigger.add_argument("--version", default="")
-    trigger.add_argument("--variant", default="")
+    trigger.add_argument("--entry", default="")
     trigger.add_argument("--batch", default="")
     trigger.add_argument("--first-only", action="store_true")
     trigger.add_argument("--rebuild-all", action="store_true")
@@ -124,7 +124,7 @@ def _inventory(ctx, package_filter: str = ""):
         if package_filter and directory.name != package_filter:
             continue
         for meta in index_store.all_version_meta(root, directory.name):
-            for variant, entry in sorted(index_store.variants(meta).items()):
+            for variant, entry in sorted(index_store.entries(meta).items()):
                 yield directory.name, str(meta.get("version")), variant, entry.get("artifacts") or []
 
 
@@ -271,7 +271,7 @@ def _drop_from_index(ctx, plan) -> None:
             if not doc:
                 continue
             version = str(doc.get("version"))
-            variants = index_store.variants(doc)
+            variants = index_store.entries(doc)
             drop = {variant for item_version, variant in wanted if item_version == version}
             for variant in drop:
                 variants.pop(variant, None)
@@ -323,8 +323,8 @@ def cmd_trigger(config: dict, ctx, args) -> int:
         discover += ["--rebuild-all"]
     util.run(discover, env=util.subprocess_env(config, proxy=ctx.proxy))
     matrix = util.read_json(matrix_file, []) or []
-    if args.variant:
-        matrix = [item for item in matrix if item.get("variant") == args.variant]
+    if args.entry:
+        matrix = [item for item in matrix if item.get("entry") == args.entry]
     if not matrix:
         util.log("nothing to build")
         return 0
@@ -335,7 +335,7 @@ def cmd_trigger(config: dict, ctx, args) -> int:
     for item in matrix:
         util.run(
             [sys.executable, str(scripts / "build.py"), "--plugin", item["plugin"],
-             "--version", item["version"], "--variant", item.get("variant", "")],
+             "--version", item["version"], "--entry", item.get("entry", "")],
             env=util.subprocess_env(config, proxy=ctx.proxy),
         )
     finalize = [sys.executable, str(scripts / "finalize.py")]

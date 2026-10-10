@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--component", default="mifcache_levilamina")
     parser.add_argument("--version", default="", help="defaults to the newest indexed version")
-    parser.add_argument("--variant", default="server", help="variant to consume (e.g. server/client)")
+    parser.add_argument("--entry", default="server", help="variant to consume (e.g. server/client)")
     parser.add_argument(
         "--toolchain",
         default="msvc",
@@ -46,17 +46,17 @@ def main() -> int:
     if meta is None:
         util.die(f"no indexed build for {args.component} {args.version or '(latest)'}")
     version = str(meta["version"])
-    variant_meta = index_store.variants(meta).get(args.variant)
+    variant_meta = index_store.entries(meta).get(args.entry)
     if variant_meta is None:
         util.die(
-            f"{args.component} {version} has no '{args.variant}' variant "
-            f"(available: {', '.join(sorted(index_store.variants(meta))) or 'none'})"
+            f"{args.component} {version} has no '{args.entry}' variant "
+            f"(available: {', '.join(sorted(index_store.entries(meta))) or 'none'})"
         )
     configs = variant_meta.get("configs") or {}
     toolset = meta.get("vs_toolset")
     toolchain = meta.get("toolchain") or "msvc"
     util.log_step(
-        f"consume {args.component} {version} [{args.variant}] "
+        f"consume {args.component} {version} [{args.entry}] "
         f"(built with {toolchain}, toolset {toolset})"
     )
 

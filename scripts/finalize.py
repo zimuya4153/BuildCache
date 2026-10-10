@@ -54,9 +54,9 @@ def main() -> int:
     entries = 0
     for result in results:
         version = result["version"]
-        variant = result.get("variant", "default")
+        variant = result.get("entry", "default")
         if not args.dry_run:
-            index_store.write_variant(
+            index_store.write_entry(
                 ctx.index_root, result["package"], version, variant, result
             )
             # Also index every artifact under its own package so that each
@@ -66,7 +66,7 @@ def main() -> int:
                 per_package.setdefault(artifact["package"], []).append(artifact)
             for package, artifacts in per_package.items():
                 for artifact in artifacts:
-                    index_store.write_variant(
+                    index_store.write_entry(
                         ctx.index_root,
                         package,
                         artifact["version"],
@@ -130,13 +130,13 @@ def refresh_release_notes(config: dict, ctx) -> None:
         if not directory.is_dir() or directory.name.startswith("."):
             continue
         for meta in index_store.all_version_meta(ctx.index_root, directory.name):
-            for variant, entry in index_store.variants(meta).items():
+            for variant, entry in index_store.entries(meta).items():
                 for artifact in entry.get("artifacts") or []:
                     if not artifact.get("release"):
                         continue
                     row = {
                         "version": artifact.get("version") or meta.get("version"),
-                        "variant": variant,
+                        "entry": variant,
                         "toolchain": entry.get("toolchain") or meta.get("toolchain") or "",
                         "toolset": artifact.get("toolset"),
                         "buildhash": artifact.get("buildhash") or "",
@@ -151,7 +151,7 @@ def refresh_release_notes(config: dict, ctx) -> None:
             shard,
             gh.release_notes(
                 shard,
-                sorted(rows.values(), key=lambda item: (item["version"], item["variant"])),
+                sorted(rows.values(), key=lambda item: (item["version"], item["entry"])),
                 prefix=prefix,
             ),
             config=config,
