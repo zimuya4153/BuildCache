@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plugin", default="ll")
     parser.add_argument("--version", required=True)
-    parser.add_argument("--entry", default="", help="variant name (e.g. server/client)")
+    parser.add_argument("--entry", default="", help="build entry id (e.g. server/client)")
     parser.add_argument("--commit", default="", help="upstream commit (defaults to the recipe listing)")
     parser.add_argument("--profile", default="", help="profile from the config (platform/toolset overrides)")
     parser.add_argument("--toolchain", default="", help="override the detected toolchain")
@@ -145,7 +145,7 @@ def main() -> int:
     util.log_step("publish artifacts")
     results = publish(
         config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake_version,
-        commit, cutoff, recipe_commits, variant, configs, require.partition(" ")[0],
+        commit, cutoff, recipe_commits, entry, configs, require.partition(" ")[0],
         plugin_name=plugin.name, upstream_toolchain=upstream_toolchain, plugin=plugin,
         dry_run=args.dry_run,
     )
@@ -165,7 +165,7 @@ def main() -> int:
 
 
 def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake_version,
-            commit, cutoff, recipe_commits, variant, configs, package_name,
+            commit, cutoff, recipe_commits, entry, configs, package_name,
             plugin_name="", upstream_toolchain="", plugin=None, dry_run=False) -> dict:
     owner = config["repos"]["cache"]["owner"]
     repo = config["repos"]["cache"]["repo"]

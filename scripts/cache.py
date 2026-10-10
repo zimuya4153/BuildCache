@@ -247,7 +247,15 @@ def cmd_remove(config: dict, ctx, args) -> int:
                     check=False,
                     quiet=True,
                 )
-                util.log(f"removed empty release {shard}")
+                util.run(
+                    ["gh", "api", "--method", "DELETE",
+                     f"repos/{owner}/{repo}/git/refs/tags/{shard}"],
+                    env=util.subprocess_env(config, proxy=ctx.proxy),
+                    capture=True,
+                    check=False,
+                    quiet=True,
+                )
+                util.log(f"removed empty release and tag {shard}")
 
     import finalize  # regenerates manifests from the index
 
