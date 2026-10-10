@@ -82,16 +82,42 @@ jobs:
         if: matrix.msvc_component != ''
         shell: pwsh
         run: |
+          $vs = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
           $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
-          & $installer modify `
-            --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" `
-            --add "${{ matrix.msvc_component }}" --quiet --wait --norestart --nocache
-          $tools = Get-ChildItem "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC" |
-            Where-Object { $_.Name -like "${{ matrix.msvc_version }}.*" } |
-            Sort-Object Name -Descending | Select-Object -First 1
-          if (-not $tools) { throw "the installer did not provide ${{ matrix.msvc_version }}" }
-          Write-Output "using $($tools.Name)"
-          "vs_toolset=$($tools.Name)" >> $env:GITHUB_OUTPUT
+          # The era's own generation first; older ones are a fallback, because an
+          # era's sources only compile with a compiler of about their age.
+          $candidates = @(
+            "${{ matrix.msvc_component }}",
+            "Microsoft.VisualStudio.Component.VC.14.38.17.8.x86.x64",
+            "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64"
+          )
+          foreach ($component in $candidates) {
+            Write-Output "== installing $component"
+            & $installer modify --installPath $vs `
+              --productId Microsoft.VisualStudio.Product.Enterprise `
+              --channelId VisualStudio.17.Release `
+              --add $component --quiet --wait --norestart --nocache
+            Write-Output "   installer exit code: $LASTEXITCODE"
+            $found = Get-ChildItem "$vs\VC\Tools\MSVC" -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -like "${{ matrix.msvc_version }}.*" -or
+                             $_.Name -like "14.38.*" -or $_.Name -like "14.29.*" } |
+              Sort-Object Name -Descending | Select-Object -First 1
+            if ($found -and $found.Name -notlike "14.51.*" -and $found.Name -notlike "14.44.*") {
+              Write-Output "using $($found.Name)"
+              "vs_toolset=$($found.Name)" >> $env:GITHUB_OUTPUT
+              return
+            }
+            # Say why, instead of only that it did not work.
+            Get-ChildItem "$vs\VC\Tools\MSVC" -ErrorAction SilentlyContinue |
+              ForEach-Object { Write-Output "   present: $($_.Name)" }
+            $log = Get-ChildItem $env:TEMP -Filter 'dd_*.log' -ErrorAction SilentlyContinue |
+              Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            if ($log) {
+              Write-Output "   installer log: $($log.FullName)"
+              Get-Content $log.FullName -Tail 20 | ForEach-Object { Write-Output "   | $_" }
+            }
+          }
+          throw "no older MSVC toolset could be installed"
       # Which MSVC generations and platform toolsets this image has, so an era
       # failure can be read without guessing.
       - name: MSVC diagnostics
@@ -102,7 +128,9 @@ jobs:
           foreach ($path in @("$vs\VC\Tools\MSVC",
                               "$vs\MSBuild\Microsoft\VC\v170\Platforms\x64\PlatformToolsets")) {
             Write-Output "== $path"
-            if (Test-Path $path) { Get-ChildItem $path | Select-Object -ExpandProperty Name }
+            if (Test-Path $path) {
+              Write-Output ("   " + ((Get-ChildItem $path | Select-Object -ExpandProperty Name) -join ", "))
+            }
             else { Write-Output "  (missing)" }
           }
           Write-Output "== vswhere"
