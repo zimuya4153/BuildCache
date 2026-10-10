@@ -16,20 +16,32 @@ _CONFIG: dict | None = None
 
 
 def log(message: str) -> None:
-    print(message, flush=True)
+    print(mask(str(message)), flush=True)
 
 
 def log_step(message: str) -> None:
-    print(f"\n=== {message} ===", flush=True)
+    print(mask(f"\n=== {message} ==="), flush=True)
 
 
 def warn(message: str) -> None:
-    print(f"warning: {message}", file=sys.stderr, flush=True)
+    print(mask(f"warning: {message}"), file=sys.stderr, flush=True)
 
 
 def die(message: str, code: int = 1) -> None:
-    print(f"error: {message}", file=sys.stderr, flush=True)
+    print(mask(f"error: {message}"), file=sys.stderr, flush=True)
     raise SystemExit(code)
+
+
+# Tokens must never reach a log file: pushed URLs embed them and the command echo
+# below prints whole command lines.
+_URL_CREDENTIALS = re.compile(r"(https?://)[^/@\s]+:[^/@\s]+@")
+_TOKEN_LITERAL = re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{8,}|github_pat_[A-Za-z0-9_]{10,})")
+
+
+def mask(text: str) -> str:
+    """Redact credentials from anything we print."""
+    text = _URL_CREDENTIALS.sub(r"\1***:***@", text)
+    return _TOKEN_LITERAL.sub("***", text)
 
 
 def load_config() -> dict:
