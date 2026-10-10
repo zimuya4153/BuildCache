@@ -351,25 +351,54 @@ def _rename_dependents(snapshot, renames: dict[str, dict[str, str]]) -> list[str
 
 
 def should_skip(ctx, version: str, commit: str) -> tuple[bool, str]:
-    """Refuse versions whose era xmake cannot drive this machine's toolchain.
+    """Skip versions unless we are running on an image of the right generation.
 
     An ancient tag ships an ancient xmake, and that xmake predates support for a
     modern MSVC: it hands the STL headers a language standard they reject, so the
-    *dependencies* fail with errors inside type_traits/utility. Such versions
-    need a CI image carrying an MSVC of their own generation, so they are skipped
-    locally instead of failing every run.
+    *dependencies* fail with errors inside type_traits/utility. Each era therefore
+    needs the CI image that carries an MSVC of the same generation, and local runs
+    (no ``ImageOS``) only take the eras this machine can actually serve.
     """
+    import os
+
+    plan = toolchain_plan(ctx, version, commit)
+    image = os.environ.get("ImageOS", "")
+    if image and plan["image"] and image >= plan["image"]:
+        return False, ""
+    if not image and plan["image"] == LOCAL_IMAGE:
+        return False, ""
+    return True, (
+        f"era xmake {plan['era_xmake']} needs a {plan['image']} image "
+        f"(msvc {plan['vs_toolset'] or 'any'}); run it on CI"
+    )
+
+
+# Which CI image (and MSVC generation) an era's xmake can drive. Floors are
+# checked newest first; "win25" means the current windows-latest image.
+ERA_IMAGES = [
+    ("3.1.0", "win25", None),
+    ("3.0.0", "win22", "14.38"),
+    ("2.9.0", "win22", "14.34"),
+    ("0.0.0", "win19", "14.29"),
+]
+LOCAL_IMAGE = "win25"
+
+
+def toolchain_plan(ctx, version: str, commit: str) -> dict:
+    """Era xmake plus the image/toolset that can serve it."""
     from lib import semver, xmake_env
 
     era = xmake_env.xmake_version_for_date(
         ctx.config, commit_date(ctx, commit), floor="0.0.0"
     )
-    if semver.lt(era, "3.1.0"):
-        return True, (
-            f"era xmake {era} predates support for this machine's MSVC; "
-            "build it on CI with a matching toolchain image"
-        )
-    return False, ""
+    for floor, image, toolset in ERA_IMAGES:
+        if semver.ge(era, floor):
+            return {
+                "era_xmake": era,
+                "image": image,
+                "vs_toolset": toolset,
+            }
+    return {"era_xmake": era, "image": "win19", "vs_toolset": "14.29"}
 
 
 def _patch_upstream_sources(snapshot, renames: dict[str, dict[str, str]]) -> list[str]:
