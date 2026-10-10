@@ -53,6 +53,8 @@
         "url": "https://github.com/xmake-io/xmake-repo.git"
       }
     ],
+    "snapshotMode": "version",
+    "cutoffOffsetDays": 3,
     "skipPackages": [
       "cmake",
       "ninja",

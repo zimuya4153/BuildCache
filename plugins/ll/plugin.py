@@ -116,20 +116,30 @@ def xmake_version(ctx, version: str, commit: str) -> str:
 
 
 def recipe_cutoff(ctx, version: str, commit: str) -> str:
-    """Cutoff used when ``recipes.snapshotMode`` is ``version``."""
-    return commit_date(ctx, commit)
+    """Date the recipe repositories are rolled back to for this build.
+
+    The whole point of the git interception is to rebuild a version against the
+    ecosystem it was released into: the recipes, the recipes' own dependency
+    pins and every unpinned clone have to match that date. A small offset keeps
+    a build from landing just before the recipe for that very release existed.
+    """
+    offset = int(ctx.config.get("recipes", {}).get("cutoffOffsetDays", 3))
+    return _shift(commit_date(ctx, commit), offset)
 
 
 def git_cutoff(ctx, version: str, commit: str) -> str:
     """Date every unpinned git clone inside the sandbox is rewound to."""
-    offset = int(ctx.config.get("gitShim", {}).get("offsetDays", 0))
-    iso = commit_date(ctx, commit)
-    if offset == 0:
+    offset = int(ctx.config.get("gitShim", {}).get("offsetDays", 3))
+    return _shift(commit_date(ctx, commit), offset)
+
+
+def _shift(iso: str, days: int) -> str:
+    if not days:
         return iso
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
     parsed = datetime.fromisoformat(iso.replace("Z", "+00:00"))
-    return (parsed + timedelta(days=offset)).isoformat()
+    return (parsed + timedelta(days=days)).isoformat()
 
 
 def configs(ctx, version: str, commit: str) -> dict:

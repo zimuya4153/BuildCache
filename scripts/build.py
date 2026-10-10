@@ -88,14 +88,14 @@ def main() -> int:
     require = f"{ctx.package_name(upstream_package)} {args.version}"
     util.log("entry: " + entry["id"] + "  configs: " + str(configs))
 
-    snapshot_mode = str(config.get("recipes", {}).get("snapshotMode", "head"))
+    snapshot_mode = str(config.get("recipes", {}).get("snapshotMode", "version"))
     recipe_commits: dict[str, str] = {}
     local_repos: list[tuple[str, Path]] = []
     main_repo = None
     build_env = util.subprocess_env(config, proxy=proxy)
     for source in config.get("recipes", {}).get("sources", []):
         mirror = ctx.mirror(source["name"], source["url"])
-        wanted = plugin.call("recipe_cutoff", ctx, args.version, commit) if snapshot_mode == "version" else None
+        wanted = None if snapshot_mode == "head" else plugin.call("recipe_cutoff", ctx, args.version, commit)
         if wanted:
             dest = util.ROOT / ".vendor" / f"{source['name']}@{args.version}"
         else:
