@@ -139,5 +139,20 @@ class _UpstreamPlugin:
                 found[name] = parts[1] if len(parts) > 1 else ""
         return [{"name": name, "version": version} for name, version in sorted(found.items())]
 
+    def asset_name(self, ctx, package: str, version: str, toolset, build_hash: str, container: str):
+        """Optional ``assetName`` template from the settings, e.g. ``"{version}-{hash}.7z"``."""
+        template = self.settings.get("assetName")
+        if not template:
+            return None
+        suffix = "tar.zst" if container == "tar.zst" else "7z"
+        return str(template).format(
+            package=package,
+            version=version,
+            toolset=toolset or "generic",
+            hash=build_hash,
+            buildhash=build_hash,
+            ext=suffix,
+        )
+
     def report_skipped(self, ctx, known: list[dict]) -> list[str]:
         return []

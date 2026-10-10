@@ -123,7 +123,8 @@ def release_title(tag: str) -> str:
     return library or tag
 
 
-def release_notes(tag: str, versions: list[str] | None = None, prefix: str = "") -> str:
+def release_notes(tag: str, rows: list[dict] | None = None, prefix: str = "") -> str:
+    """Release bodies carry the metadata that no longer lives in asset names."""
     lines = [
         "Prebuilt SDK artifacts published by [BuildCache]"
         "(https://github.com/zimuya4153/BuildCache).",
@@ -133,9 +134,26 @@ def release_notes(tag: str, versions: list[str] | None = None, prefix: str = "")
     ]
     if prefix:
         lines.append(f"- Package prefix: `{prefix}`")
-    if versions:
-        lines += ["", f"Cached versions ({len(versions)}):", ""]
-        lines += [f"- `{version}`" for version in versions]
+    if rows:
+        lines += [
+            "",
+            f"Cached builds ({len(rows)}):",
+            "",
+            "| version | variant | toolchain | toolset | build hash | asset |",
+            "|---|---|---|---|---|---|",
+        ]
+        for row in rows:
+            lines.append(
+                "| `{version}` | `{variant}` | `{toolchain}` | `{toolset}` | "
+                "`{buildhash}` | `{asset}` |".format(
+                    version=row.get("version", ""),
+                    variant=row.get("variant", ""),
+                    toolchain=row.get("toolchain", ""),
+                    toolset=row.get("toolset") or "-",
+                    buildhash=row.get("buildhash", ""),
+                    asset=row.get("asset", ""),
+                )
+            )
     return "\n".join(lines)
 
 

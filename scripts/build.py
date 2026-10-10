@@ -150,7 +150,8 @@ def main() -> int:
     results = publish(
         config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake_version,
         commit, cutoff, recipe_commits, variant, configs, require.partition(" ")[0],
-        plugin_name=plugin.name, upstream_toolchain=upstream_toolchain, dry_run=args.dry_run,
+        plugin_name=plugin.name, upstream_toolchain=upstream_toolchain, plugin=plugin,
+        dry_run=args.dry_run,
     )
     out = Path(args.results)
     util.ensure_dir(out)
@@ -169,7 +170,7 @@ def main() -> int:
 
 def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake_version,
             commit, cutoff, recipe_commits, variant, configs, package_name,
-            plugin_name="", upstream_toolchain="", dry_run=False) -> dict:
+            plugin_name="", upstream_toolchain="", plugin=None, dry_run=False) -> dict:
     owner = config["repos"]["cache"]["owner"]
     repo = config["repos"]["cache"]["repo"]
     max_assets = int(config["release"]["maxAssetsPerRelease"])
@@ -202,7 +203,7 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
                         continue
                     artifacts.append(
                         _publish_one(
-                            config, ctx, sandbox, dist, owner, repo, max_assets,
+                            config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
                             name, version, hash_dir, plat, arch, toolset_for_key(vs_toolset, name),
                             target_branch=target_branch, dry_run=dry_run,
                         )
@@ -240,13 +241,21 @@ def container_for(config: dict, package: str) -> str:
     return override or artifacts_cfg.get("container") or packer.default_container()
 
 
-def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets,
+def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
                  name, version, hash_dir, plat, arch, toolset, target_branch=None, dry_run=False) -> dict:
     from lib import manifest as manifest_lib
 
     container = container_for(config, name)
     suffix = "tar.zst" if container == "tar.zst" else "7z"
-    asset = f"{name}-{version}-{plat}-{arch}-{toolset or 'generic'}-{hash_dir.name}.{suffix}"
+    # The build hash already encodes plat/arch/toolchain/configs and shards are
+    # per package, so the asset name only needs to be unique inside its shard.
+    # Everything a human needs lives in the release body instead.
+    asset = None
+    if plugin is not None:
+        asset = plugin.call(
+            "asset_name", ctx, name, version, toolset, hash_dir.name, container
+        )
+    asset = asset or f"{hash_dir.name}.{suffix}"
     archive = dist / asset
     util.log(f"pack {name} {version} ({hash_dir.name})")
     # xmake strips one level while extracting precompiled artifacts, so the

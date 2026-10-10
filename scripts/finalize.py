@@ -124,23 +124,36 @@ def refresh_release_notes(config: dict, ctx) -> None:
 
     cache_cfg = config["repos"]["cache"]
     owner, repo = cache_cfg["owner"], cache_cfg["repo"]
-    shards: dict[str, set[str]] = {}
+    shards: dict[str, dict[str, dict]] = {}
     prefix = ""
     for directory in sorted(Path(ctx.index_root).iterdir()):
-        if not directory.is_dir():
+        if not directory.is_dir() or directory.name.startswith("."):
             continue
         for meta in index_store.all_version_meta(ctx.index_root, directory.name):
-            for artifact in index_store.all_artifacts(meta):
-                if not artifact.get("release"):
-                    continue
-                shards.setdefault(artifact["release"], set()).add(artifact["version"])
-                prefix = prefix or str(meta.get("prefix") or "")
-    for shard, versions in sorted(shards.items()):
+            for variant, entry in index_store.variants(meta).items():
+                for artifact in entry.get("artifacts") or []:
+                    if not artifact.get("release"):
+                        continue
+                    row = {
+                        "version": artifact.get("version") or meta.get("version"),
+                        "variant": variant,
+                        "toolchain": entry.get("toolchain") or meta.get("toolchain") or "",
+                        "toolset": artifact.get("toolset"),
+                        "buildhash": artifact.get("buildhash") or "",
+                        "asset": artifact.get("asset") or "",
+                    }
+                    shards.setdefault(artifact["release"], {})[row["asset"]] = row
+                    prefix = prefix or str(meta.get("prefix") or "")
+    for shard, rows in sorted(shards.items()):
         gh.update_release_notes(
             owner,
             repo,
             shard,
-            gh.release_notes(shard, sorted(versions), prefix=prefix),
+            gh.release_notes(
+                shard,
+                sorted(rows.values(), key=lambda item: (item["version"], item["variant"])),
+                prefix=prefix,
+            ),
             config=config,
         )
     if shards:
