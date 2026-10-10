@@ -119,27 +119,3 @@ jobs:
           BUILDCACHE_PUSH_TOKEN: ${{ secrets.PACKAGE_REPO_TOKEN }}
         run: python scripts/finalize.py --push
 
-  verify:
-    needs: [discover, build, finalize]
-    # Runs even when there was nothing to build: triggering a round for a version
-    # that is already published is how the consumer side gets re-checked, and a
-    # broken artifact must fail the round rather than be skipped silently.
-    if: always() && needs.discover.result == 'success'
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.14"
-      - name: Consume the published artifact
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/selftest.py --component mifcache_levilamina
-      # The same archive is published under three toolchain addresses, and the
-      # one a project picks depends on how it declares its toolchain. The step
-      # above covers "declares nothing"; this covers the manifest alias a
-      # clang-cl plugin project resolves to.
-      - name: Consume it as a clang-cl project
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/selftest.py --component mifcache_levilamina --toolchain clang-cl

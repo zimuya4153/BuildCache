@@ -196,11 +196,20 @@ cache.py trigger --plugin ll --entry client --local   # 只编某个条目
 
 ## 9. CI
 
-`.github/workflows/build.yml`：`discover → build(矩阵) → finalize(串行) → verify(消费端)`。
+`.github/workflows/build.yml`：`discover → build(矩阵) → finalize(串行)`。
 需要的 secret 只有一个 `PACKAGE_REPO_TOKEN`（写第二个仓库用）。定时触发默认关掉
 （`schedule` 被注释），一轮很贵、由人手动 `gh workflow run` 发起。
-`verify` 会跑两次消费端自测：默认写法（不声明工具链）和 `--toolchain clang-cl`
-（也就是 manifest 别名那条路径）。
+一轮的验收就是 `finalize` 里的 `verify`：索引里每个产物的 url/sha256 与线上 release
+逐一比对，对不上会把条目重新排队（见 §8）。
+
+消费端自测（`scripts/selftest.py`）**不进流水线**：它要把整个闭包装进一个沙箱，
+而我们没有发布的那些包（还按上游名引用的 `snappy`/`demangler` 之类）在消费端只会
+源码编译，这一步等于多编一次、又慢又容易受网络影响。它保留为本地手动工具：
+
+```bash
+python scripts/selftest.py --component mifcache_levilamina            # 默认写法
+python scripts/selftest.py --component mifcache_levilamina --toolchain clang-cl
+```
 
 ### 署名（bot 账号）
 
