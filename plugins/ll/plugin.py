@@ -330,6 +330,7 @@ def _repair_legacy_versions(snapshot) -> list[str]:
 
     if renames:
         notes += _rename_dependents(snapshot, renames)
+        notes += _patch_upstream_sources(snapshot, renames)
     return notes
 
 
@@ -347,3 +348,62 @@ def _rename_dependents(snapshot, renames: dict[str, dict[str, str]]) -> list[str
             util.write_text(path, updated)
             notes.append(f"{path.name}: dependency versions updated")
     return notes
+
+
+def should_skip(ctx, version: str, commit: str) -> tuple[bool, str]:
+    """Refuse versions whose era xmake cannot drive this machine's toolchain.
+
+    An ancient tag ships an ancient xmake, and that xmake predates support for a
+    modern MSVC: it hands the STL headers a language standard they reject, so the
+    *dependencies* fail with errors inside type_traits/utility. Such versions
+    need a CI image carrying an MSVC of their own generation, so they are skipped
+    locally instead of failing every run.
+    """
+    from lib import semver, xmake_env
+
+    era = xmake_env.xmake_version_for_date(
+        ctx.config, commit_date(ctx, commit), floor="0.0.0"
+    )
+    if semver.lt(era, "3.1.0"):
+        return True, (
+            f"era xmake {era} predates support for this machine's MSVC; "
+            "build it on CI with a matching toolchain image"
+        )
+    return False, ""
+
+
+def _patch_upstream_sources(snapshot, renames: dict[str, dict[str, str]]) -> list[str]:
+    """Rename legacy dependencies inside the upstream project's own xmake.lua.
+
+    LeviLamina tags from the 0.8-0.13 era pin their data package directly in the
+    project file, so renaming it in the recipe alone leaves both sides
+    disagreeing (``version(1.20.61.01) not found``). The recipe we ship therefore
+    rewrites those strings while it builds the project.
+    """
+    recipe = Path(snapshot) / "packages" / "l" / "levilamina" / "xmake.lua"
+    if not recipe.is_file():
+        return []
+    text = util.read_text(recipe)
+    if "BuildCache: upstream dependency renames" in text:
+        return []
+    lines = []
+    for package, mapping in renames.items():
+        for old, new in mapping.items():
+            lines.append(
+                f'        io.replace("xmake.lua", "{package} {old}", '
+                f'"{package} {new}", {{plain = true}})'
+            )
+            lines.append(
+                f'        io.replace("xmake.lua", "{package} v{old}", '
+                f'"{package} v{new}", {{plain = true}})'
+            )
+    anchor = "    on_install(function(package)"
+    if not lines or anchor not in text:
+        return []
+    injection = (
+        "\n        -- BuildCache: upstream dependency renames\n"
+        + "\n".join(lines)
+        + "\n"
+    )
+    util.write_text(recipe, text.replace(anchor, anchor + injection, 1))
+    return [f"{recipe.parent.name}: upstream dependency renames injected ({len(lines)})"]

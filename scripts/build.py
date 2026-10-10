@@ -84,6 +84,11 @@ def main() -> int:
     entries = plugin.entries(ctx, args.version, commit)
     entry = next((item for item in entries if item["id"] == args.entry), entries[0])
     configs = entry.get("configs") or {}
+
+    skip, reason = plugin.call("should_skip", ctx, args.version, commit) or (False, "")
+    if skip:
+        util.log(f"skip {args.version}: {reason}")
+        return 0
     upstream_package = plugin.call("metadata")["package"]
     # Built with the era's own recipes, i.e. with the original package names;
     # renaming to our prefix happens at publish time. That keeps a build
