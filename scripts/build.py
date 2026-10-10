@@ -127,7 +127,7 @@ def main() -> int:
     git_shim.install(config, sandbox.env, cutoff)
 
     util.log_step("configure")
-    sandbox.configure(toolchain, vs_toolset, plat, arch)
+    sandbox.configure(toolchain, vs_toolset, plat, arch, stream=True)
 
     util.log_step("install closure")
     # No explicit package argument: the sandbox project already declares the
