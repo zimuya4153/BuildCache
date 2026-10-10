@@ -74,7 +74,14 @@ def main() -> int:
 
     platform_cfg = config["platform"]
     plat, arch = platform_cfg["plat"], platform_cfg["arch"]
-    toolchain = args.toolchain or plugin.call("toolchain", ctx, args.version, commit) or "msvc"
+    # An entry may pin its own toolchain (that is how a plugin declares extra
+    # build dimensions); otherwise the plugin's default applies.
+    toolchain = (
+        args.toolchain
+        or entry.get("toolchain")
+        or plugin.call("toolchain", ctx, args.version, commit)
+        or "msvc"
+    )
     upstream_toolchain = plugin.call("native_toolchain", ctx, args.version, commit) or toolchain
     util.log(f"toolchains: cache={toolchain}  upstream={upstream_toolchain}")
     vs_toolset = xmake_env.detect_vs_toolset(config, args.vs_toolset or None)

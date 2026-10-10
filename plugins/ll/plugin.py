@@ -165,10 +165,18 @@ def entries(ctx, version: str, commit: str) -> list[dict]:
     server/client split is reflected in the package configs, which gives each
     build its own hash and therefore its own set of artifacts.
     """
-    return [
-        {"id": "server", "configs": {"target_type": "server"}},
-        {"id": "client", "configs": {"target_type": "client"}},
-    ]
+    entries = []
+    for target_type in ("server", "client"):
+        for toolchain in ("msvc", "clang-cl"):
+            entries.append(
+                {
+                    "id": f"{target_type}-{toolchain}",
+                    "configs": {"target_type": target_type},
+                    "toolchain": toolchain,
+                    "fields": {"target_type": target_type, "toolchain": toolchain},
+                }
+            )
+    return entries
 
 
 def extra_deps(ctx, version: str, commit: str) -> list[dict]:

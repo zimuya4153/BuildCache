@@ -144,21 +144,27 @@ def release_notes(tag: str, rows: list[dict] | None = None, prefix: str = "") ->
             "",
             f"Cached builds ({len(rows)}):",
             "",
-            "| version | variant | toolchain | toolset | build hash | asset |",
+            "| version | entry | toolchain (as compiled) | toolset | build hash | asset |",
             "|---|---|---|---|---|---|",
         ]
         for row in rows:
             lines.append(
-                "| `{version}` | `{variant}` | `{toolchain}` | `{toolset}` | "
+                "| `{version}` | `{entry}` | `{toolchain}` | `{toolset}` | "
                 "`{buildhash}` | `{asset}` |".format(
                     version=row.get("version", ""),
-                    variant=row.get("variant", ""),
-                    toolchain=row.get("toolchain", ""),
+                    entry=row.get("entry", row.get("variant", "")),
+                    toolchain=row.get("upstream_toolchain") or row.get("toolchain", ""),
                     toolset=row.get("toolset") or "-",
                     buildhash=row.get("buildhash", ""),
                     asset=row.get("asset", ""),
                 )
             )
+        lines += [
+            "",
+            "*`toolchain`* is the one the artifact was actually compiled with — it",
+            "is part of the build id, so a project must resolve packages under the",
+            "matching toolchain for the entry to be selected.",
+        ]
     return "\n".join(lines)
 
 
