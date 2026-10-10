@@ -9,12 +9,33 @@ from . import util
 
 
 class Plugin:
+    #: Hooks the framework may call; anything else is a typo and gets reported.
+    KNOWN_HOOKS = {
+        "metadata",
+        "list_versions",
+        "report_skipped",
+        "entries",
+        "configs",
+        "xmake_version",
+        "toolchain",
+        "native_toolchain",
+        "toolchain_plan",
+        "recipe_cutoff",
+        "git_cutoff",
+        "extra_deps",
+        "asset_name",
+        "should_skip",
+        "repair_recipes",
+    }
+
     def __init__(self, name: str, module, path: Path):
         self.name = name
         self.module = module
         self.path = path
 
     def call(self, function: str, *args, **kwargs):
+        if function not in self.KNOWN_HOOKS:
+            util.warn(f"plugin {self.name}: unknown hook {function!r} (typo?)")
         handler = getattr(self.module, function, None)
         if handler is None:
             return None

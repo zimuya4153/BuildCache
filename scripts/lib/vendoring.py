@@ -82,25 +82,17 @@ def vendor(config: dict, ctx, plugin, refresh: bool = False) -> dict:
 def _source_snapshots(config: dict, ctx, env: dict | None = None, refresh: bool = False, plugin=None) -> dict[str, Path]:
     """Snapshot every configured recipe source at its current HEAD."""
     root = util.absolute(config.get("_vendor_root", ".vendor"))
-    mode = str(config.get("recipes", {}).get("snapshotMode", "head"))
     env = env or util.subprocess_env(config, proxy=ctx.proxy)
-    snapshots = {}
-    for source in config.get("recipes", {}).get("sources", []):
-        mirror = ctx.mirror(source["name"], source["url"])
-        commit = repos.commit_at(mirror, env=env)
-        dest = root / f"{source['name']}@{commit[:12]}"
-        if mode in ("head", "version"):
-            util.log(f"snapshot {source['name']} @ {commit[:12]}")
-            repos.snapshot(mirror, dest, commit=commit, env=env)
-        target = dest if dest.is_dir() else mirror
-        for note in recipefix.apply_fixups(config, source["name"], target):
-            util.log(note)
-        for note in recipefix.plugin_repair(config, plugin, source["name"], target):
-            util.log(note)
-        for note in recipefix.normalize_tree(target):
-            util.log(note)
-        snapshots[source["name"]] = target
-    return snapshots
+    # Vendoring describes every version, so it takes the sources at their current
+    # state rather than at a version's cutoff (hence `cutoff=None`).
+    from . import sources as sources_module
+
+    return {
+        name: directory
+        for name, (directory, _commit) in sources_module.prepare(
+            config, ctx, plugin, refresh=refresh, env=env
+        ).items()
+    }
 
 
 def _collect_owned(config: dict, ctx, plugin, sources: dict[str, Path], target: str) -> set[str]:

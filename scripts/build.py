@@ -22,6 +22,7 @@ from lib import (  # noqa: E402
     plugins,
     recipefix,
     repos,
+    sources,
     util,
     vendoring,
     xmake_env,
@@ -96,31 +97,15 @@ def main() -> int:
     require = f"{upstream_package} {args.version}"
     util.log("entry: " + entry["id"] + "  configs: " + str(configs))
 
-    snapshot_mode = str(config.get("recipes", {}).get("snapshotMode", "version"))
-    recipe_commits: dict[str, str] = {}
-    local_repos: list[tuple[str, Path]] = []
-    main_repo = None
-    build_env = util.subprocess_env(config, proxy=proxy)
-    for source in config.get("recipes", {}).get("sources", []):
-        mirror = ctx.mirror(source["name"], source["url"])
-        wanted = None if snapshot_mode == "head" else plugin.call("recipe_cutoff", ctx, args.version, commit)
-        if wanted:
-            dest = util.ROOT / ".vendor" / f"{source['name']}@{args.version}"
-        else:
-            dest = util.ROOT / ".vendor" / f"{source['name']}@{repos.commit_at(mirror, env=build_env)[:12]}"
-        recipe_commits[source["name"]] = repos.snapshot(
-            mirror, dest, cutoff_iso=wanted, env=build_env
-        )
-        for note in recipefix.apply_fixups(config, source["name"], dest):
-            util.log(note)
-        for note in recipefix.plugin_repair(config, plugin, source["name"], dest):
-            util.log(note)
-        for note in recipefix.normalize_tree(dest):
-            util.log(note)
-        if source["name"] == "xmake-repo":
-            main_repo = dest
-        else:
-            local_repos.append((source["name"], dest))
+    cutoff_for_recipes = plugin.call("recipe_cutoff", ctx, args.version, commit)
+    prepared = sources.prepare(
+        config, ctx, plugin, cutoff=cutoff_for_recipes, label=args.version
+    )
+    recipe_commits = {name: commit_sha for name, (_dir, commit_sha) in prepared.items()}
+    main_repo = prepared.get("xmake-repo", (None, ""))[0]
+    local_repos = [
+        (name, directory) for name, (directory, _sha) in prepared.items() if name != "xmake-repo"
+    ]
 
     # Keep the official precompiled mirror out of the way: the closure has to be
     # built from source with the era recipes, not fetched as someone else's artifact.

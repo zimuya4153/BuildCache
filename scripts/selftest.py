@@ -144,18 +144,12 @@ def _pick_meta(ctx, component: str, version: str) -> dict | None:
 
 
 def _snapshot(config: dict, ctx, name: str, proxy: str | None) -> Path:
-    from lib import recipefix, repos
+    from lib import sources as sources_module
 
-    source = next(item for item in config["recipes"]["sources"] if item["name"] == name)
-    mirror = ctx.mirror(source["name"], source["url"])
-    env = util.subprocess_env(config, proxy=proxy)
-    commit = repos.commit_at(mirror, env=env)
-    dest = util.ROOT / ".vendor" / f"{source['name']}@{commit[:12]}"
-    if not (dest / "packages").is_dir():
-        repos.snapshot(mirror, dest, commit=commit, env=env)
-    recipefix.apply_fixups(config, source["name"], dest)
-    recipefix.normalize_tree(dest)
-    return dest
+    prepared = sources_module.prepare(
+        config, ctx, only=name, env=util.subprocess_env(config, proxy=proxy)
+    )
+    return prepared[name][0]
 
 
 def _published_repo(config: dict, ctx, proxy: str | None) -> Path:
