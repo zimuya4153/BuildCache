@@ -12,6 +12,7 @@ import json
 import os
 import re
 import subprocess
+import time
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -29,6 +30,8 @@ class Sandbox:
     env: dict = field(default_factory=dict)
     xmake_exe: Path | None = None
     timeout: float | None = 5400
+    heartbeat: float = 60.0
+    silent_timeout: float = 1800.0
 
     def xmake(
         self,
@@ -64,7 +67,15 @@ class Sandbox:
         Buffering the child's output (``capture=True``) makes a long package
         build look like a hang both locally and in CI, where a step that prints
         nothing for many minutes may be treated as dead.
+
+        Some individual steps are silent for a long time by nature (cloning a
+        big repository, a download without a TTY to render progress into). A
+        heartbeat keeps such a run visibly alive, and a silence limit turns a
+        genuinely stuck child into a failure instead of a run that never ends.
         """
+        import queue
+        import threading
+
         cmd = [str(self.xmake_exe)] + [str(a) for a in args]
         util.log("+ " + " ".join(cmd))
         process = subprocess.Popen(
@@ -78,8 +89,32 @@ class Sandbox:
             errors="replace",
             bufsize=1,
         )
-        collected = []
-        for line in process.stdout or []:
+        lines: "queue.Queue" = queue.Queue()
+
+        def pump():
+            for line in process.stdout or []:
+                lines.put(line)
+            lines.put(None)
+
+        threading.Thread(target=pump, daemon=True).start()
+        collected: list[str] = []
+        started = last = time.time()
+        while True:
+            try:
+                line = lines.get(timeout=self.heartbeat)
+            except queue.Empty:
+                idle = time.time() - last
+                util.log(f"  | ... still running ({int(time.time() - started)}s, {int(idle)}s silent)")
+                if self.silent_timeout and idle > self.silent_timeout:
+                    process.kill()
+                    util.die(
+                        f"no output for {int(idle)}s, killing what looks like a stuck step: "
+                        + " ".join(cmd)
+                    )
+                continue
+            if line is None:
+                break
+            last = time.time()
             util.log("  | " + line.rstrip())
             collected.append(line)
         code = process.wait()
@@ -300,4 +335,6 @@ def create_sandbox(
         env=env,
         xmake_exe=xmake_exe,
         timeout=float(config.get("xmake", {}).get("timeoutSeconds", 5400)),
+        heartbeat=float(config.get("xmake", {}).get("heartbeatSeconds", 60)),
+        silent_timeout=float(config.get("xmake", {}).get("silentTimeoutSeconds", 1800)),
     )

@@ -81,6 +81,8 @@
   "xmake": {
     "minArtifactsVersion": "3.0.0",
     "installRetries": 3,
+    "heartbeatSeconds": 60,
+    "silentTimeoutSeconds": 1800,
     "cacheDir": ".cache/xmake"
   },
   "batch": {
