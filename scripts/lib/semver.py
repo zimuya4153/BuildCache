@@ -1,18 +1,41 @@
-"""Minimal version helpers for xmake-style version strings."""
+"""Version helpers built on the `semver` package (installed automatically).
+
+BuildCache compares real library versions and xmake releases (`11.2.0`,
+`2025.02.05`, `v26.51.1-server.7`, ...); the library handles all of them, so
+there is no hand-written comparison left.
+"""
 
 from __future__ import annotations
 
-import re
+import semver as _semver
 
-_PATTERN = re.compile(r"^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:[-+](.*))?$")
+
+def parse(version: str) -> _semver.Version:
+    """Parse a version, tolerating `v`, `alias:` prefixes and leading zeros.
+
+    SemVer forbids leading zeros, but projects such as rapidjson or stb use date
+    versions (`2025.02.05`), so the numeric components are normalised first.
+    """
+    text = str(version).strip()
+    if ":" in text and "//" not in text:
+        text = text.split(":", 1)[1]
+    text = text.lstrip("vV")
+    head, _, tail = text.partition("-")
+    parts = head.split(".")
+    if parts and all(part.isdigit() for part in parts):
+        head = ".".join(str(int(part)) for part in parts)
+        text = head + (("-" + tail) if tail else "")
+    try:
+        return _semver.Version.parse(text)
+    except ValueError as error:
+        raise ValueError("cannot parse version " + repr(version)) from error
 
 
 def key(version: str):
-    match = _PATTERN.match(str(version).strip())
-    if not match:
-        return (0, 0, 0, str(version))
-    major, minor, patch, suffix = match.groups()
-    return (int(major), int(minor or 0), int(patch or 0), suffix or "")
+    """Sort key: numeric version plus prerelease (release sorts above pre)."""
+    parsed = parse(version)
+    prerelease = str(parsed.prerelease or "")
+    return (parsed.major, parsed.minor, parsed.patch, 1 if not prerelease else 0, prerelease)
 
 
 def sort_desc(versions):
@@ -20,27 +43,8 @@ def sort_desc(versions):
 
 
 def compare(a: str, b: str) -> int:
-    """Prefer the `semver` package when it is installed, fall back to `key()`."""
-    left, right = _library(a), _library(b)
-    if left is not None and right is not None:
-        return left.__gt__(right) - (left < right)
-    ka, kb = key(a), key(b)
-    return (ka > kb) - (ka < kb)
-
-
-try:  # optional dependency: pip install semver
-    import semver as _semver_package
-except ImportError:  # pragma: no cover - dependency is optional
-    _semver_package = None
-
-
-def _library(version: str):
-    if _semver_package is None:
-        return None
-    try:
-        return _semver_package.Version.parse(str(version).strip().lstrip("v"))
-    except (ValueError, TypeError):
-        return None
+    pa, pb = parse(a), parse(b)
+    return (pa > pb) - (pa < pb)
 
 
 def gt(a: str, b: str) -> bool:

@@ -40,7 +40,7 @@ packages/<首字母>/<包名>/<版本>/manifest.txt
 ## 4. 快速开始（本机）
 
 ```bash
-# 依赖：Python 3.14+、已登录的 gh CLI；无需第三方 Python 库
+# 依赖：Python 3.14+、已登录的 gh CLI；第三方包（semver）首次运行会自动 pip 安装
 python scripts/vendor.py                     # 生成前缀化配方
 python scripts/cache.py trigger --plugin ll --first-only --local   # 编一个版本并发布
 python scripts/cache.py verify               # 校验「索引 ↔ 线上 asset」一致

@@ -89,8 +89,9 @@ check on demand.
 
 Notes:
 
-* Python 3.14+ and an authenticated `gh` CLI are required; there are no
-  third-party Python dependencies.
+* Python 3.14+ and an authenticated `gh` CLI are required. Third-party Python
+  packages (`semver`) are installed automatically on first run; set
+  `BUILDCACHE_NO_AUTO_INSTALL=1` to opt out.
 * `BUILDCACHE_PROXY=http://127.0.0.1:2080` enables a proxy for one invocation.
   It is never persisted and never a default.
 * `BUILDCACHE_PUSH_TOKEN` is only needed in CI to push the second repository.

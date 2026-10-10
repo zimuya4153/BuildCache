@@ -1,6 +1,2 @@
-# BuildCache intentionally depends on nothing outside the Python standard library.
-#
-# - JSON config (no PyYAML)
-# - zstd via stdlib `compression.zstd` (Python >= 3.14), falling back to bsdtar/7-Zip
-# - HTTP via urllib.request
-# - git/gh through the CLI binaries that are already present in CI
+# Installed automatically on first run (see scripts/lib/deps.py).
+semver>=3.0
