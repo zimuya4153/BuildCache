@@ -1,0 +1,114 @@
+name: Build SDK
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      plugin:
+        description: only build this plugin
+        default: ""
+      version:
+        description: only build this exact SDK version
+        default: ""
+      batch:
+        description: versions per plugin, newest first
+        default: "3"
+      first_only:
+        description: only the newest version
+        type: boolean
+        default: false
+      rebuild_all:
+        description: ignore what is already published
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  discover:
+    runs-on: windows-latest
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Discover
+        id: discover
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          python scripts/discover.py `
+            --plugin "${{ inputs.plugin }}" `
+            --version "${{ inputs.version }}" `
+            --batch "${{ inputs.batch }}" `
+            --report-skipped
+
+  build:
+    needs: discover
+    if: needs.discover.outputs.matrix != '[]'
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include: ${{ fromJson(needs.discover.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Build ${{ matrix.package }} ${{ matrix.version }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/build.py --plugin "${{ matrix.plugin }}" --version "${{ matrix.version }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-result-${{ matrix.plugin }}-${{ strategy.job-index }}
+          path: results/build-result-*.json
+          if-no-files-found: ignore
+
+  finalize:
+    needs: build
+    if: always() && needs.build.result != 'skipped'
+    runs-on: windows-latest
+    concurrency:
+      group: buildcache-finalize
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: build-result-*
+          merge-multiple: true
+          path: results
+      - name: Configure git
+        run: |
+          git config --global user.name "buildcache"
+          git config --global user.email "buildcache@localhost"
+      - name: Update index and manifests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUILDCACHE_PUSH_TOKEN: ${{ secrets.PACKAGE_REPO_TOKEN }}
+        run: python scripts/finalize.py --push
+
+  verify:
+    needs: finalize
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Consume the published artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/selftest.py --component mifcahce_levilamina

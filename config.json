@@ -1,0 +1,143 @@
+{
+  "prefix": "mifcahce_",
+  "platform": {
+    "plat": "windows",
+    "arch": "x64",
+    "mode": "release",
+    "vsToolset": null
+  },
+  "repos": {
+    "package": {
+      "owner": "zimuya4153",
+      "repo": "xmake-repo",
+      "branch": "main"
+    },
+    "cache": {
+      "owner": "zimuya4153",
+      "repo": "BuildCache"
+    },
+    "index": {
+      "branch": "index"
+    }
+  },
+  "release": {
+    "maxAssetsPerRelease": 800,
+    "targetBranch": "assets"
+  },
+  "artifacts": {
+    "container": "7z",
+    "containers": {
+      "mifcahce_levilamina": "7z"
+    }
+  },
+  "paths": {
+    "sandboxRoot": null
+  },
+  "recipes": {
+    "sources": [
+      {
+        "name": "levimc-repo",
+        "url": "https://github.com/LiteLDev/xmake-repo.git"
+      },
+      {
+        "name": "oeotyan-repo",
+        "url": "https://github.com/OEOTYAN/xmake-repo.git"
+      },
+      {
+        "name": "xmake-repo",
+        "url": "https://github.com/xmake-io/xmake-repo.git"
+      }
+    ],
+    "skipPackages": [
+      "cmake",
+      "ninja",
+      "pkg-config",
+      "pkgconf",
+      "meson",
+      "autoconf",
+      "automake",
+      "libtool",
+      "7z",
+      "doxygen",
+      "gtkdoc",
+      "node",
+      "python",
+      "perl",
+      "nasm",
+      "yasm",
+      "llvm",
+      "llvm-prebuilt",
+      "mingw-w64",
+      "mingw"
+    ]
+  },
+  "xmake": {
+    "minArtifactsVersion": "3.0.0",
+    "cacheDir": ".cache/xmake"
+  },
+  "batch": {
+    "defaultSize": 20,
+    "maxMatrix": 200
+  },
+  "plugins": [
+    {
+      "name": "ll",
+      "module": "plugins/ll/plugin.py",
+      "enabled": true
+    },
+    {
+      "name": "moredimensions",
+      "module": "plugins/upstream.py",
+      "enabled": true,
+      "settings": {
+        "id": "moredimensions",
+        "display": "MoreDimensions",
+        "upstream": "https://github.com/LiteLDev/MoreDimensions.git",
+        "upstream_repo": "LiteLDev/MoreDimensions",
+        "recipe_source": "levimc-repo",
+        "recipe_package": "more-dimensions",
+        "toolchain": "msvc",
+        "extra_packages": [
+          "levilamina"
+        ],
+        "variants": [
+          {
+            "name": "default",
+            "configs": {}
+          }
+        ]
+      }
+    },
+    {
+      "name": "bsci",
+      "module": "plugins/upstream.py",
+      "enabled": true,
+      "settings": {
+        "id": "bsci",
+        "display": "BedrockServerClientInterface",
+        "upstream": "https://github.com/OEOTYAN/BedrockServerClientInterface.git",
+        "upstream_repo": "OEOTYAN/BedrockServerClientInterface",
+        "recipe_source": "oeotyan-repo",
+        "recipe_package": "bsci",
+        "toolchain": "msvc",
+        "extra_packages": [
+          "levilamina"
+        ],
+        "variants": [
+          {
+            "name": "server",
+            "configs": {
+              "target_type": "server"
+            }
+          },
+          {
+            "name": "client",
+            "configs": {
+              "target_type": "client"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

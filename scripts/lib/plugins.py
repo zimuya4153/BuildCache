@@ -1,0 +1,98 @@
+"""Load in-tree plugins (``plugins/<name>/plugin.py``)."""
+
+from __future__ import annotations
+
+import importlib.util
+from pathlib import Path
+
+from . import util
+
+
+class Plugin:
+    def __init__(self, name: str, module, path: Path):
+        self.name = name
+        self.module = module
+        self.path = path
+
+    def call(self, function: str, *args, **kwargs):
+        handler = getattr(self.module, function, None)
+        if handler is None:
+            return None
+        return handler(*args, **kwargs)
+
+    def has(self, function: str) -> bool:
+        return hasattr(self.module, function)
+
+
+def load_all(config: dict) -> list[Plugin]:
+    plugins = []
+    for spec in config.get("plugins", []):
+        if not spec.get("enabled", True):
+            continue
+        path = util.ROOT / spec["module"]
+        if not path.is_file():
+            util.die(f"plugin module not found: {path}")
+        module_spec = importlib.util.spec_from_file_location(
+            f"buildcache_plugin_{spec['name']}", path
+        )
+        module = importlib.util.module_from_spec(module_spec)
+        module_spec.loader.exec_module(module)
+        if spec.get("settings") and hasattr(module, "create"):
+            module = module.create(spec["settings"])
+        plugins.append(Plugin(spec["name"], module, path))
+    return plugins
+
+
+class Context:
+    """Everything a plugin may need while discovering or building."""
+
+    def __init__(self, config: dict, proxy: str | None = None, mirrors: dict | None = None):
+        self.config = config
+        self.proxy = proxy
+        self.mirrors: dict = mirrors if mirrors is not None else {}
+        self.index_root = util.absolute(config.get("_index_dir", ".work/index"))
+        self.package_repo = util.ROOT / config.get("_package_repo_dir", ".work/xmake-repo")
+        self.vendor_root = util.ROOT / config.get("_vendor_root", ".vendor")
+
+    def ensure_index(self, create: bool = False) -> Path:
+        """Materialise the index branch (read-only unless ``create``)."""
+        from . import gitops
+
+        cache_cfg = self.config["repos"]["cache"]
+        branch = (self.config.get("repos", {}).get("index") or {}).get("branch", "index")
+        seed = None
+        if create:
+            seed = (
+                ".buildcache-index.md",
+                "# index\n\nGenerated index of every prebuilt SDK artifact.\n"
+                "Kept on its own branch so the framework branch stays clean.\n",
+            )
+        return gitops.ensure_branch(
+            self.config,
+            cache_cfg["owner"],
+            cache_cfg["repo"],
+            branch,
+            self.index_root,
+            seed=seed,
+            proxy=self.proxy,
+        )
+
+    def mirror(self, name: str, url: str) -> Path:
+        from . import repos
+
+        if name not in self.mirrors:
+            self.mirrors[name] = repos.mirror(self.config, name, url, proxy=self.proxy)
+        return self.mirrors[name]
+
+    @property
+    def prefix(self) -> str:
+        return str(self.config.get("prefix", ""))
+
+    def package_name(self, upstream: str) -> str:
+        return f"{self.prefix}{upstream}"
+
+    def recipe_source(self, name: str) -> Path | None:
+        for source in self.config.get("recipes", {}).get("sources", []):
+            if source["name"] == name:
+                return self.mirror(name, source["url"])
+        return None

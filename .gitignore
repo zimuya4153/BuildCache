@@ -1,0 +1,11 @@
+# Local build workspace (never committed)
+.work/
+.vendor/
+.sandbox/
+.cache/
+__pycache__/
+*.pyc
+
+# Generated build results
+build-result-*.json
+results/
