@@ -257,6 +257,7 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
         "version": args.version,
         "entry": entry["id"],
         "configs": configs,
+        "revision": int(config.get("revision", 1)),
         "upstream_commit": commit,
         "entry": entry["id"],
         "xmake_version": xmake_version,

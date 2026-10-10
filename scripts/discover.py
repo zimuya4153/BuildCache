@@ -66,8 +66,12 @@ def main() -> int:
             if not args.rebuild_all and version in built and not args.version:
                 continue
             item = by_version[version]
-            done = set() if args.rebuild_all else index_store.built_entries(
-                ctx.index_root, package, version
+            done = (
+                set()
+                if args.rebuild_all
+                else index_store.built_entries_at_revision(
+                    ctx.index_root, package, version, int(config.get("revision", 1))
+                )
             )
             for entry in plugin.entries(ctx, version, item["commit"]):
                 if entry["id"] in done:

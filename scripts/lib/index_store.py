@@ -55,6 +55,22 @@ def built_entries(index_root: Path, package: str, version: str) -> set[str]:
     return set(entries(version_meta(index_root, package, version)).keys())
 
 
+def built_entries_at_revision(
+    index_root: Path, package: str, version: str, revision: int
+) -> set[str]:
+    """Entries that are still current for the given build revision.
+
+    Bumping ``revision`` in the config therefore marks every older build as
+    stale, which is how a fix in a recipe or in a plugin gets re-published
+    instead of being masked by "this version is already in the index".
+    """
+    found = set()
+    for entry_id, entry in entries(version_meta(index_root, package, version)).items():
+        if int(entry.get("revision") or 0) >= int(revision):
+            found.add(entry_id)
+    return found
+
+
 def entry_artifacts(index_root: Path, package: str, version: str, entry_id: str) -> list[dict]:
     entry = entries(version_meta(index_root, package, version)).get(entry_id) or {}
     return list(entry.get("artifacts") or [])
