@@ -15,6 +15,9 @@ def parse(version: str) -> _semver.Version:
 
     SemVer forbids leading zeros, but projects such as rapidjson or stb use date
     versions (`2025.02.05`), so the numeric components are normalised first.
+    Incomplete versions are padded the same way: this ecosystem really does ship
+    two-component versions (`leveldb 1.23`), and refusing to sort the build
+    ledger over one of them would be a poor trade.
     """
     text = str(version).strip()
     if ":" in text and "//" not in text:
@@ -23,6 +26,8 @@ def parse(version: str) -> _semver.Version:
     head, _, tail = text.partition("-")
     parts = head.split(".")
     if parts and all(part.isdigit() for part in parts):
+        while len(parts) < 3:
+            parts.append("0")
         head = ".".join(str(int(part)) for part in parts)
         text = head + (("-" + tail) if tail else "")
     try:
@@ -33,9 +38,27 @@ def parse(version: str) -> _semver.Version:
 
 def key(version: str):
     """Sort key: numeric version plus prerelease (release sorts above pre)."""
-    parsed = parse(version)
+    try:
+        parsed = parse(version)
+    except ValueError:
+        # Sorting the ledger must never fail over an unusual version string;
+        # unparseable entries simply sort last, keeping the order stable.
+        _warn_once(version)
+        return (0, 0, 0, 0, str(version))
     prerelease = str(parsed.prerelease or "")
     return (parsed.major, parsed.minor, parsed.patch, 1 if not prerelease else 0, prerelease)
+
+
+_WARNED: set[str] = set()
+
+
+def _warn_once(version: str) -> None:
+    if version in _WARNED:
+        return
+    _WARNED.add(version)
+    from . import util
+
+    util.warn(f"version {version!r} is not SemVer; ordering it by string instead")
 
 
 def sort_desc(versions):

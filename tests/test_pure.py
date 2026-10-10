@@ -36,6 +36,16 @@ def test_prerelease_sorts_below_release():
     assert semver.compare("1.2.3-rc.1", "1.2.3") < 0
 
 
+def test_two_component_versions_are_padded():
+    # leveldb really ships "1.23"; the ledger must keep sorting.
+    assert semver.sort_desc(["1.23", "1.22.9", "11.2.0"]) == ["11.2.0", "1.23", "1.22.9"]
+    assert semver.compare("1.23", "1.22") > 0
+
+
+def test_unparseable_version_does_not_break_sorting():
+    assert semver.sort_desc(["master", "1.23", "2.0.0"])[0] == "2.0.0"
+
+
 # ---------------------------------------------------------------------- patches
 def test_repair_patch_restores_blank_context_lines():
     broken = "@@ -1,2 +1,2 @@\n-old\n+new\n\n context\n"
