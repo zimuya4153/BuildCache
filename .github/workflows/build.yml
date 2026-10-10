@@ -1,8 +1,11 @@
 name: Build SDK
 
 on:
-  schedule:
-    - cron: "0 2 * * *"
+  # Automatic (scheduled) runs are off on purpose: a round is expensive and is
+  # started by hand. Put the cron trigger back when the cache should refill
+  # itself again:
+  #   schedule:
+  #     - cron: "0 2 * * *"
   workflow_dispatch:
     inputs:
       plugin:
@@ -128,3 +131,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/selftest.py --component mifcache_levilamina
+      # The same archive is published under three toolchain addresses, and the
+      # one a project picks depends on how it declares its toolchain. The step
+      # above covers "declares nothing"; this covers the manifest alias a
+      # clang-cl plugin project resolves to.
+      - name: Consume it as a clang-cl project
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/selftest.py --component mifcache_levilamina --toolchain clang-cl
