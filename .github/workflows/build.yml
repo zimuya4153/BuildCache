@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   discover:
-    runs-on: ${{ matrix.image || 'windows-latest' }}
+    runs-on: windows-latest
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
     steps:
@@ -51,7 +51,9 @@ jobs:
   build:
     needs: discover
     if: needs.discover.outputs.matrix != '[]'
-    runs-on: windows-latest
+    # The era of the version decides the image: ancient tags need an MSVC of
+    # their own generation (see plugins/ll/plugin.py::toolchain_plan).
+    runs-on: ${{ matrix.image || 'windows-latest' }}
     strategy:
       fail-fast: false
       max-parallel: 3
