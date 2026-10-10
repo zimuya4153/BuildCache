@@ -25,6 +25,7 @@ class Plugin:
         "git_cutoff",
         "extra_deps",
         "asset_name",
+        "register_release_columns",
         "should_skip",
         "repair_recipes",
     }
@@ -98,6 +99,17 @@ def load_all(config: dict) -> list[Plugin]:
             module = module.create(spec["settings"])
         plugins.append(Plugin(spec["name"], module, path))
     return plugins
+
+
+def project_packages(config: dict, ctx) -> set[str]:
+    """Published names of the packages that *are* one of the configured projects.
+
+    Those are the only ones with a build-entry dimension of their own: everything
+    else a build pulls in is just a dependency.
+    """
+    return {
+        ctx.package_name(plugin.call("metadata")["package"]) for plugin in load_all(config)
+    }
 
 
 class Context:

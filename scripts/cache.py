@@ -25,7 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import gh, gitops, index_store, plugins, util, verify  # noqa: E402
+from lib import gh, gitops, index_store, plugins, reports, util, verify  # noqa: E402
 
 _SPEC = re.compile(r'"([A-Za-z0-9][A-Za-z0-9_.\-]*)(?:\[[^\]]*\])?(?:\s+[^"]*)?"')
 
@@ -114,6 +114,10 @@ def main() -> int:
 # --------------------------------------------------------------------------- list
 def cmd_list(ctx, args) -> int:
     ctx.ensure_index()
+    # Same columns as a release body: the core ones plus whatever the project's
+    # plugin registers, so the two views cannot drift apart.
+    table = reports.for_plugins(ctx.config, ctx, plugins.load_all(ctx.config))
+    own = plugins.project_packages(ctx.config, ctx)
     total = 0
     for package, version, variant, artifacts in _inventory(ctx, args.package):
         size = sum(int(item.get("size") or 0) for item in artifacts)
@@ -122,14 +126,14 @@ def cmd_list(ctx, args) -> int:
             f"{package}@{version} [{variant}]  {len(artifacts)} artifact(s)  {size / 1e6:.1f} MB"
         )
         if args.versions:
-            for item in artifacts:
-                extra = ""
-                aliases = item.get("aliases") or []
-                if aliases:
-                    extra = "  + " + ", ".join(
-                        alias.get("id") or alias.get("toolchain") or "" for alias in aliases
-                    )
-                util.log(f"    {item['asset']}  ({item.get('release')}){extra}")
+            rows = [
+                reports.artifact_row(
+                    item, version=version, entry_id=variant, own=package in own
+                )
+                for item in artifacts
+            ]
+            for line in table.render(rows):
+                util.log("  " + line)
     util.log(f"total: {total / 1e6:.1f} MB")
     return 0
 

@@ -22,6 +22,7 @@ from lib import (  # noqa: E402
     manifest,
     plugins,
     recipefix,
+    reports,
     schemas,
     semver,
     util,
@@ -279,29 +280,58 @@ def test_ll_entries_follow_the_upstream_build_shape(monkeypatch):
 
 
 # ------------------------------------------------------------- failed installs
-def test_release_body_links_the_asset_directly():
-    """The asset name alone is not clickable; the body links to the download."""
-    notes = gh.release_notes(
-        "levilamina_0",
-        [
-            {
-                "version": "26.51.6",
-                "entry": "server",
-                "compiled_with": "clang-cl",
-                "toolset": "14.44.35207",
-                "buildhash": "906b0696836741eda5b5749d54146a8c",
-                "asset": "levilamina-906b0696836741eda5b5749d54146a8c.7z",
-                "url": "https://github.com/zimuya4153/BuildCache/releases/download/"
-                "levilamina_0/levilamina-906b0696836741eda5b5749d54146a8c.7z",
-                "aliases": ["msvc", "clang-cl"],
-            }
-        ],
+def test_release_table_only_shows_columns_that_carry_information():
+    """The core columns come from the framework, the rest from the plugin.
+
+    A column whose value is empty in every row is dropped, so a dependency's table
+    has no ``entry`` and no ``compiled with`` -- those are the project's concepts.
+    """
+    table = reports.Table()
+    ll = next(item for item in plugins.load_all(util.load_config()) if item.name == "ll")
+    ll.call("register_release_columns", table, None)
+
+    own_row = reports.artifact_row(
+        {
+            "version": "26.51.6",
+            "buildhash": "906b0696836741eda5b5749d54146a8c",
+            "toolset": "14.44.35207",
+            "asset": "levilamina-906b0696836741eda5b5749d54146a8c.7z",
+            "url": "https://example.invalid/levilamina-906b0696836741eda5b5749d54146a8c.7z",
+            "aliases": [{"id": "msvc"}, {"id": "clang-cl"}],
+        },
+        entry_id="server",
+        entry={"compiled_with": "clang-cl"},
     )
-    assert (
-        "[levilamina-906b0696836741eda5b5749d54146a8c.7z]"
-        "(https://github.com/zimuya4153/BuildCache/releases/download/levilamina_0/"
-        "levilamina-906b0696836741eda5b5749d54146a8c.7z)"
-    ) in notes
+    dependency_row = reports.artifact_row(
+        {
+            "version": "11.2.0",
+            "buildhash": "ee1902dd7cff4195a287949f80dbce70",
+            "asset": "fmt-ee1902dd7cff4195a287949f80dbce70.7z",
+            "url": "https://example.invalid/fmt-ee1902dd7cff4195a287949f80dbce70.7z",
+        },
+        own=False,
+    )
+
+    owned = "\n".join(table.render([own_row]))
+    assert "| entry |" in owned and "| compiled with |" in owned
+    # the asset name is a direct download link
+    assert "[levilamina-906b0696836741eda5b5749d54146a8c.7z](https://example.invalid/" in owned
+
+    dependency = "\n".join(table.render([dependency_row]))
+    assert "| entry |" not in dependency
+    assert "| compiled with |" not in dependency
+    assert "| version |" in dependency and "| asset |" in dependency
+
+
+def test_table_manager_adds_and_removes_columns():
+    table = reports.Table()
+    assert table.keys() == ["version", "buildhash", "toolset", "asset"]
+    table.add("variant", title="variant", render=reports.code)
+    assert table.has("variant") and table.keys()[-1] == "variant"
+    # registering the same key twice replaces instead of duplicating
+    table.add("variant", title="build entry")
+    assert table.keys().count("variant") == 1
+    assert table.remove("variant").has("variant") is False
 
 
 def test_failed_install_logs_are_found(tmp_path: Path):

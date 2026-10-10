@@ -123,8 +123,15 @@ def release_title(tag: str) -> str:
     return library or tag
 
 
-def release_notes(tag: str, rows: list[dict] | None = None, prefix: str = "") -> str:
-    """Release bodies carry the metadata that no longer lives in asset names."""
+def release_notes(tag: str, rows: list[dict] | None = None, table=None, prefix: str = "") -> str:
+    """Release bodies carry the metadata that no longer lives in asset names.
+
+    The columns come from :mod:`lib.reports`: the framework supplies the mandatory
+    core and the project's plugin registers whatever else its packages need, so
+    nothing project specific is hardcoded here.
+    """
+    from . import reports
+
     config = util.load_config()
     cache = (config.get("repos") or {}).get("cache") or {}
     source = ""
@@ -140,44 +147,8 @@ def release_notes(tag: str, rows: list[dict] | None = None, prefix: str = "") ->
     if prefix:
         lines.append(f"- Package prefix: `{prefix}`")
     if rows:
-        lines += [
-            "",
-            f"Cached builds ({len(rows)}):",
-            "",
-            "| version | entry | compiled with | toolset | build hash | also addressable as | asset |",
-            "|---|---|---|---|---|---|---|",
-        ]
-        for row in rows:
-            also = ", ".join(f"`{item}`" for item in row.get("aliases") or []) or "-"
-            # A direct link, so the artifact is one click away: the asset name
-            # alone is not clickable, and browsing the release to find it means
-            # scrolling through every shard member.
-            name = row.get("asset", "")
-            asset = f"[{name}]({row['url']})" if row.get("url") else name
-            lines.append(
-                "| `{version}` | `{entry}` | `{toolchain}` | `{toolset}` | "
-                "`{buildhash}` | {also} | {asset} |".format(
-                    version=row.get("version", ""),
-                    entry=row.get("entry", row.get("variant", "")),
-                    toolchain=row.get("compiled_with") or row.get("toolchain", ""),
-                    toolset=row.get("toolset") or "-",
-                    buildhash=row.get("buildhash", ""),
-                    also=also,
-                    asset=asset,
-                )
-            )
-        lines += [
-            "",
-            "*`compiled with`* is the compiler that really built the sources. It can",
-            "differ from the toolchain the package was resolved under: LeviLamina's",
-            "own xmake.lua forces clang-cl for its targets, so its SDK is a clang-cl",
-            "build even though the package resolution (and therefore the build hash)",
-            "uses msvc.",
-            "",
-            "*`also addressable as`* lists the toolchain declarations this same",
-            "archive answers to, as extra manifest entries: a project that declares",
-            "one of them needs no second artifact.",
-        ]
+        table = table or reports.Table()
+        lines += table.render(rows, title="Cached builds")
     return "\n".join(lines)
 
 

@@ -221,6 +221,42 @@ def toolchain_aliases(ctx, version: str, commit: str) -> list[dict]:
     return found
 
 
+def register_release_columns(table, ctx=None) -> None:
+    """The columns a LeviLamina release body needs, on top of the core ones.
+
+    These are *this project's* concepts, so they live here rather than in the
+    renderer: the framework's table is only version, build hash and the artifact.
+    A column whose value is empty in every row is not rendered, which is what
+    keeps them out of a dependency's release body.
+    """
+    from lib import reports
+
+    table.add(
+        "entry",
+        title="entry",
+        render=reports.code,
+        note="*`entry`* is the build this artifact belongs to; a dependency is the\n"
+        "same artifact either way and therefore has no entry.",
+    )
+    table.add(
+        "compiled_with",
+        title="compiled with",
+        render=reports.code,
+        note="*`compiled with`* is the compiler that really built the sources. It can\n"
+        "differ from the toolchain the package was resolved under: LeviLamina's own\n"
+        "xmake.lua forces clang-cl for its targets, so its SDK is a clang-cl build\n"
+        "even though the package resolution (and therefore the build hash) uses msvc.",
+    )
+    table.add(
+        "aliases",
+        title="also addressable as",
+        render=reports.listed,
+        note="*`also addressable as`* lists the toolchain declarations this same\n"
+        "archive answers to, as extra manifest entries: a project that declares one\n"
+        "of them needs no second artifact.",
+    )
+
+
 def extra_deps(ctx, version: str, commit: str) -> list[dict]:
     """Dependencies only named by LeviLamina's own xmake.lua."""
     text = upstream_xmake_lua(ctx, commit)

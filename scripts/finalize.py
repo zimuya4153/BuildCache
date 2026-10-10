@@ -8,7 +8,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import gitops, index_store, manifest as manifest_lib, plugins, util, verify  # noqa: E402
+from lib import (  # noqa: E402
+    gitops,
+    index_store,
+    manifest as manifest_lib,
+    plugins,
+    reports,
+    util,
+    verify,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -142,10 +150,7 @@ def write_ledger(config: dict, ctx, results: list[dict], dry_run: bool = False) 
     two builds for something built once and would put an entry name, and an
     implied ``target_type``, on packages that know nothing about either.
     """
-    own_packages = {
-        ctx.package_name(plugin.call("metadata")["package"])
-        for plugin in plugins.load_all(config)
-    }
+    own_packages = plugins.project_packages(config, ctx)
     components: dict[tuple[str, str], dict] = {}
     entries = 0
     for result in results:
@@ -216,10 +221,36 @@ def write_ledger(config: dict, ctx, results: list[dict], dry_run: bool = False) 
 
 def refresh_release_notes(config: dict, ctx) -> None:
     """Keep each release body listing what that shard currently holds."""
-    from lib import gh, index_store
+    from lib import gh
 
     cache_cfg = config["repos"]["cache"]
     owner, repo = cache_cfg["owner"], cache_cfg["repo"]
+    # The core columns come from the framework, the rest from the project's own
+    # plugin; a column that is empty in every row of a shard is not rendered.
+    table = reports.for_plugins(config, ctx, plugins.load_all(config))
+    shards, prefix = release_rows(config, ctx)
+    for shard, rows in sorted(shards.items()):
+        gh.update_release_notes(
+            owner,
+            repo,
+            shard,
+            gh.release_notes(
+                shard,
+                rows,
+                table=table,
+                prefix=prefix,
+            ),
+            config=config,
+        )
+    if shards:
+        util.log(f"refreshed release notes for {len(shards)} shard(s)")
+
+
+def release_rows(config: dict, ctx) -> tuple[dict[str, list[dict]], str]:
+    """The table rows of every release shard, and the package prefix."""
+    from lib import index_store
+
+    own = plugins.project_packages(config, ctx)
     shards: dict[str, dict[str, dict]] = {}
     prefix = ""
     for directory in sorted(Path(ctx.index_root).iterdir()):
@@ -230,43 +261,22 @@ def refresh_release_notes(config: dict, ctx) -> None:
                 for artifact in entry.get("artifacts") or []:
                     if not artifact.get("release"):
                         continue
-                    row = {
-                        "version": artifact.get("version") or meta.get("version"),
-                        "entry": variant,
-                        # What compiled the sources, which is not the toolchain the
-                        # *package* resolution used: LeviLamina's own xmake.lua
-                        # forces clang-cl while the package resolves under msvc.
-                        "toolchain": entry.get("toolchain") or meta.get("toolchain") or "",
-                        "compiled_with": entry.get("compiled_with")
-                        or entry.get("upstream_toolchain")
-                        or entry.get("toolchain")
-                        or meta.get("toolchain")
-                        or "",
-                        "toolset": artifact.get("toolset"),
-                        "buildhash": artifact.get("buildhash") or "",
-                        "asset": artifact.get("asset") or "",
-                        "url": artifact.get("url") or "",
-                        "aliases": sorted(
-                            item.get("id") or item.get("toolchain") or ""
-                            for item in artifact.get("aliases") or []
-                        ),
-                    }
+                    row = reports.artifact_row(
+                        artifact,
+                        version=artifact.get("version") or meta.get("version") or "",
+                        entry_id=variant,
+                        entry=entry,
+                        own=directory.name in own,
+                    )
                     shards.setdefault(artifact["release"], {})[row["asset"]] = row
                     prefix = prefix or str(meta.get("prefix") or "")
-    for shard, rows in sorted(shards.items()):
-        gh.update_release_notes(
-            owner,
-            repo,
-            shard,
-            gh.release_notes(
-                shard,
-                sorted(rows.values(), key=lambda item: (item["version"], item["entry"])),
-                prefix=prefix,
-            ),
-            config=config,
-        )
-    if shards:
-        util.log(f"refreshed release notes for {len(shards)} shard(s)")
+    return (
+        {
+            shard: sorted(rows.values(), key=lambda item: (item["version"], item["entry"]))
+            for shard, rows in shards.items()
+        },
+        prefix,
+    )
 
 
 def _remove_legacy_index(config: dict) -> None:
