@@ -33,7 +33,7 @@ packages/<首字母>/<包名>/<版本>/manifest.txt
 | `main` | 框架：`scripts/`、`plugins/`、`recipes/fixups/`、`config.json`、工作流、文档 |
 | `index` 分支 | 生成物：`<包名>/index.json`、`<包名>/versions/<版本>.json` |
 | `assets` 分支 | 空分支，只作为 release tag 的落点，避免污染 main 的 tag |
-| GitHub Releases | 产物本体，按 `<包名>_<序号>` 分片（每片 ≤800 asset） |
+| GitHub Releases | 产物本体，按 `<包名>_<序号>` 分片（每片 ≤800 asset）；asset 名形如 `<原库名>-<buildhash>.7z`，release body 里是**直接下载直链** |
 | `zimuya4153/xmake-repo` | 消费端仓库：前缀化配方 + `manifest.txt` |
 
 所有发布出去的包都是 `mifcache_<原名>`，**不覆写上游包名**；官方仓库继续提供其它依赖。
@@ -96,7 +96,7 @@ msvc 工具链，而它的预编译选择逻辑要求「存在已 check、带 vc
 | `entries(ctx, version, commit)` | 该版本要编几个条目：`[{"id": "server", "configs": {...}}]`；**这是项目特例的归属地**（LL 的 server/client 就写在这里） |
 | `configs(ctx, version, commit)` | 单条目项目的默认 configs |
 | `xmake_version` / `toolchain` / `native_toolchain` | 用哪个 xmake、用哪个工具链编缓存 |
-| `toolchain_aliases(ctx, version, commit)` | 产物还能被哪些消费端工具链使用：`[{"id": "clang-cl", "toolchain": "clang-cl"}]`，命中同一份压缩包、只补 manifest 条目 |
+| `toolchain_aliases(ctx, version, commit)` | 产物还能被哪些消费端工具链使用：`[{"id": "clang-cl", "toolchain": "clang-cl"}]`，命中同一份压缩包、只补 manifest 条目；只声明这个版本真的支持的那些（见下） |
 | `recipe_cutoff` / `git_cutoff` | 配方快照与「未锁版本的 git clone 回退到的日期」 |
 | `extra_deps(ctx, version, commit)` | 只在上游自身 `xmake.lua` 里出现的依赖 |
 | `asset_name(...)` | 自定义 asset 文件名（默认 `<原库名>-<buildhash>.<ext>`） |
@@ -140,6 +140,18 @@ xmake 给产物寻址用的是「平台 + 架构 + configs + 源码 hash + 工�
 
 改了 `toolchain_aliases()` 后不需要手工清缓存：条目里记着 `alias_profiles`，
 `discover` 会把缺这条信息的旧条目自动重新排队。
+
+`entries()` 与 `toolchain_aliases()` 都应该是**版本相关的**：老版本可能既没有 client
+SDK，也没法用 clang-cl 编译，声明了只会让那一轮失败或发出一条谁也用不上的地址。
+LL 插件就是这么做的 —— 扫它自己 `xmake.lua` 里 `target_type` 的写法（1.8 起才有
+client；1.0–1.7 是硬编码 `is_client = false`，0.8/0.13 连选项都没有），以及
+`set_toolchains("clang-cl")` 是否出现（26.20 起才用 clang-cl 编自己）。
+
+索引里 **entry 只属于项目自己的包**：LL 的 `mifcache_levilamina` 按 server/client 记
+两条，依赖项（`mifcache_fmt` 之类）只记一条 `default` —— 不管哪个 entry 拉进来的都是
+同一份产物，把 entry 铺到闭包上只会让账本多算一倍，并把 `target_type` 这种项目特例的
+概念安到无关的包上。插件自己的包同理：`mifcache_levilamina` 本身也是别的插件（bsci 等）
+的依赖，那时它的账仍归 LL 自己的构建。
 
 要分清两件事：**包解析用的工具链**（进 buildhash、决定命中哪条 manifest）和**真正
 编译源码的工具链**。LeviLamina 的 SDK 是 clang-cl 编出来的 —— 它自己的 `xmake.lua`
@@ -185,7 +197,10 @@ cache.py trigger --plugin ll --entry client --local   # 只编某个条目
 ## 9. CI
 
 `.github/workflows/build.yml`：`discover → build(矩阵) → finalize(串行) → verify(消费端)`。
-需要的 secret 只有一个 `PACKAGE_REPO_TOKEN`（写第二个仓库用）。
+需要的 secret 只有一个 `PACKAGE_REPO_TOKEN`（写第二个仓库用）。定时触发默认关掉
+（`schedule` 被注释），一轮很贵、由人手动 `gh workflow run` 发起。
+`verify` 会跑两次消费端自测：默认写法（不声明工具链）和 `--toolchain clang-cl`
+（也就是 manifest 别名那条路径）。
 
 ### 署名（bot 账号）
 
