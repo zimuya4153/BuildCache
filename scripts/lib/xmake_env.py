@@ -99,6 +99,7 @@ class Sandbox:
         threading.Thread(target=pump, daemon=True).start()
         collected: list[str] = []
         started = last = time.time()
+        previous = None
         while True:
             try:
                 line = lines.get(timeout=self.heartbeat)
@@ -115,7 +116,11 @@ class Sandbox:
             if line is None:
                 break
             last = time.time()
-            util.log("  | " + line.rstrip())
+            text = line.rstrip()
+            # Progress animations redraw the same line; keep the log readable.
+            if text and text != previous:
+                util.log("  | " + text)
+            previous = text
             collected.append(line)
         code = process.wait()
         output = "".join(collected)
@@ -316,6 +321,9 @@ def create_sandbox(
     env = util.subprocess_env(config, proxy=proxy)
     # xmake 3.x derives every runtime directory from XMAKE_GLOBALDIR/.xmake.
     env["XMAKE_GLOBALDIR"] = str(root_dir)
+    # No colours and no animated progress: the animation redraws one line with
+    # \r, which in a piped log becomes either noise or a long silent gap.
+    env["XMAKE_COLORTERM"] = "nocolor"
     env["PATH"] = (
         str(bin_dir)
         + os.pathsep

@@ -37,10 +37,12 @@ def die(message: str, code: int = 1) -> None:
 # below prints whole command lines.
 _URL_CREDENTIALS = re.compile(r"(https?://)[^/@\s]+:[^/@\s]+@")
 _TOKEN_LITERAL = re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{8,}|github_pat_[A-Za-z0-9_]{10,})")
+_ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
 
 
 def mask(text: str) -> str:
-    """Redact credentials from anything we print."""
+    """Redact credentials and drop terminal control sequences from our output."""
+    text = _ANSI.sub("", text)
     text = _URL_CREDENTIALS.sub(r"\1***:***@", text)
     return _TOKEN_LITERAL.sub("***", text)
 
