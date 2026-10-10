@@ -1,0 +1,87 @@
+{
+  "package": "mifcache_debug_assert",
+  "version": "v1.3.4",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-10T15:06:26Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.51.36231",
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc",
+    "clang-cl"
+  ],
+  "produced_for": "levilamina@26.51.6",
+  "entries": {
+    "client": {
+      "package": "mifcache_debug_assert",
+      "version": "v1.3.4",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-10T15:09:48Z",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "configs": {
+        "target_type": "client"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "produced_for": "levilamina@26.51.6",
+      "artifacts": [
+        {
+          "package": "mifcache_debug_assert",
+          "upstream_package": "debug_assert",
+          "version": "v1.3.4",
+          "buildhash": "e3515434506a445792c1c83600bcf899",
+          "key": "windows-x64-vc-e3515434506a445792c1c83600bcf899",
+          "toolset": "14.51.36231",
+          "release": "debug_assert_0",
+          "asset": "debug_assert-e3515434506a445792c1c83600bcf899.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/debug_assert_0/debug_assert-e3515434506a445792c1c83600bcf899.7z",
+          "sha256": "a9ba90111ce63cd663292917772d4ccd692a5097a8c8f168cec41f390e1a0240",
+          "size": 6164,
+          "container": "7z",
+          "aliases": []
+        }
+      ]
+    },
+    "server": {
+      "package": "mifcache_debug_assert",
+      "version": "v1.3.4",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-10T15:06:26Z",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "produced_for": "levilamina@26.51.6",
+      "artifacts": [
+        {
+          "package": "mifcache_debug_assert",
+          "upstream_package": "debug_assert",
+          "version": "v1.3.4",
+          "buildhash": "e3515434506a445792c1c83600bcf899",
+          "key": "windows-x64-vc-e3515434506a445792c1c83600bcf899",
+          "toolset": "14.51.36231",
+          "release": "debug_assert_0",
+          "asset": "debug_assert-e3515434506a445792c1c83600bcf899.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/debug_assert_0/debug_assert-e3515434506a445792c1c83600bcf899.7z",
+          "sha256": "a9ba90111ce63cd663292917772d4ccd692a5097a8c8f168cec41f390e1a0240",
+          "size": 6164,
+          "container": "7z",
+          "aliases": []
+        }
+      ]
+    }
+  }
+}

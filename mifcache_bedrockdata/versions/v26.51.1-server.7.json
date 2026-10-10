@@ -1,0 +1,68 @@
+{
+  "package": "mifcache_bedrockdata",
+  "version": "v26.51.1-server.7",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-10T15:06:26Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.51.36231",
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc",
+    "clang-cl"
+  ],
+  "produced_for": "levilamina@26.51.6",
+  "entries": {
+    "server": {
+      "package": "mifcache_bedrockdata",
+      "version": "v26.51.1-server.7",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-10T15:06:26Z",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "produced_for": "levilamina@26.51.6",
+      "artifacts": [
+        {
+          "package": "mifcache_bedrockdata",
+          "upstream_package": "bedrockdata",
+          "version": "v26.51.1-server.7",
+          "buildhash": "e6d9a5276de04940b2093d16f2a562c9",
+          "key": "windows-x64-vc-e6d9a5276de04940b2093d16f2a562c9",
+          "toolset": "14.51.36231",
+          "release": "bedrockdata_0",
+          "asset": "bedrockdata-e6d9a5276de04940b2093d16f2a562c9.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/bedrockdata_0/bedrockdata-e6d9a5276de04940b2093d16f2a562c9.7z",
+          "sha256": "a7b34460aa04b16164753f2014dbdb97a3458af33a01ffd30b2e2dd81ae85566",
+          "size": 30125506,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "d0e72d5281be497e8392566279b075bc",
+              "key": "windows-x64-vc-d0e72d5281be497e8392566279b075bc",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "de0f4bf60e37470484c6ac8436cb8394",
+              "key": "windows-x64-vc-de0f4bf60e37470484c6ac8436cb8394",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "package": "mifcache_glm",
+  "version": "1.0.1",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-10T15:06:26Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.51.36231",
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc",
+    "clang-cl"
+  ],
+  "produced_for": "levilamina@26.51.6",
+  "entries": {
+    "client": {
+      "package": "mifcache_glm",
+      "version": "1.0.1",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-10T15:09:48Z",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "configs": {
+        "target_type": "client"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "produced_for": "levilamina@26.51.6",
+      "artifacts": [
+        {
+          "package": "mifcache_glm",
+          "upstream_package": "glm",
+          "version": "1.0.1",
+          "buildhash": "18615f0387cd4e2ab2e9ea9965afc784",
+          "key": "windows-x64-vc-18615f0387cd4e2ab2e9ea9965afc784",
+          "toolset": "14.51.36231",
+          "release": "glm_0",
+          "asset": "glm-18615f0387cd4e2ab2e9ea9965afc784.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/glm_0/glm-18615f0387cd4e2ab2e9ea9965afc784.7z",
+          "sha256": "d105d7fbdf49a1bbf5046679f6e5fd854bc89bc75704663d3ff7f859102ccfd9",
+          "size": 162206,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "0837f5285eec477891add461f07f461c",
+              "key": "windows-x64-vc-0837f5285eec477891add461f07f461c",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "b35502c78b9847ab89a7994a4f750c71",
+              "key": "windows-x64-vc-b35502c78b9847ab89a7994a4f750c71",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ]
+    },
+    "server": {
+      "package": "mifcache_glm",
+      "version": "1.0.1",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-10T15:06:26Z",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "produced_for": "levilamina@26.51.6",
+      "artifacts": [
+        {
+          "package": "mifcache_glm",
+          "upstream_package": "glm",
+          "version": "1.0.1",
+          "buildhash": "18615f0387cd4e2ab2e9ea9965afc784",
+          "key": "windows-x64-vc-18615f0387cd4e2ab2e9ea9965afc784",
+          "toolset": "14.51.36231",
+          "release": "glm_0",
+          "asset": "glm-18615f0387cd4e2ab2e9ea9965afc784.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/glm_0/glm-18615f0387cd4e2ab2e9ea9965afc784.7z",
+          "sha256": "d105d7fbdf49a1bbf5046679f6e5fd854bc89bc75704663d3ff7f859102ccfd9",
+          "size": 162206,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "0837f5285eec477891add461f07f461c",
+              "key": "windows-x64-vc-0837f5285eec477891add461f07f461c",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "b35502c78b9847ab89a7994a4f750c71",
+              "key": "windows-x64-vc-b35502c78b9847ab89a7994a4f750c71",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
