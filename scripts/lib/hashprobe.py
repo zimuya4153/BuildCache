@@ -65,14 +65,23 @@ end
 
 local name = "__PACKAGE__"
 local version = "__VERSION__"
-local instance = package.load_from_repository(name, "__RECIPE_DIR__")
+-- Mirrors how xmake-repo's own tooling loads a recipe outside a project: an
+-- explicit package directory plus the recipe file, so no repository lookup and
+-- therefore no project context is required.
+local instance = package.load_from_repository(name, "__RECIPE_DIR__",
+    {packagefile = "__PACKAGE_FILE__"})
 if not instance then
     print("HASHPROBE-ERROR unknown package " .. name)
     return
 end
 instance:version_set(version)
-instance:configs_set(__CONFIGS__)
-instance:toolchains_set(__TOOLCHAINS__)
+-- Requireinfo is how the require action injects consumer configs (see
+-- _configs_for_buildhash in core/package/package.lua).
+instance:requireinfo_set({configs = __CONFIGS__, configs_overrided = {},
+    ignored_configs_for_buildhash = {}})
+for _, toolchain in ipairs(__TOOLCHAINS__) do
+    instance:config_set("toolchains", table.wrap(instance:config("toolchains") or {}) )
+end
 
 local str = instance:plat() .. instance:arch()
 local label = instance:label()
@@ -106,6 +115,10 @@ def build_hash(
         _LUA.replace("__PACKAGE__", package)
         .replace("__VERSION__", version)
         .replace("__RECIPE_DIR__", str(recipe_dir).replace("\\", "/"))
+        .replace(
+            "__PACKAGE_FILE__",
+            str(Path(recipe_dir) / "xmake.lua").replace("\\", "/"),
+        )
         .replace("__CONFIGS__", _lua_table(configs or {}))
         .replace("__TOOLCHAINS__", _lua_list(toolchains or []))
     )
