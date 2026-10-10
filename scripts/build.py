@@ -159,9 +159,28 @@ def main() -> int:
         )
         if result.returncode == 0:
             break
+        util.warn(f"install closure failed (attempt {attempt}/{attempts})")
+        failed = _failed_packages(sandbox)
+        if failed:
+            util.log(
+                "retrying failed package(s): "
+                + ", ".join(f"{name} {version}" for name, version in failed)
+            )
+            for name, version in failed:
+                for package_attempt in range(1, attempts + 1):
+                    single = sandbox.xmake(
+                        ["require", "-y", "--build", f"{name} {version}"],
+                        tail=15,
+                        check=False,
+                    )
+                    if single.returncode == 0:
+                        break
+                    util.warn(
+                        f"{name} {version} failed "
+                        f"(attempt {package_attempt}/{attempts})"
+                    )
         if attempt == attempts:
             util.die(f"install closure failed after {attempts} attempt(s)")
-        util.warn(f"install closure failed (attempt {attempt}/{attempts}); retrying")
 
     util.log_step("publish artifacts")
     results = publish(
@@ -257,6 +276,21 @@ def container_for(config: dict, package: str) -> str:
     artifacts_cfg = config.get("artifacts") or {}
     override = (artifacts_cfg.get("containers") or {}).get(package)
     return override or artifacts_cfg.get("container") or packer.default_container()
+
+
+def _failed_packages(sandbox) -> list[tuple[str, str]]:
+    """Every package whose install left an ``installdir.failed`` marker.
+
+    The layout under the sandbox cache is ``packages/<key>/<letter>/<name>/<version>/``,
+    so the marker tells us exactly which package to retry on its own.
+    """
+    found: list[tuple[str, str]] = []
+    cache = sandbox.root_dir / ".xmake" / "cache" / "packages"
+    for marker in sorted(cache.glob("*/*/*/*/installdir.failed")):
+        version = marker.parent.name
+        name = marker.parent.parent.name
+        found.append((name, version))
+    return found
 
 
 def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
