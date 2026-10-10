@@ -1,7 +1,0 @@
-{
-    cmdlines = {
-        "xmake f -y -p windows -a x64 -m release",
-        "xmake f -y -p windows -a x64 -m release",
-        "xmake f -y -p windows -a x64 -m release"
-    }
-}

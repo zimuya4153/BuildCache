@@ -9,3 +9,7 @@ __pycache__/
 # Generated build results
 build-result-*.json
 results/
+
+# Consumer smoke test locals
+tests/consumer/.xmake/
+tests/consumer/build/
