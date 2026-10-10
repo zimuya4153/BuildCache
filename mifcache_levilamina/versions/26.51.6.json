@@ -23,6 +23,7 @@
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
+      "revision": 1,
       "configs": {
         "target_type": "client"
       },
@@ -30,6 +31,7 @@
         "msvc",
         "clang-cl"
       ],
+      "compiled_with": "clang-cl",
       "produced_for": "levilamina@26.51.6",
       "artifacts": [
         {
@@ -72,6 +74,7 @@
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
+      "revision": 1,
       "configs": {
         "target_type": "server"
       },
@@ -79,6 +82,7 @@
         "msvc",
         "clang-cl"
       ],
+      "compiled_with": "clang-cl",
       "produced_for": "levilamina@26.51.6",
       "artifacts": [
         {
@@ -113,5 +117,7 @@
         }
       ]
     }
-  }
+  },
+  "revision": 1,
+  "compiled_with": "clang-cl"
 }
