@@ -1,0 +1,11 @@
+{
+    mifcahce_levilamina = {
+        __requireconfs = {
+            configs = {
+                target_type = "server"
+            }
+        },
+        __requirestr = "mifcahce_levilamina 26.51.6",
+        __enabled = false
+    }
+}
