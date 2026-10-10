@@ -41,11 +41,14 @@ local function sorted_configs(package)
 end
 
 local function sourcehashes(package)
-    local found = {}
+    -- xmake collects these into a hashset, so duplicates (the same content
+    -- behind several urls) must collapse — appending them twice changes the hash.
+    local seen, found = {}, {}
     for _, url in ipairs(package:urls()) do
         local alias = package:url_alias(url)
         local value = package:sourcehash(alias)
-        if value then
+        if value and not seen[value] then
+            seen[value] = true
             table.insert(found, value)
         end
     end
@@ -75,13 +78,31 @@ if not instance then
     return
 end
 instance:version_set(version)
--- Requireinfo is how the require action injects consumer configs (see
--- _configs_for_buildhash in core/package/package.lua).
+
+-- Mirror _add_package_configurations() from
+-- modules/private/action/require/impl/package.lua: the resolver injects these
+-- builtin configs before hashing, and they are part of the string.
+local function add_builtin_configs(package)
+    local boolean_defaults = {debug = false, shared = false, pic = true, lto = false, asan = false}
+    for _, name in ipairs({"debug", "shared", "pic", "lto", "asan"}) do
+        if package:extraconf("configs", name, "default") == nil then
+            package:add("configs", name,
+                {builtin = true, default = boolean_defaults[name], type = "boolean"})
+        end
+    end
+    for _, name in ipairs({"runtimes", "vs_runtime", "toolchains",
+                           "cflags", "cxflags", "cxxflags", "asflags", "ldflags", "shflags"}) do
+        if package:extraconf("configs", name, "default") == nil then
+            package:add("configs", name, {builtin = true})
+        end
+    end
+end
+add_builtin_configs(instance)
+
+-- Requireinfo is how the require action hands the consumer's configs to a
+-- package (see _configs_for_buildhash in core/package/package.lua).
 instance:requireinfo_set({configs = __CONFIGS__, configs_overrided = {},
     ignored_configs_for_buildhash = {}})
-for _, toolchain in ipairs(__TOOLCHAINS__) do
-    instance:config_set("toolchains", table.wrap(instance:config("toolchains") or {}) )
-end
 
 local str = instance:plat() .. instance:arch()
 local label = instance:label()
@@ -127,7 +148,7 @@ def build_hash(
     name = f"buildcache_hash_{package.replace('-', '_')}"
     path = sandbox.project_dir / f"{name}.lua"
     util.write_text(path, script)
-    result = sandbox.xmake(["l", f"{name}.lua"], check=False)
+    result = sandbox.xmake(["l", f"{name}.lua"], check=False, capture=True)
     output = (result.stdout or "") + (result.stderr or "")
     match = re.search(r"HASHPROBE-HASH (\w+)", output)
     if match:
