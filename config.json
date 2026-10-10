@@ -80,6 +80,7 @@
   },
   "xmake": {
     "minArtifactsVersion": "3.0.0",
+    "installRetries": 3,
     "cacheDir": ".cache/xmake"
   },
   "batch": {
