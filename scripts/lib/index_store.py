@@ -39,7 +39,7 @@ def entries(meta: dict | None) -> dict:
     legacy = meta.get("artifacts")
     if legacy:
         return {
-            "server": {
+            "default": {
                 "configs": {"target_type": "server"},
                 "built_at": meta.get("built_at"),
                 "xmake_version": meta.get("xmake_version"),

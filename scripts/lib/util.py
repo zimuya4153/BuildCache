@@ -51,6 +51,14 @@ def load_config() -> dict:
         if not CONFIG_PATH.is_file():
             die(f"config not found: {CONFIG_PATH}")
         _CONFIG = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        try:  # validate the boundary so a typo fails now, not after a long build
+            from . import schemas
+
+            schemas.validate(schemas.Config, _CONFIG)
+        except ImportError:
+            pass
+        except Exception as error:  # pydantic validation error, kept readable
+            die(f"config.json is not valid: {error}")
     return _CONFIG
 
 

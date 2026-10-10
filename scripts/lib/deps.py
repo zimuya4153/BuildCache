@@ -15,6 +15,8 @@ import sys
 # import name -> distribution name
 REQUIRED = {
     "semver": "semver>=3.0",
+    "pydantic": "pydantic>=2.0",
+    "pytest": "pytest>=8.0",
 }
 
 _ENSURED = False
