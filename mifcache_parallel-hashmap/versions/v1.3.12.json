@@ -2,16 +2,15 @@
   "package": "mifcache_parallel-hashmap",
   "version": "v1.3.12",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-10T17:18:12Z",
+  "xmake_version": "2.9.7",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "configs": {
-    "target_type": "client"
+    "target_type": "server"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "produced_for": "levilamina@v1.3.12",
   "entries": {
@@ -19,17 +18,16 @@
       "package": "mifcache_parallel-hashmap",
       "version": "v1.3.12",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-10T17:18:12Z",
+      "xmake_version": "2.9.7",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
-      "revision": 1,
+      "vs_toolset": "14.44.35207",
+      "revision": 2,
       "configs": {
-        "target_type": "client"
+        "target_type": "server"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
       "produced_for": "levilamina@v1.3.12",
@@ -40,18 +38,18 @@
           "version": "v1.3.12",
           "buildhash": "47b4dd3f84f34e9d98b4cde1eedee54d",
           "key": "windows-x64-vc-47b4dd3f84f34e9d98b4cde1eedee54d",
-          "toolset": "14.51.36231",
+          "toolset": "14.44.35207",
           "release": "parallel-hashmap_0",
           "asset": "parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/parallel-hashmap_0/parallel-hashmap-47b4dd3f84f34e9d98b4cde1eedee54d.7z",
-          "sha256": "5d9e4d5d3ca0f8b5c5c24959f73936fcbeac82cc030da217597ef2c69bdc6396",
-          "size": 92929,
+          "sha256": "81f69f9ae50fc3acb6a4c8c079ad98a8499df044215fd78cc01635680e83d939",
+          "size": 92924,
           "container": "7z",
           "aliases": []
         }
       ]
     }
   },
-  "revision": 1,
+  "revision": 2,
   "compiled_with": "msvc"
 }

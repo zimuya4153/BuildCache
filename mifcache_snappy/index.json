@@ -2,6 +2,7 @@
   "package": "mifcache_snappy",
   "latest": "1.2.2",
   "versions": [
-    "1.2.2"
+    "1.2.2",
+    "1.2.1"
   ]
 }

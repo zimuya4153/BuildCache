@@ -1,0 +1,55 @@
+{
+  "package": "mifcache_debug_assert",
+  "version": "2022.11.13",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-10T17:18:12Z",
+  "xmake_version": "2.9.7",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 2,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@2022.11.13",
+  "entries": {
+    "default": {
+      "package": "mifcache_debug_assert",
+      "version": "2022.11.13",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-10T17:18:12Z",
+      "xmake_version": "2.9.7",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 2,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@2022.11.13",
+      "artifacts": [
+        {
+          "package": "mifcache_debug_assert",
+          "upstream_package": "debug_assert",
+          "version": "2022.11.13",
+          "buildhash": "9c6fc08e3abe475da93722bd8d8442ff",
+          "key": "windows-x64-vc-9c6fc08e3abe475da93722bd8d8442ff",
+          "toolset": "14.44.35207",
+          "release": "debug_assert_0",
+          "asset": "debug_assert-9c6fc08e3abe475da93722bd8d8442ff.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/debug_assert_0/debug_assert-9c6fc08e3abe475da93722bd8d8442ff.7z",
+          "sha256": "b6e41c0615732a0e3124f48c6a488d5042cc7075bfd7e283c6e6c06d8ff9901f",
+          "size": 6170,
+          "container": "7z",
+          "aliases": []
+        }
+      ]
+    }
+  }
+}
