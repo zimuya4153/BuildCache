@@ -2,7 +2,7 @@
   "package": "mifcache_entt",
   "version": "v4.0.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
+  "built_at": "2026-10-10T16:55:27Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
@@ -19,11 +19,11 @@
       "package": "mifcache_entt",
       "version": "v4.0.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
+      "built_at": "2026-10-10T16:55:27Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
-      "revision": 1,
+      "revision": 2,
       "configs": {
         "target_type": "client"
       },
@@ -44,14 +44,14 @@
           "release": "entt_0",
           "asset": "entt-0d58f676872d486790799bfc6f016197.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/entt_0/entt-0d58f676872d486790799bfc6f016197.7z",
-          "sha256": "cba2b5c7c08f37935c49aafd6e67b448f2ad40e85af50c0d78094484c7b1c2e7",
-          "size": 101722,
+          "sha256": "24fafd86ba66c65523181f0a0bd48723cc9395611244a9f6539595c5c7a80903",
+          "size": 101724,
           "container": "7z",
           "aliases": []
         }
       ]
     }
   },
-  "revision": 1,
+  "revision": 2,
   "compiled_with": "msvc"
 }

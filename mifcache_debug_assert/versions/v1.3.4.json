@@ -2,15 +2,16 @@
   "package": "mifcache_debug_assert",
   "version": "v1.3.4",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T16:18:48Z",
-  "xmake_version": "3.0.1",
+  "built_at": "2026-10-10T16:55:27Z",
+  "xmake_version": "3.1.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.44.35207",
+  "vs_toolset": "14.51.36231",
   "configs": {
-    "target_type": "server"
+    "target_type": "client"
   },
   "alias_profiles": [
-    "msvc"
+    "msvc",
+    "clang-cl"
   ],
   "produced_for": "levilamina@v1.3.4",
   "entries": {
@@ -18,16 +19,17 @@
       "package": "mifcache_debug_assert",
       "version": "v1.3.4",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T16:18:48Z",
-      "xmake_version": "3.0.1",
+      "built_at": "2026-10-10T16:55:27Z",
+      "xmake_version": "3.1.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.44.35207",
-      "revision": 1,
+      "vs_toolset": "14.51.36231",
+      "revision": 2,
       "configs": {
-        "target_type": "server"
+        "target_type": "client"
       },
       "alias_profiles": [
-        "msvc"
+        "msvc",
+        "clang-cl"
       ],
       "compiled_with": "msvc",
       "produced_for": "levilamina@v1.3.4",
@@ -38,18 +40,18 @@
           "version": "v1.3.4",
           "buildhash": "e3515434506a445792c1c83600bcf899",
           "key": "windows-x64-vc-e3515434506a445792c1c83600bcf899",
-          "toolset": "14.44.35207",
+          "toolset": "14.51.36231",
           "release": "debug_assert_0",
           "asset": "debug_assert-e3515434506a445792c1c83600bcf899.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/debug_assert_0/debug_assert-e3515434506a445792c1c83600bcf899.7z",
-          "sha256": "077647c4e6f5b65366616791289588c2755bcc380f33b0aeea773ecadeadbb4c",
-          "size": 6150,
+          "sha256": "a4add8d9ecb178ac414bbec419e04e6af112b8a45894dc25e4aa5bcfa18ae0e3",
+          "size": 6168,
           "container": "7z",
           "aliases": []
         }
       ]
     }
   },
-  "revision": 1,
+  "revision": 2,
   "compiled_with": "msvc"
 }

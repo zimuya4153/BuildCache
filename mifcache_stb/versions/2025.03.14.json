@@ -2,7 +2,7 @@
   "package": "mifcache_stb",
   "version": "2025.03.14",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
+  "built_at": "2026-10-10T16:55:27Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
@@ -19,11 +19,11 @@
       "package": "mifcache_stb",
       "version": "2025.03.14",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
+      "built_at": "2026-10-10T16:55:27Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
-      "revision": 1,
+      "revision": 2,
       "configs": {
         "target_type": "client"
       },
@@ -44,14 +44,14 @@
           "release": "stb_0",
           "asset": "stb-5add428b704648039c039d4d74bed865.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/stb_0/stb-5add428b704648039c039d4d74bed865.7z",
-          "sha256": "a251001d56fd22716d229facde5e0be05ba54a01d71612432f7b334d29829472",
-          "size": 345843,
+          "sha256": "d758854545f19cf3cee462590c06dd9d56ec9906103670473b5c36b4fa966c56",
+          "size": 345839,
           "container": "7z",
           "aliases": []
         }
       ]
     }
   },
-  "revision": 1,
+  "revision": 2,
   "compiled_with": "msvc"
 }

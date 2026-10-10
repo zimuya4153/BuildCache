@@ -2,7 +2,7 @@
   "package": "mifcache_bedrockdata",
   "version": "v26.51.1-client.7",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
+  "built_at": "2026-10-10T16:55:27Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
@@ -19,11 +19,11 @@
       "package": "mifcache_bedrockdata",
       "version": "v26.51.1-client.7",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
+      "built_at": "2026-10-10T16:55:27Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
-      "revision": 1,
+      "revision": 2,
       "configs": {
         "target_type": "client"
       },
@@ -44,8 +44,8 @@
           "release": "bedrockdata_0",
           "asset": "bedrockdata-c0ff48dfd06a4b6bb28f59bb9ae43fd0.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/bedrockdata_0/bedrockdata-c0ff48dfd06a4b6bb28f59bb9ae43fd0.7z",
-          "sha256": "a2853119044b383ef54f97a97d4bb57aeb0ec9c88586a6c859d33b74b49f50c0",
-          "size": 40781843,
+          "sha256": "386e9ebb2a03196a82efa75d6905769650134b2c99ad7e1d3d9d4bafe423cbc5",
+          "size": 40781842,
           "container": "7z",
           "aliases": [
             {
@@ -67,6 +67,6 @@
       ]
     }
   },
-  "revision": 1,
+  "revision": 2,
   "compiled_with": "msvc"
 }

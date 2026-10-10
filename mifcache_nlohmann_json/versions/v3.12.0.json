@@ -2,7 +2,7 @@
   "package": "mifcache_nlohmann_json",
   "version": "v3.12.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
+  "built_at": "2026-10-10T16:55:27Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
@@ -19,11 +19,11 @@
       "package": "mifcache_nlohmann_json",
       "version": "v3.12.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
+      "built_at": "2026-10-10T16:55:27Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
-      "revision": 1,
+      "revision": 2,
       "configs": {
         "target_type": "client"
       },
@@ -44,14 +44,14 @@
           "release": "nlohmann_json_0",
           "asset": "nlohmann_json-ab8414047c424750bdc9d7a0ff7afdde.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/nlohmann_json_0/nlohmann_json-ab8414047c424750bdc9d7a0ff7afdde.7z",
-          "sha256": "c908f185fa93b3e4937841d148d556a5e2c1e9bc3fab602de5f5b2f865f9647f",
-          "size": 110863,
+          "sha256": "1a00a7473ec820eb6330477edc93d0bb68e7407a982d9e611c753d8dec65a0c8",
+          "size": 110861,
           "container": "7z",
           "aliases": []
         }
       ]
     }
   },
-  "revision": 1,
+  "revision": 2,
   "compiled_with": "msvc"
 }

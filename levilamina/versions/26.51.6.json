@@ -6,7 +6,7 @@
   "configs": {
     "target_type": "server"
   },
-  "revision": 1,
+  "revision": 2,
   "upstream_commit": "32fcaa02baa38371b705358801c7d185c284233e",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
@@ -27,7 +27,7 @@
     "arch": "x64",
     "mode": "release"
   },
-  "built_at": "2026-10-10T15:06:26Z",
+  "built_at": "2026-10-10T16:54:59Z",
   "entries": {
     "client": {
       "plugin": "ll",
@@ -37,7 +37,7 @@
       "configs": {
         "target_type": "client"
       },
-      "revision": 1,
+      "revision": 2,
       "upstream_commit": "32fcaa02baa38371b705358801c7d185c284233e",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
@@ -58,7 +58,7 @@
         "arch": "x64",
         "mode": "release"
       },
-      "built_at": "2026-10-10T15:09:48Z",
+      "built_at": "2026-10-10T16:55:27Z",
       "artifacts": [
         {
           "package": "mifcache_levilamina",
@@ -70,8 +70,8 @@
           "release": "levilamina_0",
           "asset": "levilamina-429ea80073cf4bb68537057b0ee0497b.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/levilamina_0/levilamina-429ea80073cf4bb68537057b0ee0497b.7z",
-          "sha256": "9b85ac5e5c8222ec6876395d2f02814aeeb134a90c53c536df3e2e7cb5c62346",
-          "size": 12374888,
+          "sha256": "d0032dfd1f8e3686ca483b4ae16095d76b10c7b0aa716754725231c29c1d6279",
+          "size": 12374427,
           "container": "7z",
           "aliases": [
             {
@@ -101,7 +101,7 @@
       "configs": {
         "target_type": "server"
       },
-      "revision": 1,
+      "revision": 2,
       "upstream_commit": "32fcaa02baa38371b705358801c7d185c284233e",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
@@ -122,7 +122,7 @@
         "arch": "x64",
         "mode": "release"
       },
-      "built_at": "2026-10-10T15:06:26Z",
+      "built_at": "2026-10-10T16:54:59Z",
       "artifacts": [
         {
           "package": "mifcache_levilamina",
@@ -134,8 +134,8 @@
           "release": "levilamina_0",
           "asset": "levilamina-906b0696836741eda5b5749d54146a8c.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/levilamina_0/levilamina-906b0696836741eda5b5749d54146a8c.7z",
-          "sha256": "7e5cf4bd9c8cb4327d5efe3d52d700e4956c6e2e76714d3d7cce2708f574e644",
-          "size": 11840244,
+          "sha256": "46f7c3f07c81a728fc55fd1d40b6d7e7db8bab450bb9fb565c2bb6367f3ec1da",
+          "size": 11843889,
           "container": "7z",
           "aliases": [
             {

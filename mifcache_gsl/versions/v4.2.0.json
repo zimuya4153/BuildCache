@@ -2,7 +2,7 @@
   "package": "mifcache_gsl",
   "version": "v4.2.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
+  "built_at": "2026-10-10T16:55:27Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
@@ -19,11 +19,11 @@
       "package": "mifcache_gsl",
       "version": "v4.2.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
+      "built_at": "2026-10-10T16:55:27Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
-      "revision": 1,
+      "revision": 2,
       "configs": {
         "target_type": "client"
       },
@@ -44,14 +44,14 @@
           "release": "gsl_0",
           "asset": "gsl-cdcbe579518f475dbbe3954d5b394a71.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/gsl_0/gsl-cdcbe579518f475dbbe3954d5b394a71.7z",
-          "sha256": "5cc7f4d654e62ae279e590f1f3cfe4107ecac31a109456f10e066948d894d5cc",
-          "size": 16273,
+          "sha256": "e20aa81c6e43d4b84d0204e282be3b11db3c6be8375c513d6ce83d67a802e1f5",
+          "size": 16278,
           "container": "7z",
           "aliases": []
         }
       ]
     }
   },
-  "revision": 1,
+  "revision": 2,
   "compiled_with": "msvc"
 }

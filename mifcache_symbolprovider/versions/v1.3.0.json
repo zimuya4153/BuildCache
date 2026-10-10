@@ -2,7 +2,7 @@
   "package": "mifcache_symbolprovider",
   "version": "v1.3.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:09:48Z",
+  "built_at": "2026-10-10T16:55:27Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
@@ -19,11 +19,11 @@
       "package": "mifcache_symbolprovider",
       "version": "v1.3.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:09:48Z",
+      "built_at": "2026-10-10T16:55:27Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
-      "revision": 1,
+      "revision": 2,
       "configs": {
         "target_type": "client"
       },
@@ -44,8 +44,8 @@
           "release": "symbolprovider_0",
           "asset": "symbolprovider-8ef9d781a7854895b90a561f7f9be0ea.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/symbolprovider_0/symbolprovider-8ef9d781a7854895b90a561f7f9be0ea.7z",
-          "sha256": "3ab55d2e9b38192a8ab57e8aee8f65d3923a3555df8ede42cc007dafcd2b8c8a",
-          "size": 5423,
+          "sha256": "d4e0a6165c9c60385846c0d5395a8d4d61ca6404d684a719bdf37e22baac81df",
+          "size": 5426,
           "container": "7z",
           "aliases": [
             {
@@ -67,6 +67,6 @@
       ]
     }
   },
-  "revision": 1,
+  "revision": 2,
   "compiled_with": "msvc"
 }
