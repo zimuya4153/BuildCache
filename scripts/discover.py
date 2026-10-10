@@ -72,6 +72,7 @@ def main() -> int:
             for entry in plugin.entries(ctx, version, item["commit"]):
                 if entry["id"] in done:
                     continue
+                plan = plugin.call("toolchain_plan", ctx, version, item["commit"]) or {}
                 matrix.append(
                     {
                         "plugin": plugin.name,
@@ -79,6 +80,8 @@ def main() -> int:
                         "recipe_package": metadata["package"],
                         "version": version,
                         "entry": entry["id"],
+                        "image": plan.get("image") or "windows-latest",
+                        "vs_toolset": plan.get("vs_toolset") or "",
                         "commit": item["commit"],
                     }
                 )

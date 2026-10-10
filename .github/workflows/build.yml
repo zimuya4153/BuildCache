@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   discover:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.image || 'windows-latest' }}
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
     steps:
@@ -65,7 +65,12 @@ jobs:
       - name: Build ${{ matrix.package }} ${{ matrix.version }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/build.py --plugin "${{ matrix.plugin }}" --version "${{ matrix.version }}"
+        run: |
+          python scripts/build.py --plugin "${{ matrix.plugin }}" `
+            --version "${{ matrix.version }}" `
+            --entry "${{ matrix.entry }}" `
+            --commit "${{ matrix.commit }}" `
+            ${{ matrix.vs_toolset && format('--vs-toolset={0}', matrix.vs_toolset) || '' }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

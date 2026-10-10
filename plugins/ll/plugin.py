@@ -362,10 +362,10 @@ def should_skip(ctx, version: str, commit: str) -> tuple[bool, str]:
     import os
 
     plan = toolchain_plan(ctx, version, commit)
-    image = os.environ.get("ImageOS", "")
-    if image and plan["image"] and image >= plan["image"]:
+    imageos = os.environ.get("ImageOS", "")
+    if imageos and plan["imageos"] and imageos >= plan["imageos"]:
         return False, ""
-    if not image and plan["image"] == LOCAL_IMAGE:
+    if not imageos and plan["imageos"] == LOCAL_IMAGEOS:
         return False, ""
     return True, (
         f"era xmake {plan['era_xmake']} needs a {plan['image']} image "
@@ -376,12 +376,13 @@ def should_skip(ctx, version: str, commit: str) -> tuple[bool, str]:
 # Which CI image (and MSVC generation) an era's xmake can drive. Floors are
 # checked newest first; "win25" means the current windows-latest image.
 ERA_IMAGES = [
-    ("3.1.0", "win25", None),
-    ("3.0.0", "win22", "14.38"),
-    ("2.9.0", "win22", "14.34"),
-    ("0.0.0", "win19", "14.29"),
+    # era xmake floor, runner label, GitHub ImageOS value, msvc toolset
+    ("3.1.0", "windows-latest", "win25", None),
+    ("3.0.0", "windows-2022", "win22", "14.38"),
+    ("2.9.0", "windows-2022", "win22", "14.34"),
+    ("0.0.0", "windows-2019", "win19", "14.29"),
 ]
-LOCAL_IMAGE = "win25"
+LOCAL_IMAGEOS = "win25"
 
 
 def toolchain_plan(ctx, version: str, commit: str) -> dict:
@@ -391,14 +392,15 @@ def toolchain_plan(ctx, version: str, commit: str) -> dict:
     era = xmake_env.xmake_version_for_date(
         ctx.config, commit_date(ctx, commit), floor="0.0.0"
     )
-    for floor, image, toolset in ERA_IMAGES:
+    for floor, runner, imageos, toolset in ERA_IMAGES:
         if semver.ge(era, floor):
             return {
                 "era_xmake": era,
-                "image": image,
+                "image": runner,
+                "imageos": imageos,
                 "vs_toolset": toolset,
             }
-    return {"era_xmake": era, "image": "win19", "vs_toolset": "14.29"}
+    return {"era_xmake": era, "image": "windows-2019", "imageos": "win19", "vs_toolset": "14.29"}
 
 
 def _patch_upstream_sources(snapshot, renames: dict[str, dict[str, str]]) -> list[str]:
