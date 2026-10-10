@@ -90,3 +90,28 @@ Notes:
 
 Re-running is idempotent: assets are addressed by name, manifests are rewritten
 from the index, and the index only ever grows.
+
+## Status and known issues
+
+Verified end to end on Windows with xmake 3.1.1:
+
+* the whole closure of a LeviLamina version is installed by xmake, exported,
+  packed and published (24 artifacts for `mifcahce_levilamina 26.51.6`);
+* a consumer project resolves `mifcahce_fmt 11.2.0` to our release asset and
+  installs it as `(precompiled) .. ok` — no compilation happens
+  (`python scripts/selftest.py --component mifcahce_fmt --version 11.2.0`).
+
+Open items:
+
+* **Parallel artifact downloads.** Resolving a package that pulls many of our
+  artifacts at once fails with
+  `unmatched checksum, current hash(...) != original hash(...)` while the same
+  artifact installs fine on its own. Every package downloads, packs and
+  installs correctly individually, so this looks like xmake's download cache
+  under concurrency rather than a publishing problem; it needs a follow-up with
+  a single-artifact download versus a batch download.
+* **Client variants.** The server variant is built and published; the client
+  variant is wired up (`plugins/ll/plugin.py::variants`) but still has to be run
+  (`python scripts/build.py --version <v> --variant client`).
+* **Consumers need `levimc-repo`** in `add_repositories` because some LL-side
+  dependencies (for example `prelink`) are only published there.

@@ -1,0 +1,10 @@
+# Keep sources and generated Lua/JSON byte-identical across checkouts: the
+# recipe patch files we ship must stay LF or git apply rejects them.
+* text=auto eol=lf
+
+*.diff -text
+*.patch -text
+*.png binary
+*.7z binary
+*.zst binary
+*.tar.zst binary
