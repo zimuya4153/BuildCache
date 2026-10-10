@@ -88,16 +88,24 @@ jobs:
           # era's sources only compile with a compiler of about their age.
           $candidates = @(
             "${{ matrix.msvc_component }}",
+            "Microsoft.VisualStudio.Component.VC.14.40.x86.x64",
             "Microsoft.VisualStudio.Component.VC.14.38.17.8.x86.x64",
+            "Microsoft.VisualStudio.Component.VC.14.38.x86.x64",
             "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64"
           )
           foreach ($component in $candidates) {
             Write-Output "== installing $component"
-            & $installer modify --installPath $vs `
-              --productId Microsoft.VisualStudio.Product.Enterprise `
-              --channelId VisualStudio.17.Release `
-              --add $component --quiet --wait --norestart --nocache
-            Write-Output "   installer exit code: $LASTEXITCODE"
+            # The bootstrapper is a GUI binary: it has to be waited for, otherwise
+            # the toolset is simply not there yet when the build starts.
+            $proc = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList @(
+              'modify',
+              '--installPath', $vs,
+              '--productId', 'Microsoft.VisualStudio.Product.Enterprise',
+              '--channelId', 'VisualStudio.17.Release',
+              '--add', $component,
+              '--quiet', '--wait', '--norestart', '--nocache'
+            )
+            Write-Output "   installer exit code: $($proc.ExitCode)"
             $found = Get-ChildItem "$vs\VC\Tools\MSVC" -ErrorAction SilentlyContinue |
               Where-Object { $_.Name -like "${{ matrix.msvc_version }}.*" -or
                              $_.Name -like "14.38.*" -or $_.Name -like "14.29.*" } |
