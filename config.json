@@ -1,5 +1,5 @@
 {
-  "prefix": "mifcahce_",
+  "prefix": "mifcache_",
   "platform": {
     "plat": "windows",
     "arch": "x64",
@@ -27,7 +27,7 @@
   "artifacts": {
     "container": "7z",
     "containers": {
-      "mifcahce_levilamina": "7z"
+      "mifcache_levilamina": "7z"
     }
   },
   "paths": {

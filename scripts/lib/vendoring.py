@@ -19,7 +19,7 @@ _STRING_PATTERN = re.compile(r'"((?:[^"\\]|\\.)*)"')
 
 # Dependency references always go through one of these entry points, so the
 # rewrite stays targeted instead of touching arbitrary string literals (a file
-# path like "glm" must never be renamed to "mifcahce_glm").
+# path like "glm" must never be renamed to "mifcache_glm").
 _DEP_CALLS = ("add_deps", "add_requires", "add_packages", "set_base")
 _DEP_CALL_PATTERN = re.compile(r"\b(" + "|".join(_DEP_CALLS) + r")\s*\(([^()]*)\)")
 _PACKAGE_ADD_PATTERN = re.compile(r':add\(\s*"(deps|systemdeps)"\s*,\s*"([^"]+)"\s*\)')

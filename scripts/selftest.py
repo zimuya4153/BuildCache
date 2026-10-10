@@ -20,7 +20,7 @@ from lib import index_store, plugins, util, xmake_env  # noqa: E402
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--component", default="mifcahce_levilamina")
+    parser.add_argument("--component", default="mifcache_levilamina")
     parser.add_argument("--version", default="", help="defaults to the newest indexed version")
     parser.add_argument("--variant", default="server", help="variant to consume (e.g. server/client)")
     parser.add_argument(
@@ -179,9 +179,9 @@ def _find_install(sandbox, component: str, version: str) -> Path | None:
 
 def _default_expectation(component: str) -> str:
     return {
-        "mifcahce_levilamina": "include/ll/api/Global.h",
-        "mifcahce_fmt": "include/fmt/format.h",
-        "mifcahce_entt": "include/entt/entt.hpp",
+        "mifcache_levilamina": "include/ll/api/Global.h",
+        "mifcache_fmt": "include/fmt/format.h",
+        "mifcache_entt": "include/entt/entt.hpp",
     }.get(component, "")
 
 

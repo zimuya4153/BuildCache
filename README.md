@@ -32,7 +32,7 @@ discover ──► build (per SDK version)                  ──► finalize
 | `zimuya4153/xmake-repo` | consumer-facing repository: prefixed recipes + manifests |
 
 Nothing we publish reuses an upstream package name: every package is vendored
-under the configured prefix (`mifcahce_`), so official recipes keep working and
+under the configured prefix (`mifcache_`), so official recipes keep working and
 our additions stay purely additive.
 
 ## Using the cache
@@ -41,14 +41,14 @@ our additions stay purely additive.
 add_repositories("levimc-repo https://github.com/LiteLDev/xmake-repo.git")
 add_repositories("llsdk https://github.com/zimuya4153/xmake-repo.git")
 
-add_requires("mifcahce_levilamina 26.51.6")
+add_requires("mifcache_levilamina 26.51.6")
 
 target("my-plugin")
     set_kind("shared")
-    add_packages("mifcahce_levilamina")
+    add_packages("mifcache_levilamina")
 ```
 
-`mifcahce_levilamina` resolves to the precompiled SDK and its dependencies
+`mifcache_levilamina` resolves to the precompiled SDK and its dependencies
 resolve to our prefixed precompiled packages as well. To make our artifacts take
 precedence over the official mirror entirely, set
 `XMAKE_BINARY_REPO=https://github.com/zimuya4153/xmake-repo.git`.
@@ -60,7 +60,7 @@ python scripts/vendor.py                     # (re)generate prefixed recipes
 python scripts/discover.py --first-only      # what still needs building
 python scripts/build.py --version 26.51.6    # build + publish one SDK version
 python scripts/finalize.py --push            # index + manifests, push both repos
-python scripts/selftest.py --component mifcahce_levilamina
+python scripts/selftest.py --component mifcache_levilamina
 python scripts/status.py --versions
 ```
 
@@ -96,10 +96,10 @@ from the index, and the index only ever grows.
 Verified end to end on Windows with xmake 3.1.1:
 
 * the whole closure of a LeviLamina version is installed by xmake, exported,
-  packed and published (24 artifacts for `mifcahce_levilamina 26.51.6`);
-* a consumer project resolves `mifcahce_fmt 11.2.0` to our release asset and
+  packed and published (24 artifacts for `mifcache_levilamina 26.51.6`);
+* a consumer project resolves `mifcache_fmt 11.2.0` to our release asset and
   installs it as `(precompiled) .. ok` — no compilation happens
-  (`python scripts/selftest.py --component mifcahce_fmt --version 11.2.0`).
+  (`python scripts/selftest.py --component mifcache_fmt --version 11.2.0`).
 
 Open items:
 

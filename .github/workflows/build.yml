@@ -111,4 +111,4 @@ jobs:
       - name: Consume the published artifact
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/selftest.py --component mifcahce_levilamina
+        run: python scripts/selftest.py --component mifcache_levilamina
