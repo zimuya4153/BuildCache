@@ -335,6 +335,6 @@ def create_sandbox(
         env=env,
         xmake_exe=xmake_exe,
         timeout=float(config.get("xmake", {}).get("timeoutSeconds", 5400)),
-        heartbeat=float(config.get("xmake", {}).get("heartbeatSeconds", 60)),
+        heartbeat=float(config.get("xmake", {}).get("heartbeatSeconds", 30)),
         silent_timeout=float(config.get("xmake", {}).get("silentTimeoutSeconds", 1800)),
     )

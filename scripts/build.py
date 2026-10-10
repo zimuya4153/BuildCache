@@ -326,10 +326,13 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
     url = ""
     release = ""
     if dry_run:
-        release = f"{published_name}_dry_run"
+        release = f"{name}_dry_run"
         url = f"file://{archive.as_posix()}"
     else:
-        release = gh.assign_release(published_name, [asset], owner, repo, max_assets, config=config)
+        # Shards and their tags are named after the *upstream* package: the
+        # prefix only exists to keep published package names distinct, it has no
+        # business showing up in release tags or titles.
+        release = gh.assign_release(name, [asset], owner, repo, max_assets, config=config)
         gh.ensure_release(owner, repo, release, target=target_branch, config=config)
         gh.upload_asset(owner, repo, release, archive, config=config)
         url = gh.asset_url(owner, repo, release, asset)

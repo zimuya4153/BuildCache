@@ -110,9 +110,13 @@ def ensure_orphan_branch(config: dict, owner: str, repo: str, branch: str, proxy
     util.run(["git", "-C", str(work), "checkout", "--orphan", branch], env=env, quiet=True)
     util.run(["git", "-C", str(work), "rm", "-rf", "--quiet", "."], env=env, check=False)
     util.write_text(
-        Path(work) / ".buildcache-assets.md",
-        f"# {branch}\n\nThis branch only exists as the target of `BuildCache` release tags.\n"
-        "The prebuilt SDK artifacts are attached to GitHub Releases, not committed here.\n",
+        Path(work) / "README.md",
+        f"# `{branch}`\n\n"
+        "This branch exists for one reason: it is the *target* of every release\n"
+        "tag. Release tags are created here so that the `main` branch never\n"
+        "accumulates one tag per published SDK version.\n\n"
+        "The prebuilt SDK artifacts themselves are attached to GitHub Releases;\n"
+        "nothing is committed to this branch beyond this file.\n",
     )
     util.run(["git", "-C", str(work), "add", "-A"], env=env, quiet=True)
     util.run(

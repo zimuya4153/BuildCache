@@ -125,9 +125,14 @@ def release_title(tag: str) -> str:
 
 def release_notes(tag: str, rows: list[dict] | None = None, prefix: str = "") -> str:
     """Release bodies carry the metadata that no longer lives in asset names."""
+    config = util.load_config()
+    cache = (config.get("repos") or {}).get("cache") or {}
+    source = ""
+    if cache.get("owner") and cache.get("repo"):
+        source = f"https://github.com/{cache['owner']}/{cache['repo']}"
     lines = [
-        "Prebuilt SDK artifacts published by [BuildCache]"
-        "(https://github.com/zimuya4153/BuildCache).",
+        "Prebuilt SDK artifacts published by "
+        + (f"[BuildCache]({source})." if source else "BuildCache."),
         "",
         f"- Package: `{release_title(tag)}`",
         f"- Index id: `{tag}`",

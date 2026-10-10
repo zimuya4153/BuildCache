@@ -65,7 +65,7 @@ class RecipeSettings(_Base):
 class XmakeSettings(_Base):
     minArtifactsVersion: str = "3.0.0"
     installRetries: int = 3
-    heartbeatSeconds: int = 60
+    heartbeatSeconds: int = 30
     silentTimeoutSeconds: int = 1800
     timeoutSeconds: int = 5400
     cacheDir: str = ".cache/xmake"
