@@ -144,12 +144,24 @@ def main() -> int:
     # require (including configs), which keeps the resolved buildid identical.
     # The sandbox package cache is kept between runs (it lives in the sandbox
     # root), so re-running reuses everything that is already built.
-    util.rmtree(sandbox.export_dir)
-    util.ensure_dir(sandbox.export_dir)
-    sandbox.xmake(
-        ["require", "-y", "--build", "--export", f"--packagedir={sandbox.export_dir}"],
-        tail=30,
-    )
+    #
+    # Some steps are known to be flaky (generating the bedrock runtime data can
+    # fail and succeed on the next attempt), so the whole install round is
+    # retried instead of failing the job.
+    attempts = int(config.get("xmake", {}).get("installRetries", 3))
+    for attempt in range(1, attempts + 1):
+        util.rmtree(sandbox.export_dir)
+        util.ensure_dir(sandbox.export_dir)
+        result = sandbox.xmake(
+            ["require", "-y", "--build", "--export", f"--packagedir={sandbox.export_dir}"],
+            tail=30,
+            check=False,
+        )
+        if result.returncode == 0:
+            break
+        if attempt == attempts:
+            util.die(f"install closure failed after {attempts} attempt(s)")
+        util.warn(f"install closure failed (attempt {attempt}/{attempts}); retrying")
 
     util.log_step("publish artifacts")
     results = publish(
