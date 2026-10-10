@@ -165,18 +165,26 @@ def entries(ctx, version: str, commit: str) -> list[dict]:
     server/client split is reflected in the package configs, which gives each
     build its own hash and therefore its own set of artifacts.
     """
-    entries = []
-    for target_type in ("server", "client"):
-        for toolchain in ("msvc", "clang-cl"):
-            entries.append(
-                {
-                    "id": f"{target_type}-{toolchain}",
-                    "configs": {"target_type": target_type},
-                    "toolchain": toolchain,
-                    "fields": {"target_type": target_type, "toolchain": toolchain},
-                }
-            )
-    return entries
+    # One build per configuration pair. Additional *toolchain* flavours are not
+    # built twice: they are published as manifest aliases for the same artifact,
+    # because the build hash can be recomputed offline (see toolchain_aliases).
+    return [
+        {"id": "server", "configs": {"target_type": "server"}},
+        {"id": "client", "configs": {"target_type": "client"}},
+    ]
+
+
+def toolchain_aliases(ctx, version: str, commit: str) -> list[dict]:
+    """Extra consumer profiles this project's artifacts can be aliased for.
+
+    LeviLamina plugin projects resolve packages under different toolchains
+    (msvc by default, clang-cl when the project asks for it). The artifact
+    itself is ABI compatible across those, and its build id is a *hash of the
+    configuration*, so serving the other profile is a matter of publishing one
+    more manifest entry with the hash recomputed for that profile — not of
+    building everything twice.
+    """
+    return [{"id": "clang-cl", "toolchain": "clang-cl"}]
 
 
 def extra_deps(ctx, version: str, commit: str) -> list[dict]:
