@@ -30,6 +30,7 @@ def commit_and_push(
 ) -> bool:
     """Stage, commit and push; returns False when there was nothing to commit."""
     repo = Path(repo)
+    name, email = util.git_identity(util.load_config())
     add_args = ["git", "-C", str(repo), "add", "-A"]
     if paths:
         add_args = ["git", "-C", str(repo), "add", "--"] + list(paths)
@@ -40,7 +41,7 @@ def commit_and_push(
     if staged.returncode == 0:
         util.log(f"{repo.name}: nothing to commit")
         return False
-    util.run(["git", "-C", str(repo), "commit", "-m", message], quiet=True)
+    util.run(["git", "-C", str(repo), "-c", f"user.name={name}", "-c", f"user.email={email}", "commit", "-m", message], quiet=True)
     if push:
         branch = current_branch(repo)
         util.run(["git", "-C", str(repo), "push", remote, branch], quiet=True)
@@ -101,8 +102,10 @@ def ensure_orphan_branch(config: dict, owner: str, repo: str, branch: str, proxy
         return False
     url = push_url(f"https://github.com/{owner}/{repo}.git")
     env = util.subprocess_env(config, proxy=proxy)
+    bot_name, bot_email = util.git_identity(config)
     work = util.absolute(".work") / f"{repo}-{branch}-branch"
     util.rmtree(work)
+    bot_name, bot_email = util.git_identity(config)
     util.run(["git", "clone", "--depth", "1", url, str(work)], env=env, quiet=True)
     util.run(["git", "-C", str(work), "checkout", "--orphan", branch], env=env, quiet=True)
     util.run(["git", "-C", str(work), "rm", "-rf", "--quiet", "."], env=env, check=False)
@@ -115,8 +118,8 @@ def ensure_orphan_branch(config: dict, owner: str, repo: str, branch: str, proxy
     util.run(
         [
             "git", "-C", str(work),
-            "-c", "user.name=buildcache",
-            "-c", "user.email=buildcache@localhost",
+            "-c", f"user.name={bot_name}",
+            "-c", f"user.email={bot_email}",
             "commit", "--quiet", "-m", f"chore: create '{branch}' branch for release tags",
         ],
         env=env,
@@ -152,8 +155,8 @@ def ensure_branch(
         util.run(
             [
                 "git", "-C", str(directory),
-                "-c", "user.name=buildcache",
-                "-c", "user.email=buildcache@localhost",
+                "-c", f"user.name={bot_name}",
+                "-c", f"user.email={bot_email}",
                 "commit", "--quiet", "-m", f"chore: create '{branch}' branch",
             ],
             env=env,

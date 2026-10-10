@@ -143,6 +143,25 @@ cache.py trigger --plugin ll --entry client --local   # 只编某个条目
 `.github/workflows/build.yml`：`discover → build(矩阵) → finalize(串行) → verify(消费端)`。
 需要的 secret 只有一个 `PACKAGE_REPO_TOKEN`（写第二个仓库用）。
 
+### 署名（bot 账号）
+
+所有由流水线产生的 commit 和 release 都署名成 GitHub Actions 官方 bot：
+
+```json
+"bot": {
+  "name": "github-actions[bot]",
+  "email": "41898282+github-actions[bot]@users.noreply.github.com",
+  "tokenEnv": "BUILDCACHE_BOT_TOKEN"
+}
+```
+
+* **commit**：`gitops` 给每个提交加 `-c user.name/-c user.email`，用的就是上面两行。
+* **release / issue / API**：归属由**用的 token**决定。用默认的 `secrets.GITHUB_TOKEN`
+  时，release 会显示为 `github-actions[bot]`；不要设置 `BUILDCACHE_BOT_TOKEN` 就保持这个效果。
+* 只有**推送第二个仓库**（`zimuya4153/xmake-repo`）必须用 PAT（`PACKAGE_REPO_TOKEN`），
+  那次推送会归属到该 PAT 的持有者——想让它也显示成 bot，就用一个 bot 账号的 PAT，
+  并把 `BUILDCACHE_BOT_TOKEN` 指向它（`util.subprocess_env` 会把它设成 `GH_TOKEN`）。
+
 ## 10. 排障速查
 
 | 现象 | 原因 / 处理 |

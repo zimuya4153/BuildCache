@@ -113,6 +113,14 @@ def subprocess_env(config: dict, extra: dict | None = None, proxy: str | None = 
     env.setdefault("GIT_CONFIG_VALUE_0", "true")
     env.setdefault("GIT_CONFIG_KEY_1", "core.autocrlf")
     env.setdefault("GIT_CONFIG_VALUE_1", "false")
+    # Everything that touches GitHub (releases, pushes, API) should be attributed
+    # to the bot account when its token is configured.
+    bot = (config.get("bot") or {}) if isinstance(config, dict) else {}
+    token_env = bot.get("tokenEnv") or "BUILDCACHE_BOT_TOKEN"
+    bot_token = os.environ.get(token_env, "").strip()
+    if bot_token:
+        env["GH_TOKEN"] = bot_token
+        env["GITHUB_TOKEN"] = bot_token
     proxy = proxy if proxy is not None else proxy_url()
     if proxy:
         env["HTTP_PROXY"] = proxy
@@ -131,6 +139,15 @@ def absolute(path_like, base: Path | None = None) -> Path:
     if path.is_absolute():
         return path
     return (base or ROOT) / path
+
+
+def git_identity(config: dict) -> tuple[str, str]:
+    """Committer identity used for every generated commit."""
+    bot = (config.get("bot") or {}) if isinstance(config, dict) else {}
+    return (
+        str(bot.get("name") or "github-actions[bot]"),
+        str(bot.get("email") or "41898282+github-actions[bot]@users.noreply.github.com"),
+    )
 
 
 def default_sandbox_root() -> Path:

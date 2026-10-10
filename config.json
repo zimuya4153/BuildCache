@@ -30,6 +30,11 @@
       "mifcache_levilamina": "7z"
     }
   },
+  "bot": {
+    "name": "github-actions[bot]",
+    "email": "41898282+github-actions[bot]@users.noreply.github.com",
+    "tokenEnv": "BUILDCACHE_BOT_TOKEN"
+  },
   "paths": {
     "sandboxRoot": null
   },
