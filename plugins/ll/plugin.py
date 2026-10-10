@@ -147,6 +147,27 @@ def line_floor(era: str) -> str:
     return era
 
 
+#: Tags older than a cutoff were written against an older MSVC than the hosted
+#: images carry, and their own dependencies do not compile with the newest one:
+#: LeviLamina 0.13.5 pulls in a libhat that dies with C2143 in Process.hpp, while
+#: 1.0.1's older-but-newer dependencies build fine. That is a property of the
+#: *project's* age, not of the xmake release line, so the cutoff is a date. The
+#: build job installs the component below (which provides that MSVC generation)
+#: and pins the build to it.
+ERA_MSVC = [
+    # commits before this date, MSVC version, Visual Studio component
+    ("2024-11-01", "14.40", "Microsoft.VisualStudio.Component.VC.14.40.17.10.x86.x64"),
+]
+
+
+def msvc_plan(era_date: str) -> dict:
+    """The MSVC generation an era's sources were written against, if not the newest."""
+    for before, version, component in ERA_MSVC:
+        if str(era_date)[:10] < before:
+            return {"msvc_version": version, "msvc_component": component}
+    return {"msvc_version": "", "msvc_component": ""}
+
+
 def recipe_cutoff(ctx, version: str, commit: str) -> str:
     """Date the recipe repositories are rolled back to for this build.
 
@@ -506,6 +527,7 @@ def toolchain_plan(ctx, version: str, commit: str) -> dict:
     era = xmake_env.xmake_version_for_date(
         ctx.config, commit_date(ctx, commit), floor="0.0.0"
     )
+    msvc = msvc_plan(commit_date(ctx, commit))
     for floor, runner, imageos, toolset in ERA_IMAGES:
         if semver.ge(era, floor):
             return {
@@ -513,8 +535,15 @@ def toolchain_plan(ctx, version: str, commit: str) -> dict:
                 "image": runner,
                 "imageos": imageos,
                 "vs_toolset": toolset,
+                **msvc,
             }
-    return {"era_xmake": era, "image": "windows-2019", "imageos": "win19", "vs_toolset": "14.29"}
+    return {
+        "era_xmake": era,
+        "image": "windows-2022",
+        "imageos": "win22",
+        "vs_toolset": None,
+        **msvc,
+    }
 
 
 def _patch_upstream_sources(snapshot, renames: dict[str, dict[str, str]]) -> list[str]:

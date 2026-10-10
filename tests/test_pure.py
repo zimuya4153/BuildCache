@@ -440,3 +440,21 @@ def test_old_eras_use_an_xmake_of_their_own_line_that_works():
     assert floor("2.9.7") == "2.9.7"
     assert floor("2.8.6") == "2.8.6"
     assert floor("3.0.1") == "3.0.1"
+
+
+def test_old_eras_ask_for_the_msvc_of_their_own_generation():
+    """The build job installs this component before an old era is built.
+
+    The hosted windows images only carry the newest MSVC, and an era's sources do
+    not compile with it (0.13.5's libhat dies with C2143).
+    """
+    ll = next(
+        item for item in plugins.load_all(util.load_config()) if item.name == "ll"
+    )
+    plan = ll.module.msvc_plan
+    assert plan("2024-08-30T20:09:06+08:00")["msvc_version"] == "14.40"
+    assert plan("2024-08-30")["msvc_component"].startswith(
+        "Microsoft.VisualStudio.Component.VC.14.40"
+    )
+    # a current era uses whatever the image has
+    assert plan("2026-10-01T00:00:00Z") == {"msvc_version": "", "msvc_component": ""}

@@ -96,6 +96,10 @@ def main() -> int:
                         "entry": entry["id"],
                         "image": plan.get("image") or "windows-latest",
                         "vs_toolset": plan.get("vs_toolset") or "",
+                        # An era whose sources need an older MSVC than the image
+                        # has: the build job installs this component first.
+                        "msvc_version": plan.get("msvc_version") or "",
+                        "msvc_component": plan.get("msvc_component") or "",
                         "commit": item["commit"],
                     }
                 )
