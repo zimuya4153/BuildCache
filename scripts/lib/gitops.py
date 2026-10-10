@@ -105,7 +105,6 @@ def ensure_orphan_branch(config: dict, owner: str, repo: str, branch: str, proxy
     bot_name, bot_email = util.git_identity(config)
     work = util.absolute(".work") / f"{repo}-{branch}-branch"
     util.rmtree(work)
-    bot_name, bot_email = util.git_identity(config)
     util.run(["git", "clone", "--depth", "1", url, str(work)], env=env, quiet=True)
     util.run(["git", "-C", str(work), "checkout", "--orphan", branch], env=env, quiet=True)
     util.run(["git", "-C", str(work), "rm", "-rf", "--quiet", "."], env=env, check=False)
@@ -150,6 +149,7 @@ def ensure_branch(
     if not branch_exists(config, owner, repo, branch):
         if seed is None:
             return directory
+        bot_name, bot_email = util.git_identity(config)
         util.rmtree(directory)
         util.run(["git", "clone", "--depth", "1", url, str(directory)], env=env, quiet=True)
         util.run(["git", "-C", str(directory), "checkout", "--orphan", branch], env=env, quiet=True)
