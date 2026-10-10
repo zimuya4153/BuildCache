@@ -53,3 +53,11 @@ def gt(a: str, b: str) -> bool:
 
 def lt(a: str, b: str) -> bool:
     return compare(a, b) < 0
+
+
+def ge(a: str, b: str) -> bool:
+    return compare(a, b) >= 0
+
+
+def le(a: str, b: str) -> bool:
+    return compare(a, b) <= 0
