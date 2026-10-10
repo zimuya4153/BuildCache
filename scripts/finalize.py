@@ -61,11 +61,16 @@ def main() -> int:
         # of the archive that lost the upload race would make every consumer
         # fall back to a source build, so the index adopts what is online.
         adopted = verify.adopt_published_digests(config, ctx.index_root)
-        for item in adopted:
-            util.warn(
-                f"{item['asset']}: indexed digest {item['recorded'][:12]} was "
-                f"overwritten by another job, kept the published "
-                f"{item['published'][:12]}"
+        if adopted:
+            # One line, not one warning per artifact: two jobs sharing a
+            # dependency is the normal case (server and client have the same
+            # closure), and their archives are never byte identical. Naming a
+            # couple of them is enough to tell a real mistake from this.
+            names = sorted(item["asset"] for item in adopted)
+            shown = ", ".join(names[:3]) + (f", … (+{len(names) - 3})" if len(names) > 3 else "")
+            util.log(
+                f"{len(adopted)} artifact(s) were packed by two jobs; the index now "
+                f"carries the digest of the published file ({shown})"
             )
         regenerate_manifests(config, ctx, index_root=ctx.index_root, package_repo=package_repo)
         problems = verify.check_index_entries(config, ctx.index_root)
