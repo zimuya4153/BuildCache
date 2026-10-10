@@ -1,0 +1,349 @@
+"""Manage the prebuilt SDK cache: inspect, prune and trigger builds.
+
+Examples:
+
+    python scripts/cache.py list
+    python scripts/cache.py list --package mifcahce_levilamina
+    python scripts/cache.py remove mifcahce_levilamina@26.51.6 --dry-run
+    python scripts/cache.py remove mifcahce_levilamina --include-dependents --yes
+    python scripts/cache.py remove '*' --all --yes
+    python scripts/cache.py trigger --plugin ll --first-only --local
+    python scripts/cache.py trigger --plugin ll --workflow --batch 5
+    python scripts/cache.py verify
+
+Destructive commands print their plan and do nothing unless ``--yes`` is given
+(``--dry-run`` is the implicit default).
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from lib import gh, gitops, index_store, plugins, util, verify  # noqa: E402
+
+_SPEC = re.compile(r'"([A-Za-z0-9][A-Za-z0-9_.\-]*)(?:\[[^\]]*\])?(?:\s+[^"]*)?"')
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--proxy", default=None)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    listing = sub.add_parser("list", help="show what is cached")
+    listing.add_argument("--package", default="")
+    listing.add_argument("--versions", action="store_true", help="include per-version detail")
+
+    graph = sub.add_parser("graph", help="show the dependency graph of cached packages")
+    graph.add_argument("--package", default="", help="only this package and its neighbourhood")
+
+    remove = sub.add_parser("remove", help="delete cached artifacts")
+    remove.add_argument("targets", nargs="+", help="package, package@version or *")
+    remove.add_argument("--include-deps", action="store_true", help="also delete its dependencies")
+    remove.add_argument(
+        "--include-dependents",
+        action="store_true",
+        help="also delete the packages that depend on it",
+    )
+    remove.add_argument(
+        "--recursive",
+        action="store_true",
+        help="repeat dependency traversal until nothing new is reachable",
+    )
+    remove.add_argument("--all", action="store_true", help="delete every cached package")
+    remove.add_argument("--prune-releases", action="store_true", help="also delete empty release shards")
+    remove.add_argument("--dry-run", action="store_true", help="only print the plan (default)")
+    remove.add_argument("--yes", action="store_true", help="actually delete")
+    remove.add_argument("--no-push", action="store_true", help="do not push the regenerated repos")
+
+    trigger = sub.add_parser("trigger", help="run one build round")
+    trigger.add_argument("--plugin", default="")
+    trigger.add_argument("--version", default="")
+    trigger.add_argument("--variant", default="")
+    trigger.add_argument("--batch", default="")
+    trigger.add_argument("--first-only", action="store_true")
+    trigger.add_argument("--rebuild-all", action="store_true")
+    trigger.add_argument("--local", action="store_true", help="build on this machine")
+    trigger.add_argument("--workflow", action="store_true", help="dispatch the GitHub workflow")
+    trigger.add_argument("--no-push", action="store_true", help="local only: skip finalize push")
+    trigger.add_argument("--dry-run", action="store_true", help="print what would be built")
+
+    sub.add_parser("verify", help="check published artifacts against the index")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    config = util.load_config()
+    proxy = args.proxy or util.proxy_url()
+    ctx = plugins.Context(config, proxy=proxy)
+    if args.command == "verify":
+        ctx.ensure_index()
+        verify.verify_or_die(config, ctx.index_root)
+        return 0
+    if args.command == "list":
+        return cmd_list(ctx, args)
+    if args.command == "graph":
+        return cmd_graph(ctx, args)
+    if args.command == "remove":
+        return cmd_remove(config, ctx, args)
+    if args.command == "trigger":
+        return cmd_trigger(config, ctx, args)
+    return 1
+
+
+# --------------------------------------------------------------------------- list
+def cmd_list(ctx, args) -> int:
+    ctx.ensure_index()
+    total = 0
+    for package, version, variant, artifacts in _inventory(ctx, args.package):
+        size = sum(int(item.get("size") or 0) for item in artifacts)
+        total += size
+        util.log(
+            f"{package}@{version} [{variant}]  {len(artifacts)} artifact(s)  {size / 1e6:.1f} MB"
+        )
+        if args.versions:
+            for item in artifacts:
+                util.log(f"    {item['asset']}  ({item.get('release')})")
+    util.log(f"total: {total / 1e6:.1f} MB")
+    return 0
+
+
+def _inventory(ctx, package_filter: str = ""):
+    root = ctx.index_root
+    if not root.is_dir():
+        return
+    for directory in sorted(root.iterdir()):
+        if not directory.is_dir() or directory.name.startswith("."):
+            continue
+        if package_filter and directory.name != package_filter:
+            continue
+        for meta in index_store.all_version_meta(root, directory.name):
+            for variant, entry in sorted(index_store.variants(meta).items()):
+                yield directory.name, str(meta.get("version")), variant, entry.get("artifacts") or []
+
+
+# -------------------------------------------------------------------------- graph
+def _read_deps(package_repo: Path) -> dict[str, set[str]]:
+    """Dependency edges between our prefixed packages, from the vendored recipes."""
+    graph: dict[str, set[str]] = {}
+    for recipe in sorted(Path(package_repo).glob("packages/*/*/xmake.lua")):
+        package = recipe.parent.name
+        edges: set[str] = set()
+        files = sorted((recipe.parent / "versions").glob("*.lua")) + [recipe]
+        for path in files:
+            for match in _SPEC.finditer(util.read_text(path)):
+                name = match.group(1)
+                if name.startswith("mifcahce_") and name != package:
+                    edges.add(name)
+        graph[package] = edges
+    return {name: edges for name, edges in graph.items() if edges or name in graph}
+
+
+def cmd_graph(ctx, args) -> int:
+    graph = _read_deps(Path(ctx.package_repo))
+    if args.package:
+        focus = args.package
+        util.log(f"{focus} depends on: {', '.join(sorted(graph.get(focus, []))) or '-'}")
+        dependents = sorted(name for name, edges in graph.items() if focus in edges)
+        util.log(f"depended on by : {', '.join(dependents) or '-'}")
+        return 0
+    for name in sorted(graph):
+        util.log(f"{name}: {', '.join(sorted(graph[name])) or '-'}")
+    return 0
+
+
+def _closure(roots: set[str], graph: dict[str, set[str]], reverse: bool, recursive: bool) -> set[str]:
+    result = set(roots)
+    frontier = set(roots)
+    while frontier:
+        nxt: set[str] = set()
+        for name in frontier:
+            if reverse:
+                nxt |= {other for other, edges in graph.items() if name in edges}
+            else:
+                nxt |= graph.get(name, set())
+        nxt -= result
+        result |= nxt
+        frontier = nxt if recursive else set()
+    return result
+
+
+# ------------------------------------------------------------------------- remove
+def cmd_remove(config: dict, ctx, args) -> int:
+    ctx.ensure_index()
+    graph = _read_deps(Path(ctx.package_repo))
+    cached = {package for package, _, _, _ in _inventory(ctx)}
+
+    if args.all or "*" in args.targets:
+        targets = set(cached)
+        versions: dict[str, set[str]] = {}
+    else:
+        targets = set()
+        versions = {}
+        for spec in args.targets:
+            package, _, version = spec.partition("@")
+            if package not in cached:
+                util.die(f"{package} is not in the cache (see `cache.py list`)")
+            targets.add(package)
+            if version:
+                versions.setdefault(package, set()).add(version)
+
+    if args.include_deps:
+        targets = _closure(targets, graph, reverse=False, recursive=args.recursive)
+    if args.include_dependents:
+        targets = _closure(targets, graph, reverse=True, recursive=args.recursive)
+
+    plan: list[tuple[str, str, str, list[dict]]] = []
+    for package, version, variant, artifacts in _inventory(ctx):
+        if package not in targets:
+            continue
+        wanted = versions.get(package)
+        if wanted and version not in wanted:
+            continue
+        plan.append((package, version, variant, artifacts))
+    if not plan:
+        util.log("nothing to remove")
+        return 0
+
+    total = sum(int(item.get("size") or 0) for _, _, _, artifacts in plan for item in artifacts)
+    util.log(f"plan: {len(plan)} package version(s), {total / 1e6:.1f} MB")
+    for package, version, variant, artifacts in plan:
+        util.log(f"  {package}@{version} [{variant}]: {len(artifacts)} artifact(s)")
+    if not args.yes:
+        util.log("dry run (pass --yes to delete)")
+        return 0
+
+    cache_cfg = config["repos"]["cache"]
+    owner, repo = cache_cfg["owner"], cache_cfg["repo"]
+    shards: set[str] = set()
+    for _, _, _, artifacts in plan:
+        for item in artifacts:
+            if item.get("release"):
+                shards.add(item["release"])
+            if item.get("asset"):
+                util.run(
+                    ["gh", "release", "delete-asset", item["release"], item["asset"],
+                     "--repo", f"{owner}/{repo}", "--yes"],
+                    env=util.subprocess_env(config, proxy=ctx.proxy),
+                    capture=True,
+                    check=False,
+                    quiet=True,
+                )
+    _drop_from_index(ctx, plan)
+    if args.prune_releases:
+        for shard in sorted(shards):
+            assets = gh.release_assets(owner, repo, shard, config=config)
+            if assets is not None and not assets:
+                util.run(
+                    ["gh", "release", "delete", shard, "--repo", f"{owner}/{repo}", "--yes"],
+                    env=util.subprocess_env(config, proxy=ctx.proxy),
+                    capture=True,
+                    check=False,
+                    quiet=True,
+                )
+                util.log(f"removed empty release {shard}")
+
+    import finalize  # regenerates manifests from the index
+
+    finalize.regenerate_manifests(config, ctx, index_root=ctx.index_root, package_repo=Path(ctx.package_repo))
+    if not args.no_push:
+        gitops.commit_and_push(Path(ctx.package_repo), f"manifests: drop {len(plan)} version(s)")
+        gitops.commit_and_push(ctx.index_root, f"index: drop {len(plan)} version(s)")
+    util.log(f"removed {len(plan)} package version(s)")
+    return 0
+
+
+def _drop_from_index(ctx, plan) -> None:
+    import json
+
+    by_package: dict[str, set[tuple[str, str]]] = {}
+    for package, version, variant, _ in plan:
+        by_package.setdefault(package, set()).add((version, variant))
+    for package, wanted in by_package.items():
+        for path in sorted((ctx.index_root / package / "versions").glob("*.json")):
+            doc = util.read_json(path, None)
+            if not doc:
+                continue
+            version = str(doc.get("version"))
+            variants = index_store.variants(doc)
+            drop = {variant for item_version, variant in wanted if item_version == version}
+            for variant in drop:
+                variants.pop(variant, None)
+            if not variants:
+                path.unlink()
+                continue
+            doc["variants"] = variants
+            path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+        index_path = ctx.index_root / package / "index.json"
+        remaining = sorted(item.stem.replace(".json", "") for item in (ctx.index_root / package / "versions").glob("*.json"))
+        index = index_store.load_package(ctx.index_root, package)
+        index["versions"] = remaining
+        index["latest"] = remaining[0] if remaining else None
+        index_path.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+
+
+# ------------------------------------------------------------------------ trigger
+def cmd_trigger(config: dict, ctx, args) -> int:
+    if args.workflow or not args.local:
+        cache_cfg = config["repos"]["cache"]
+        cmdline = ["gh", "workflow", "run", "build.yml",
+                   "--repo", f"{cache_cfg['owner']}/{cache_cfg['repo']}"]
+        for flag, value in (("dep", args.plugin), ("version", args.version), ("batch", args.batch)):
+            if value:
+                cmdline += ["-f", f"{flag}={value}"]
+        if args.first_only:
+            cmdline += ["-f", "first_only=true"]
+        if args.rebuild_all:
+            cmdline += ["-f", "rebuild_all=true"]
+        if args.dry_run:
+            util.log("would run: " + " ".join(cmdline))
+            return 0
+        util.run(cmdline, env=util.subprocess_env(config, proxy=ctx.proxy))
+        util.log("workflow dispatched; follow it with `gh run watch`")
+        return 0
+
+    scripts = Path(__file__).resolve().parent
+    matrix_file = util.ROOT / ".work" / "matrix.json"
+    discover = [sys.executable, str(scripts / "discover.py"), "--out", str(matrix_file)]
+    if args.plugin:
+        discover += ["--plugin", args.plugin]
+    if args.version:
+        discover += ["--version", args.version]
+    if args.batch:
+        discover += ["--batch", args.batch]
+    if args.first_only:
+        discover += ["--first-only"]
+    if args.rebuild_all:
+        discover += ["--rebuild-all"]
+    util.run(discover, env=util.subprocess_env(config, proxy=ctx.proxy))
+    matrix = util.read_json(matrix_file, []) or []
+    if args.variant:
+        matrix = [item for item in matrix if item.get("variant") == args.variant]
+    if not matrix:
+        util.log("nothing to build")
+        return 0
+    if args.dry_run:
+        for item in matrix:
+            util.log(f"would build {item['package']}@{item['version']} [{item.get('variant')}]")
+        return 0
+    for item in matrix:
+        util.run(
+            [sys.executable, str(scripts / "build.py"), "--plugin", item["plugin"],
+             "--version", item["version"], "--variant", item.get("variant", "")],
+            env=util.subprocess_env(config, proxy=ctx.proxy),
+        )
+    finalize = [sys.executable, str(scripts / "finalize.py")]
+    if not args.no_push:
+        finalize.append("--push")
+    util.run(finalize, env=util.subprocess_env(config, proxy=ctx.proxy))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

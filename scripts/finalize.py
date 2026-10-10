@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import gitops, index_store, manifest as manifest_lib, plugins, util  # noqa: E402
+from lib import gitops, index_store, manifest as manifest_lib, plugins, util, verify  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -16,6 +16,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--results", default="results")
     parser.add_argument("--dry-run", action="store_true", help="write nothing, push nothing")
     parser.add_argument("--push", action="store_true", help="commit and push the generated repos")
+    parser.add_argument(
+        "--verify-only",
+        action="store_true",
+        help="only check that every indexed artifact matches its published release asset",
+    )
     parser.add_argument("--proxy", default=None)
     return parser.parse_args()
 
@@ -31,6 +36,10 @@ def main() -> int:
         data = util.read_json(path, None)
         if data:
             results.append(data)
+    if args.verify_only:
+        ctx.ensure_index()
+        verify.verify_or_die(config, ctx.index_root)
+        return 0
     if not results:
         util.log("no build results found")
         return 0
@@ -84,6 +93,7 @@ def main() -> int:
 
     if not args.dry_run:
         regenerate_manifests(config, ctx, index_root=ctx.index_root, package_repo=package_repo)
+        verify.verify_or_die(config, ctx.index_root)
 
     util.log(f"indexed {entries} artifact entr(ies)")
     if args.dry_run:

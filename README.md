@@ -64,6 +64,29 @@ python scripts/selftest.py --component mifcache_levilamina
 python scripts/status.py --versions
 ```
 
+## Managing the cache
+
+```bash
+python scripts/cache.py list [--package PKG] [--versions]   # what is cached
+python scripts/cache.py graph [--package PKG]               # dependency edges
+python scripts/cache.py verify                              # index vs published assets
+
+# deletion always prints its plan first; --yes applies it
+python scripts/cache.py remove PKG@VERSION --dry-run
+python scripts/cache.py remove PKG --include-deps --yes
+python scripts/cache.py remove PKG --include-deps --include-dependents --recursive --yes
+python scripts/cache.py remove '*' --all --yes --prune-releases
+
+# one build round, locally or through the workflow
+python scripts/cache.py trigger --plugin ll --first-only --local
+python scripts/cache.py trigger --plugin ll --workflow --batch 5
+```
+
+`finalize.py` verifies every indexed artifact against the release asset it
+points at and refuses to finish on a mismatch, so a stale manifest can no longer
+make consumers silently fall back to compiling. `cache.py verify` runs the same
+check on demand.
+
 Notes:
 
 * Python 3.14+ and an authenticated `gh` CLI are required; there are no
