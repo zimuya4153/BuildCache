@@ -137,6 +137,7 @@ class Sandbox:
         plat: str,
         arch: str,
         capture: bool = False,
+        check: bool = True,
         stream: bool = False,
     ):
         args = ["f", "-y", "-p", plat, "-a", arch, "-m", "release"]
@@ -146,7 +147,7 @@ class Sandbox:
             args.append("--toolchain=clang-cl")
         # `xmake f` is where the dependency closure actually gets installed, so
         # it is usually the longest silent step: it needs the heartbeat too.
-        return self.xmake(args, capture=capture, stream=stream)
+        return self.xmake(args, capture=capture, check=check, stream=stream)
 
 
 def list_xmake_releases(config: dict, refresh: bool = False) -> list[dict]:

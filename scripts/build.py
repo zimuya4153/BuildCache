@@ -140,19 +140,31 @@ def main() -> int:
     )
     git_shim.install(config, sandbox.env, cutoff)
 
+    # Some steps are known to be flaky (generating the bedrock runtime data can
+    # fail and succeed on the next attempt), so both install steps are retried
+    # instead of failing the job. The sandbox package cache is kept between
+    # attempts (it lives in the sandbox root), so a retry resumes rather than
+    # restarting.
+    attempts = int(config.get("xmake", {}).get("installRetries", 3))
+
     util.log_step("configure")
-    sandbox.configure(toolchain, vs_toolset, plat, arch, stream=True)
+    # The configure step is where the dependency closure gets installed, so a
+    # failure here has to be retried exactly like the export step below.
+    for attempt in range(1, attempts + 1):
+        result = sandbox.configure(
+            toolchain, vs_toolset, plat, arch, stream=True, check=False
+        )
+        if result.returncode == 0:
+            break
+        util.warn(f"configure failed (attempt {attempt}/{attempts})")
+        _dump_failed_logs(config, sandbox)
+        if attempt == attempts:
+            util.die(f"configure failed after {attempts} attempt(s)")
+        _retry_failed_packages(config, sandbox, attempts)
 
     util.log_step("install closure")
     # No explicit package argument: the sandbox project already declares the
     # require (including configs), which keeps the resolved buildid identical.
-    # The sandbox package cache is kept between runs (it lives in the sandbox
-    # root), so re-running reuses everything that is already built.
-    #
-    # Some steps are known to be flaky (generating the bedrock runtime data can
-    # fail and succeed on the next attempt), so the whole install round is
-    # retried instead of failing the job.
-    attempts = int(config.get("xmake", {}).get("installRetries", 3))
     for attempt in range(1, attempts + 1):
         util.rmtree(sandbox.export_dir)
         util.ensure_dir(sandbox.export_dir)
@@ -164,27 +176,10 @@ def main() -> int:
         if result.returncode == 0:
             break
         util.warn(f"install closure failed (attempt {attempt}/{attempts})")
-        failed = _failed_packages(sandbox)
-        if failed:
-            util.log(
-                "retrying failed package(s): "
-                + ", ".join(f"{name} {version}" for name, version in failed)
-            )
-            for name, version in failed:
-                for package_attempt in range(1, attempts + 1):
-                    single = sandbox.xmake(
-                        ["require", "-y", "--build", f"{name} {version}"],
-                        stream=True,
-                        check=False,
-                    )
-                    if single.returncode == 0:
-                        break
-                    util.warn(
-                        f"{name} {version} failed "
-                        f"(attempt {package_attempt}/{attempts})"
-                    )
+        _dump_failed_logs(config, sandbox)
         if attempt == attempts:
             util.die(f"install closure failed after {attempts} attempt(s)")
+        _retry_failed_packages(config, sandbox, attempts)
 
     util.log_step("publish artifacts")
     results = publish(
@@ -301,6 +296,69 @@ def _failed_packages(sandbox) -> list[tuple[str, str]]:
         name = marker.parent.parent.name
         found.append((name, version))
     return found
+
+
+def _failed_install_logs(sandbox) -> list[dict]:
+    """The logs xmake writes next to a package it failed to install.
+
+    xmake's own advice is "if you want to get more verbose errors, please see:
+    <path>", and that path is inside the sandbox -- which nobody can open from a
+    CI runner. Both the package and the files are returned so the caller can
+    print them.
+    """
+    cache = sandbox.root_dir / ".xmake" / "cache" / "packages"
+    found: list[dict] = []
+    for marker in sorted(cache.glob("*/*/*/*/installdir.failed")):
+        directory = marker / "logs"
+        logs = sorted(directory.glob("*.txt")) if directory.is_dir() else []
+        found.append(
+            {
+                "package": marker.parent.parent.name,
+                "version": marker.parent.name,
+                "logs": logs,
+            }
+        )
+    return found
+
+
+def _dump_failed_logs(config: dict, sandbox) -> None:
+    """Print why every failed package failed, instead of pointing into the sandbox."""
+    limit = int(config.get("xmake", {}).get("failedLogLines", 120))
+    for item in _failed_install_logs(sandbox):
+        if not item["logs"]:
+            util.warn(f"{item['package']} {item['version']}: no install log was written")
+            continue
+        for path in item["logs"]:
+            lines = util.read_text(path).splitlines()
+            util.log(f"--- {item['package']} {item['version']} install log ({path})")
+            hidden = len(lines) - limit
+            for line in lines[-limit:] if limit else lines:
+                util.log("  | " + line)
+            if hidden > 0:
+                util.log(f"  | ... ({hidden} earlier line(s) not shown)")
+
+
+def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
+    """Rebuild the packages that failed, one by one, before retrying the whole step."""
+    failed = _failed_packages(sandbox)
+    if not failed:
+        return
+    util.log(
+        "retrying failed package(s): "
+        + ", ".join(f"{name} {version}" for name, version in failed)
+    )
+    for name, version in failed:
+        for attempt in range(1, attempts + 1):
+            single = sandbox.xmake(
+                ["require", "-y", "--build", f"{name} {version}"],
+                stream=True,
+                check=False,
+            )
+            if single.returncode == 0:
+                break
+            util.warn(f"{name} {version} failed (attempt {attempt}/{attempts})")
+        else:
+            _dump_failed_logs(config, sandbox)
 
 
 def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,

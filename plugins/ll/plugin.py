@@ -402,14 +402,21 @@ def should_skip(ctx, version: str, commit: str) -> tuple[bool, str]:
     )
 
 
-# Which CI image (and MSVC generation) an era's xmake can drive. Floors are
-# checked newest first; "win25" means the current windows-latest image.
+# Which CI image an era's xmake can drive. Floors are checked newest first;
+# "win25" means the current windows-latest image.
+#
+# The images used to be pinned to a toolset of the era's own generation, but the
+# hosted images no longer carry one: in 2026 windows-2022 ships Visual Studio
+# 17.14 with MSVC 14.44 only (asking for --vs_toolset=14.38 makes xmake report
+# "vs not found!" and every package fail), and windows-2019 -- the image the
+# oldest era needed -- has been retired. So the era is now expressed by the image
+# alone and an old xmake gets whatever MSVC that image has. If that turns out to
+# be unusable for a version, the build fails loudly and the entry is requeued;
+# producing artifacts with a compiler the era does not understand would be worse.
 ERA_IMAGES = [
     # era xmake floor, runner label, GitHub ImageOS value, msvc toolset
     ("3.1.0", "windows-latest", "win25", None),
-    ("3.0.0", "windows-2022", "win22", "14.38"),
-    ("2.9.0", "windows-2022", "win22", "14.34"),
-    ("0.0.0", "windows-2019", "win19", "14.29"),
+    ("0.0.0", "windows-2022", "win22", None),
 ]
 LOCAL_IMAGEOS = "win25"
 

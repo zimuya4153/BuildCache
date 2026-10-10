@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import build  # noqa: E402
 import finalize  # noqa: E402
 from lib import (  # noqa: E402
     aliases,
@@ -228,3 +229,23 @@ def test_shipped_plugins_declare_their_consumer_profiles():
         # clang-cl -- see docs/tutorial.md, section 5
         assert set(found) >= {"msvc", "clang-cl"}, plugin.name
         assert all(found.values())
+
+
+# ------------------------------------------------------------- failed installs
+def test_failed_install_logs_are_found(tmp_path: Path):
+    """xmake only points at a log inside the sandbox, so we print it ourselves."""
+    logs = (
+        tmp_path / "root" / ".xmake" / "cache" / "packages"
+        / "2610" / "g" / "gsl" / "v4.0.0" / "installdir.failed" / "logs"
+    )
+    logs.mkdir(parents=True)
+    (logs / "install.txt").write_text("vs not found!\n", encoding="utf-8")
+
+    class FakeSandbox:
+        root_dir = tmp_path / "root"
+
+    found = build._failed_install_logs(FakeSandbox())
+    assert [item["package"] for item in found] == ["gsl"]
+    assert [item["version"] for item in found] == ["v4.0.0"]
+    assert [path.name for path in found[0]["logs"]] == ["install.txt"]
+    assert build._failed_packages(FakeSandbox()) == [("gsl", "v4.0.0")]
