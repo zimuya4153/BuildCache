@@ -66,11 +66,21 @@ def main() -> int:
             if not args.rebuild_all and version in built and not args.version:
                 continue
             item = by_version[version]
+            profiles = [
+                found["id"]
+                for found in (
+                    plugin.call("toolchain_aliases", ctx, version, item["commit"]) or []
+                )
+            ]
             done = (
                 set()
                 if args.rebuild_all
-                else index_store.built_entries_at_revision(
-                    ctx.index_root, package, version, int(config.get("revision", 1))
+                else index_store.built_entries_with_profiles(
+                    ctx.index_root,
+                    package,
+                    version,
+                    int(config.get("revision", 1)),
+                    profiles,
                 )
             )
             for entry in plugin.entries(ctx, version, item["commit"]):

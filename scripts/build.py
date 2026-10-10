@@ -15,6 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib import (  # noqa: E402
+    aliases,
     gh,
     git_shim,
     gitops,
@@ -92,6 +93,9 @@ def main() -> int:
     entries = plugin.entries(ctx, args.version, commit)
     entry = next((item for item in entries if item["id"] == args.entry), entries[0])
     configs = entry.get("configs") or {}
+    alias_profiles = [
+        found["id"] for found in (plugin.call("toolchain_aliases", ctx, args.version, commit) or [])
+    ]
 
     skip, reason = plugin.call("should_skip", ctx, args.version, commit) or (False, "")
     if skip:
@@ -113,6 +117,9 @@ def main() -> int:
     local_repos = [
         (name, directory) for name, (directory, _sha) in prepared.items() if name != "xmake-repo"
     ]
+    # xmake searches the project's own repositories before the main one, so the
+    # recipe lookup for a package has to follow the same order.
+    repo_order = local_repos + [("xmake-repo", main_repo)]
 
     # Keep the official precompiled mirror out of the way: the closure has to be
     # built from source with the era recipes, not fetched as someone else's artifact.
@@ -184,6 +191,8 @@ def main() -> int:
         config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake_version,
         commit, cutoff, recipe_commits, entry, configs, require.partition(" ")[0],
         plugin_name=plugin.name, upstream_toolchain=upstream_toolchain, plugin=plugin,
+        repo_order=repo_order,
+        alias_profiles=alias_profiles,
         dry_run=args.dry_run,
     )
     out = Path(args.results)
@@ -203,7 +212,8 @@ def main() -> int:
 
 def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake_version,
             commit, cutoff, recipe_commits, entry, configs, package_name,
-            plugin_name="", upstream_toolchain="", plugin=None, dry_run=False) -> dict:
+            plugin_name="", upstream_toolchain="", plugin=None, repo_order=None,
+            alias_profiles=None, dry_run=False) -> dict:
     owner = config["repos"]["cache"]["owner"]
     repo = config["repos"]["cache"]["repo"]
     max_assets = int(config["release"]["maxAssetsPerRelease"])
@@ -239,6 +249,7 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
                             config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
                             name, published_name, version, hash_dir, plat, arch,
                             toolset_for_key(vs_toolset, name),
+                            repo_order=repo_order or [], commit=commit,
                             target_branch=target_branch, dry_run=dry_run,
                         )
                     )
@@ -255,6 +266,7 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
         "xmake_version": xmake_version,
         "toolchain": toolchain,
         "upstream_toolchain": upstream_toolchain,
+        "alias_profiles": alias_profiles or [],
         "vs_toolset": vs_toolset,
         "recipe_commits": recipe_commits,
         "prefix": ctx.prefix,
@@ -293,7 +305,7 @@ def _failed_packages(sandbox) -> list[tuple[str, str]]:
 
 def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
                  name, published_name, version, hash_dir, plat, arch, toolset,
-                 target_branch=None, dry_run=False) -> dict:
+                 repo_order=None, commit="", target_branch=None, dry_run=False) -> dict:
     from lib import manifest as manifest_lib
 
     container = container_for(config, name)
@@ -315,6 +327,15 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
     packer.pack(hash_dir, archive, store_as=store_as, container=container)
     digest = util.sha256_file(archive)
     key = manifest_lib.build_id(plat, arch, toolset, hash_dir.name)
+    # The same artifact is reachable for other consumer toolchains; the plugin
+    # decides which ones, the hash is recomputed offline (never rebuilt).
+    derived: list[dict] = []
+    if plugin is not None and not dry_run:
+        derived = aliases.for_artifact(
+            ctx, plugin, sandbox, list(repo_order or []), plat, arch,
+            package=name, version=version, commit=commit, hash_dir=hash_dir,
+            toolset=toolset,
+        )
     url = ""
     release = ""
     if dry_run:
@@ -341,6 +362,7 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         "sha256": digest,
         "size": archive.stat().st_size,
         "container": container,
+        "aliases": derived,
     }
 
 

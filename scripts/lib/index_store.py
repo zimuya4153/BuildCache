@@ -71,6 +71,29 @@ def built_entries_at_revision(
     return found
 
 
+def built_entries_with_profiles(
+    index_root: Path, package: str, version: str, revision: int, profiles: list[str]
+) -> set[str]:
+    """Entries that are current for this revision *and* carry these profiles.
+
+    The consumer profiles a plugin declares are part of what makes an entry
+    current: when a plugin starts publishing another toolchain, the entries that
+    were written before it existed have to be built again, and this is what
+    notices. An entry is compared against the declared set rather than against
+    the aliases found in its artifacts, because whether an artifact needs an
+    alias at all is only known while it is being built.
+    """
+    found = set()
+    wanted = sorted(profiles)
+    for entry_id, entry in entries(version_meta(index_root, package, version)).items():
+        if int(entry.get("revision") or 0) < int(revision):
+            continue
+        if sorted(entry.get("alias_profiles") or []) != wanted:
+            continue
+        found.add(entry_id)
+    return found
+
+
 def entry_artifacts(index_root: Path, package: str, version: str, entry_id: str) -> list[dict]:
     entry = entries(version_meta(index_root, package, version)).get(entry_id) or {}
     return list(entry.get("artifacts") or [])

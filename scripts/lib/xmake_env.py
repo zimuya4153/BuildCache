@@ -40,6 +40,7 @@ class Sandbox:
         check: bool = True,
         tail: int = 0,
         capture: bool = False,
+        quiet: bool = False,
         stream: bool = False,
     ):
         if stream:
@@ -51,9 +52,10 @@ class Sandbox:
             capture=capture or tail > 0,
             check=check,
             timeout=self.timeout,
+            quiet=quiet,
         )
         output = result.stdout or ""
-        if capture and output:
+        if capture and output and not quiet:
             for line in output.splitlines():
                 util.log("  | " + line)
         elif tail > 0 and output:

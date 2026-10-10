@@ -12,7 +12,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from lib import index_store, manifest, recipefix, schemas, semver, util  # noqa: E402
+import finalize  # noqa: E402
+from lib import (  # noqa: E402
+    aliases,
+    hashprobe,
+    index_store,
+    manifest,
+    plugins,
+    recipefix,
+    schemas,
+    semver,
+    util,
+)
 
 
 # --------------------------------------------------------------------- versions
@@ -95,6 +106,27 @@ def test_legacy_variant_documents_still_read(tmp_path: Path):
     assert "default" in index_store.entries(meta)
 
 
+def test_entry_keeps_the_profiles_it_was_built_for(tmp_path: Path):
+    """`discover` compares the declared profiles against what an entry records."""
+    index_store.write_entry(
+        tmp_path,
+        "mifcache_levilamina",
+        "26.51.6",
+        "server",
+        {"revision": 1, "alias_profiles": ["msvc", "clang-cl"], "artifacts": []},
+    )
+    assert index_store.built_entries_with_profiles(
+        tmp_path, "mifcache_levilamina", "26.51.6", 1, ["msvc", "clang-cl"]
+    ) == {"server"}
+    # a plugin that starts declaring another profile queues the entry again
+    assert (
+        index_store.built_entries_with_profiles(
+            tmp_path, "mifcache_levilamina", "26.51.6", 1, ["msvc", "clang-cl", "gcc"]
+        )
+        == set()
+    )
+
+
 # ------------------------------------------------------------------------ config
 def test_shipped_config_is_valid():
     config = schemas.validate(schemas.Config, util.load_config())
@@ -108,3 +140,91 @@ def test_config_typo_is_rejected():
 
     with pytest.raises(Exception):
         schemas.validate(schemas.Config, {"prefix": "x", "repos": {"package": {}, "cache": {}}})
+
+
+# ---------------------------------------------------------------------- aliases
+def test_alias_profiles_say_what_they_change():
+    # "primary" is the artifact as built: whatever its install manifest recorded
+    # must stay untouched, that is what makes the self-check meaningful.
+    assert hashprobe._lua_profiles([{"id": "primary"}]) == '{{ id = "primary" }}'
+    assert hashprobe._lua_profiles([{"id": "clang-cl", "toolchains": "clang-cl"}]) == (
+        '{{ id = "clang-cl", toolchains = "clang-cl" }}'
+    )
+    # a profile that means "no toolchain" is as explicit as a named one
+    assert hashprobe._lua_profiles([{"id": "msvc", "toolchains": None}]) == (
+        '{{ id = "msvc", clear_toolchains = true }}'
+    )
+
+
+def test_alias_verification_uses_the_built_profile():
+    hashes = {"primary": {"hash": "abc", "input": "windowsx64{...}"}}
+    assert hashprobe.verify(hashes, "abc")
+    assert not hashprobe.verify(hashes, "def")
+    assert not hashprobe.verify({}, "abc")
+    assert hashprobe.input_of(hashes, "primary") == "windowsx64{...}"
+
+
+def test_recipe_candidates_prefer_the_repository_with_that_version(tmp_path: Path):
+    for repo, version in (("levimc-repo", "10.0.0"), ("xmake-repo", "11.2.0")):
+        recipe = tmp_path / repo / "packages" / "f" / "fmt"
+        recipe.mkdir(parents=True)
+        (recipe / "xmake.lua").write_text(
+            f'add_versions("{version}", "deadbeef")\n', encoding="utf-8"
+        )
+    repos = [("levimc-repo", tmp_path / "levimc-repo"), ("xmake-repo", tmp_path / "xmake-repo")]
+    found = aliases.recipe_candidates(repos, "fmt", "11.2.0")
+    assert [path.parts[-4] for path in found] == ["xmake-repo", "levimc-repo"]
+
+
+def test_finalize_publishes_aliases_into_the_manifest(tmp_path: Path):
+    index_root = tmp_path / "index"
+    package_repo = tmp_path / "xmake-repo"
+    artifact = {
+        "package": "mifcache_fmt",
+        "upstream_package": "fmt",
+        "version": "11.2.0",
+        "buildhash": "ee1902dd",
+        "key": "windows-x64-vc-ee1902dd",
+        "toolset": "14.44.35207",
+        "url": "https://example.invalid/fmt-ee1902dd.7z",
+        "sha256": "ab" * 32,
+        "aliases": [
+            {
+                "id": "clang-cl",
+                "toolchain": "clang-cl",
+                "buildhash": "df51e1a2",
+                "key": "windows-x64-vc-df51e1a2",
+                "toolset": "14.44.35207",
+            }
+        ],
+    }
+    index_store.write_entry(
+        index_root, "mifcache_fmt", "11.2.0", "server", {"revision": 1, "artifacts": [artifact]}
+    )
+    config = util.load_config()
+    finalize.regenerate_manifests(
+        config,
+        plugins.Context(config),
+        index_root=index_root,
+        package_repo=package_repo,
+    )
+    entries = manifest.read(package_repo, "mifcache_fmt", "11.2.0")
+    assert set(entries) == {"windows-x64-vc-ee1902dd", "windows-x64-vc-df51e1a2"}
+    # one archive, two addresses
+    assert entries["windows-x64-vc-df51e1a2"] == entries["windows-x64-vc-ee1902dd"]
+
+
+def test_shipped_plugins_declare_their_consumer_profiles():
+    """Every configured project has to say which toolchains its artifacts serve.
+
+    The profiles are what the build recomputes hashes for, so a project that
+    declares none silently serves only the toolchain it was built with.
+    """
+    for plugin in plugins.load_all(util.load_config()):
+        profiles = plugin.call("toolchain_aliases", None, "26.51.6", "") or []
+        found = {item["id"]: item["toolchain"] for item in profiles}
+        assert found, f"{plugin.name} declares no consumer profile"
+        # the shapes a consumer can declare: nothing (the built profile), msvc,
+        # clang-cl -- see docs/tutorial.md, section 5
+        assert set(found) >= {"msvc", "clang-cl"}, plugin.name
+        assert all(found.values())

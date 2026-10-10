@@ -123,7 +123,13 @@ def cmd_list(ctx, args) -> int:
         )
         if args.versions:
             for item in artifacts:
-                util.log(f"    {item['asset']}  ({item.get('release')})")
+                extra = ""
+                aliases = item.get("aliases") or []
+                if aliases:
+                    extra = "  + " + ", ".join(
+                        alias.get("id") or alias.get("toolchain") or "" for alias in aliases
+                    )
+                util.log(f"    {item['asset']}  ({item.get('release')}){extra}")
     util.log(f"total: {total / 1e6:.1f} MB")
     return 0
 

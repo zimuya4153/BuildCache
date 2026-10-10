@@ -92,6 +92,21 @@ class _UpstreamPlugin:
     def native_toolchain(self, ctx, version: str, commit: str) -> str:
         return self.settings.get("native_toolchain", self.toolchain(ctx, version, commit))
 
+    def toolchain_aliases(self, ctx, version: str, commit: str) -> list[dict]:
+        """Extra consumer toolchains to publish the same artifact for.
+
+        Opt-in per project (``"toolchainAliases": [{"id": "clang-cl",
+        "toolchain": "clang-cl"}]``): whether the same archive can serve another
+        toolchain is a property of the project's artifacts, not of the framework.
+        """
+        found = []
+        for item in self.settings.get("toolchainAliases") or []:
+            if isinstance(item, str):
+                found.append({"id": item, "toolchain": item})
+            elif item.get("toolchain"):
+                found.append({"id": item.get("id") or item["toolchain"], "toolchain": item["toolchain"]})
+        return found
+
     def xmake_version(self, ctx, version: str, commit: str) -> str:
         from lib import xmake_env
 

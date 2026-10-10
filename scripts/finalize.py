@@ -65,6 +65,12 @@ def main() -> int:
             for artifact in result.get("artifacts", []):
                 per_package.setdefault(artifact["package"], []).append(artifact)
             for package, artifacts in per_package.items():
+                # The entry of the package that was built is already written in
+                # full above; rewriting it here with the per-component shape
+                # would drop what only the build knows (which consumer profiles
+                # it was published for), and `discover` would queue it forever.
+                if package == result["package"]:
+                    continue
                 for artifact in artifacts:
                     index_store.write_entry(
                         ctx.index_root,
@@ -80,6 +86,7 @@ def main() -> int:
                             "toolchain": result.get("toolchain"),
                             "vs_toolset": result.get("vs_toolset"),
                             "configs": result.get("configs"),
+                            "alias_profiles": result.get("alias_profiles") or [],
                             "produced_for": f"{result['package']}@{version}",
                             "artifacts": [artifact],
                         },
@@ -152,6 +159,10 @@ def refresh_release_notes(config: dict, ctx) -> None:
                         "toolset": artifact.get("toolset"),
                         "buildhash": artifact.get("buildhash") or "",
                         "asset": artifact.get("asset") or "",
+                        "aliases": sorted(
+                            item.get("id") or item.get("toolchain") or ""
+                            for item in artifact.get("aliases") or []
+                        ),
                     }
                     shards.setdefault(artifact["release"], {})[row["asset"]] = row
                     prefix = prefix or str(meta.get("prefix") or "")
@@ -209,6 +220,14 @@ def regenerate_manifests(config: dict, ctx, index_root: Path, package_repo: Path
                 entries[artifact["key"]] = manifest_lib.entry(
                     artifact["url"], artifact["sha256"], artifact.get("toolset")
                 )
+                # A derived alias is the same archive under another consumer
+                # toolchain: same url, same checksum, different build id.
+                for alias in artifact.get("aliases") or []:
+                    entries[alias["key"]] = manifest_lib.entry(
+                        artifact["url"],
+                        artifact["sha256"],
+                        alias.get("toolset") or artifact.get("toolset"),
+                    )
             manifest_lib.write_all(package_repo, package, version, entries)
 
 

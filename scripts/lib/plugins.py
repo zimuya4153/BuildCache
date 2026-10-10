@@ -19,6 +19,7 @@ class Plugin:
         "xmake_version",
         "toolchain",
         "native_toolchain",
+        "toolchain_aliases",
         "toolchain_plan",
         "recipe_cutoff",
         "git_cutoff",
@@ -129,7 +130,12 @@ class Context:
                 "`configs`, `revision`, `xmake_version`, `toolchain`, plus every\n"
                 "artifact's url/sha256/toolset/buildhash). `revision` is what makes\n"
                 "a fix re-publish old versions: bumping it in `config.json` marks\n"
-                "older records as stale and `discover` queues them again.\n",
+                "older records as stale and `discover` queues them again.\n\n"
+                "`alias_profiles` names the extra consumer toolchains an entry was\n"
+                "published for. Each artifact may then carry `aliases`: manifest\n"
+                "entries that address the very same archive with a build hash\n"
+                "recomputed for another toolchain. Declaring a new profile in a\n"
+                "plugin re-queues the entries that predate it.\n",
             )
         return gitops.ensure_branch(
             self.config,

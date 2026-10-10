@@ -184,7 +184,20 @@ def toolchain_aliases(ctx, version: str, commit: str) -> list[dict]:
     more manifest entry with the hash recomputed for that profile — not of
     building everything twice.
     """
-    return [{"id": "clang-cl", "toolchain": "clang-cl"}]
+    # The list has to cover how a consumer *declares* its toolchain, because the
+    # declaration is part of the build hash:
+    #
+    #   * nothing declared (windows defaults to msvc) -> the plain artifact
+    #   * set_toolchains("msvc")                     -> toolchains=msvc
+    #   * set_toolchains("clang-cl")                 -> toolchains=clang-cl
+    #
+    # It has to sit in the project file: `xmake f --toolchain=clang-cl` hashes
+    # the same, but xmake then never checks an MSVC toolchain, and its
+    # precompiled-artifact selection (which requires a checked one) is skipped.
+    return [
+        {"id": "msvc", "toolchain": "msvc"},
+        {"id": "clang-cl", "toolchain": "clang-cl"},
+    ]
 
 
 def extra_deps(ctx, version: str, commit: str) -> list[dict]:

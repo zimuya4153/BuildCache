@@ -13,6 +13,14 @@ the configured repositories, picks the entry whose build id
 and then downloads, verifies and unpacks that archive instead of building
 anything.
 
+That build id contains the toolchain the *consumer* resolves the package with,
+so the same archive is addressed differently by an msvc project and a clang-cl
+one. Instead of building everything twice, a plugin declares the extra consumer
+toolchains (`toolchain_aliases`) and the build recomputes the build hash offline
+with the very xmake that built the package: the alias is published only when the
+recomputation of the built profile reproduces the artifact's own hash, and the
+alias is just one more manifest entry pointing at the same archive.
+
 BuildCache fills that channel by letting xmake itself do the work:
 
 ```
@@ -28,7 +36,7 @@ discover ──► build (per SDK version)                  ──► finalize
 | `main` branch | framework: scripts, plugins, workflow, config |
 | `index` branch | generated index (`<package>/index.json`, `<package>/versions/*.json`) |
 | `assets` branch | empty branch that only exists as the target of release tags |
-| GitHub Releases | the `*.tar.zst` artifacts, sharded as `<package>_<n>` |
+| GitHub Releases | the `*.7z` artifacts, sharded as `<package>_<n>` |
 | `zimuya4153/xmake-repo` | consumer-facing repository: prefixed recipes + manifests |
 
 Nothing we publish reuses an upstream package name: every package is vendored
@@ -47,6 +55,13 @@ target("my-plugin")
     set_kind("shared")
     add_packages("mifcache_levilamina")
 ```
+
+Which toolchain the project *declares* decides which manifest entry it needs,
+because the declaration is part of the build hash. Every published artifact is
+therefore addressable in all three ways a project can write it down — nothing,
+`set_toolchains("msvc")`, and `set_toolchains("clang-cl")` — from one archive.
+It has to be `set_toolchains` in the project file: `xmake f --toolchain=...`
+hashes the same but never selects artifacts (see `docs/tutorial.md`, section 5).
 
 `mifcache_levilamina` resolves to the precompiled SDK and its dependencies
 resolve to our prefixed precompiled packages as well. To make our artifacts take
@@ -109,8 +124,10 @@ Notes:
 3. `xmake require --export` the closure, pack every exported install dir as
    `<package>/<version>/<buildhash>/`, upload it to a release shard and record it
    in the build result.
-4. `finalize` writes the index branch and regenerates every manifest from the
-   index, then pushes both repositories.
+4. Derive the aliases of every artifact (same archive, build hash recomputed for
+   the other consumer toolchains) and record them next to it.
+5. `finalize` writes the index branch and regenerates every manifest from the
+   index (aliases included), then pushes both repositories.
 
 Re-running is idempotent: assets are addressed by name, manifests are rewritten
 from the index, and the index only ever grows.
@@ -134,8 +151,8 @@ Open items:
   installs correctly individually, so this looks like xmake's download cache
   under concurrency rather than a publishing problem; it needs a follow-up with
   a single-artifact download versus a batch download.
-* **Client variants.** The server variant is built and published; the client
-  variant is wired up (`plugins/ll/plugin.py::variants`) but still has to be run
-  (`python scripts/build.py --version <v> --variant client`).
+* **Client entries.** The server entry is built and published; the client entry
+  is wired up (`plugins/ll/plugin.py::entries`) but still has to be run
+  (`python scripts/build.py --version <v> --entry client`).
 * **Consumers need `levimc-repo`** in `add_repositories` because some LL-side
   dependencies (for example `prelink`) are only published there.

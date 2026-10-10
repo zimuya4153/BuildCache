@@ -25,9 +25,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--entry", default="server", help="variant to consume (e.g. server/client)")
     parser.add_argument(
         "--toolchain",
-        default="msvc",
-        help="consumer toolchain; xmake only selects artifacts when an msvc "
-        "toolchain instance is configured (project level is enough)",
+        default="auto",
+        choices=["auto", "msvc", "clang-cl"],
+        help="how the consumer *declares* its toolchain, which is part of the "
+        "build hash: 'auto' declares nothing (windows defaults to msvc), 'msvc' "
+        "and 'clang-cl' write set_toolchains() into the project file and must be "
+        "served by a manifest alias. Never pass it as a command line --toolchain: "
+        "xmake would hash the same but skip artifact selection entirely.",
     )
     parser.add_argument("--expect", default="", help="extra relative path that must exist")
     parser.add_argument("--keep-sandbox", action="store_true")
@@ -70,7 +74,7 @@ def main() -> int:
         name="selftest",
         xmake_version=str(meta.get("xmake_version") or "3.1.1"),
         proxy=proxy,
-        toolchain=None if args.toolchain == "msvc" else args.toolchain,
+        toolchain=None if args.toolchain == "auto" else args.toolchain,
         repositories=[("llsdk", published), ("levimc-repo", levimc_snapshot)],
         main_repo=main_snapshot,
         binary_repo=published,
@@ -80,7 +84,10 @@ def main() -> int:
         ),
     )
     plat, arch = config["platform"]["plat"], config["platform"]["arch"]
-    result = sandbox.configure(args.toolchain, toolset, plat, arch, capture=True)
+    # Deliberately no command line toolchain: the sandbox project file already
+    # declares it, and xmake only selects precompiled artifacts when it checked
+    # an msvc toolchain itself, which a `--toolchain=` argument prevents.
+    result = sandbox.configure(None, toolset, plat, arch, capture=True)
     log = result.stdout or ""
     expected_assets = [item["asset"] for item in variant_meta.get("artifacts", [])]
     fetched = any(f"/{asset}" in log for asset in expected_assets)

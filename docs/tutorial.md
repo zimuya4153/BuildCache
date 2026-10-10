@@ -22,6 +22,7 @@ packages/<首字母>/<包名>/<版本>/manifest.txt
 | Windows 下 key 必须形如 `<plat>-<arch>-vc<...>-<buildhash>` | 中间那段可以省略，前后缀不能动 |
 | `buildhash = strhash128(plat + arch + [label] + configs + sourcehash + _toolchains)` | **文件名里不需要再写平台/架构/工具链/版本** |
 | 只对「解析时带 msvc 工具链」的包做选择 | 消费端工程要以 msvc 解析依赖 |
+| 哈希里含工具链，消费端与编译端不同就对不上 | 可以「别名」：同一个压缩包再写一条 hash 离线重算出来的 manifest 条目（见 §6 `toolchain_aliases`） |
 | 解包时会**吃掉一层目录** | 包内必须是 `<字母>/<包名>/<版本>/<buildhash>/…`，且 xmake 3.1 不认 `.tar.zst`（用 7z） |
 | 校验失败会**静默回退编源码** | 必须自己校验发布一致性（见 `finalize` 的 verify） |
 
@@ -58,7 +59,7 @@ cd tests/consumer && xmake f -y -p windows -a x64 -m release      # 消费端验
 add_repositories("levimc-repo https://github.com/LiteLDev/xmake-repo.git")
 add_repositories("llsdk https://github.com/zimuya4153/xmake-repo.git")
 
-set_toolchains("msvc")     -- 关键：包按 msvc 解析才会用预编译产物
+set_toolchains("msvc")     -- 写在工程文件里才会命中缓存（原因见下表）
 set_runtimes("MD")
 add_requires("mifcache_levilamina 26.51.6", {configs = {target_type = "server"}})
 
@@ -67,8 +68,22 @@ target("my-plugin")
     add_packages("mifcache_levilamina")
 ```
 
-插件自身代码仍可用 clang-cl（`target` 级别再 `set_toolchains("clang-cl")`），
-LL 的源码编译不受影响。
+工程「怎么声明工具链」会被写进包的 buildhash，所以它决定命中哪条 manifest：
+
+| 工程里的写法 | buildhash 多出来的部分 | 命中 |
+|---|---|---|
+| 什么都不写（Windows 默认 msvc） | 无 | 产物本身那一条 |
+| `set_toolchains("msvc")` | `toolchains=msvc` | `msvc` 别名 |
+| `set_toolchains("clang-cl")` | `toolchains=clang-cl` | `clang-cl` 别名 |
+| `xmake f --toolchain=clang-cl` | 同 clang-cl | **不命中**，见下 |
+
+前三种都实测打印 `install mifcache_fmt 11.2.0 (precompiled) .. ok`，用的还是同一份
+压缩包。最后一种是 xmake 自身的限制：命令行给的 toolchain 不会让 xmake 去 check 一个
+msvc 工具链，而它的预编译选择逻辑要求「存在已 check、带 vcvars 的 msvc」，于是整条
+通道被跳过，只能回源码编译。所以**把 `set_toolchains(...)` 写在 xmake.lua 里**。
+
+插件自身代码仍可用 clang-cl（`target` 级别再 `set_toolchains("clang-cl")`），LL 的源码
+编译不受影响：SDK 产物与工具链 ABI 兼容，别名只是同一个包的另一个地址。
 
 ## 6. 写一个插件（接入新项目）
 
@@ -81,6 +96,7 @@ LL 的源码编译不受影响。
 | `entries(ctx, version, commit)` | 该版本要编几个条目：`[{"id": "server", "configs": {...}}]`；**这是项目特例的归属地**（LL 的 server/client 就写在这里） |
 | `configs(ctx, version, commit)` | 单条目项目的默认 configs |
 | `xmake_version` / `toolchain` / `native_toolchain` | 用哪个 xmake、用哪个工具链编缓存 |
+| `toolchain_aliases(ctx, version, commit)` | 产物还能被哪些消费端工具链使用：`[{"id": "clang-cl", "toolchain": "clang-cl"}]`，命中同一份压缩包、只补 manifest 条目 |
 | `recipe_cutoff` / `git_cutoff` | 配方快照与「未锁版本的 git clone 回退到的日期」 |
 | `extra_deps(ctx, version, commit)` | 只在上游自身 `xmake.lua` 里出现的依赖 |
 | `asset_name(...)` | 自定义 asset 文件名（默认 `<原库名>-<buildhash>.<ext>`） |
@@ -98,6 +114,7 @@ LL 的源码编译不受影响。
     "recipe_source": "levimc-repo",
     "recipe_package": "more-dimensions",
     "entries": [{"id": "default", "configs": {}}],
+    "toolchainAliases": [{"id": "clang-cl", "toolchain": "clang-cl"}],
     "assetName": null
   }
 }
@@ -105,6 +122,24 @@ LL 的源码编译不受影响。
 
 新增配方源只要往 `recipes.sources` 加一条（例如 `oeotyan-repo`），配方本身由
 `vendor.py` 从上游拉取、改名、修好历史遗留问题（坏补丁、四段版本号）。
+
+### 别名（同一个产物，多个地址）
+
+xmake 给产物寻址用的是「平台 + 架构 + configs + 源码 hash + 工具链」的哈希，所以
+`set_toolchains("clang-cl")` 的工程算出来的地址和用 msvc 编出来的产物天生不一样。
+只要产物在两种工具链下 ABI 兼容（Windows 上 clang-cl 与 msvc 共用同一套 ABI/STL），
+就完全不必重编，改成多发一条 manifest：
+
+* 插件用 `toolchain_aliases()` 声明还支持哪些工具链（项目特例，不放框架里）；
+* 编译结束后，用沙箱里**同一个 xmake** 离线重算该 configs 下的 buildhash
+  （`scripts/lib/hashprobe.py`），不重新编译；
+* 只有「按产物真实工具链重算出来的 hash == 产物目录名」时才发布别名，所以永远
+  不会写出一个没人能匹配的地址；头文件包/宿主工具包本身与工具链无关，直接跳过；
+* asset 只有一个，别名只是 manifest 与索引里的额外地址；release body 会写明
+  `also serves` 列。
+
+改了 `toolchain_aliases()` 后不需要手工清缓存：条目里记着 `alias_profiles`，
+`discover` 会把缺这条信息的旧条目自动重新排队。
 
 ## 7. 日常管理（`scripts/cache.py`）
 
@@ -136,7 +171,9 @@ cache.py trigger --plugin ll --entry client --local   # 只编某个条目
 3. PATH 前置 git shim：把**未锁版本**的 clone 回退到该版本发布日期之前；已由配方锁定
    commit 的包不受影响。
 4. `xmake require --export` 导出整棵闭包，逐个打包为 `<字母>/<包名>/<版本>/<hash>/`。
-5. 上传分片、写索引；`finalize` 从索引重生成 manifest、刷新 release body、校验一致性。
+5. 为每个产物离线重算其它消费工具链的 buildhash，作为 manifest 别名记进索引。
+6. 上传分片、写索引；`finalize` 从索引重生成 manifest（含别名）、刷新 release body、
+   校验一致性。
 
 ## 9. CI
 
@@ -166,9 +203,10 @@ cache.py trigger --plugin ll --entry client --local   # 只编某个条目
 
 | 现象 | 原因 / 处理 |
 |---|---|
-| 日志里没有 `(precompiled)` | manifest 没命中（工具链不是 msvc / configs/buildid 不一致）或 sha256 对不上 → `cache.py verify` |
+| 日志里没有 `(precompiled)` | manifest 没命中（工具链不在别名列表里 / configs/buildid 不一致）或 sha256 对不上 → `cache.py verify` |
 | `unmatched checksum` | 索引里的 sha 与线上 asset 不一致 → 重新 build+finalize，或先跑 reconcile |
 | `manifest.txt not found when installing artifacts` | 压缩包内部层级不对（必须三段后再放文件） |
 | `cannot extract ... .tar.zst` | 该包容器不是 7z |
 | `unable to parse semver` | 老配方有四段版本号 → `recipefix.normalize_tree` 会剔除 |
 | 下载全失败 | 先确认 `gh`/`curl` 能直连；本机可显式 `BUILDCACHE_PROXY` |
+| clang-cl 工程没命中缓存 | 先确认 `set_toolchains("clang-cl")` 写在 xmake.lua 里（命令行 `--toolchain=` 不触发选择）；再看 build 日志里的 `alias skipped ...`：头文件包/宿主工具包本来就不需要别名，重算 hash 与产物不符则说明拿来重算的配方或 configs 不是产出该产物的那一份 |

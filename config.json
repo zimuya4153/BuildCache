@@ -108,6 +108,16 @@
         "recipe_source": "levimc-repo",
         "recipe_package": "more-dimensions",
         "toolchain": "msvc",
+        "toolchainAliases": [
+          {
+            "id": "msvc",
+            "toolchain": "msvc"
+          },
+          {
+            "id": "clang-cl",
+            "toolchain": "clang-cl"
+          }
+        ],
         "extra_packages": [
           "levilamina"
         ],
@@ -131,6 +141,16 @@
         "recipe_source": "oeotyan-repo",
         "recipe_package": "bsci",
         "toolchain": "msvc",
+        "toolchainAliases": [
+          {
+            "id": "msvc",
+            "toolchain": "msvc"
+          },
+          {
+            "id": "clang-cl",
+            "toolchain": "clang-cl"
+          }
+        ],
         "extra_packages": [
           "levilamina"
         ],

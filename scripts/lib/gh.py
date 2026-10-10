@@ -144,26 +144,29 @@ def release_notes(tag: str, rows: list[dict] | None = None, prefix: str = "") ->
             "",
             f"Cached builds ({len(rows)}):",
             "",
-            "| version | entry | toolchain (as compiled) | toolset | build hash | asset |",
-            "|---|---|---|---|---|---|",
+            "| version | entry | toolchain (as compiled) | toolset | build hash | also serves | asset |",
+            "|---|---|---|---|---|---|---|",
         ]
         for row in rows:
+            also = ", ".join(f"`{item}`" for item in row.get("aliases") or []) or "-"
             lines.append(
                 "| `{version}` | `{entry}` | `{toolchain}` | `{toolset}` | "
-                "`{buildhash}` | `{asset}` |".format(
+                "`{buildhash}` | {also} | `{asset}` |".format(
                     version=row.get("version", ""),
                     entry=row.get("entry", row.get("variant", "")),
                     toolchain=row.get("upstream_toolchain") or row.get("toolchain", ""),
                     toolset=row.get("toolset") or "-",
                     buildhash=row.get("buildhash", ""),
+                    also=also,
                     asset=row.get("asset", ""),
                 )
             )
         lines += [
             "",
             "*`toolchain`* is the one the artifact was actually compiled with — it",
-            "is part of the build id, so a project must resolve packages under the",
-            "matching toolchain for the entry to be selected.",
+            "is part of the build id. *`also serves`* lists the consumer toolchains",
+            "that were added as additional manifest entries for the very same",
+            "archive, so those projects need no second artifact either.",
         ]
     return "\n".join(lines)
 
