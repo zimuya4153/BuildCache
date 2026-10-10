@@ -20,6 +20,18 @@ from pathlib import Path
 from . import semver, util
 
 
+#: xmake copies every installed file in verbose mode, one line each: a package
+#: with a few hundred headers then buries everything else in the log. Only the
+#: printing is filtered -- such a line still counts as activity for the
+#: heartbeat, otherwise a long copy phase would look like a stuck step.
+_COPY_NOISE = re.compile(r"^\s*>?\s*copy\b", re.IGNORECASE)
+
+
+def is_copy_noise(line: str) -> bool:
+    """Is this verbose xmake line one of the copy notices?"""
+    return bool(_COPY_NOISE.match(line or ""))
+
+
 @dataclass
 class Sandbox:
     name: str
@@ -32,6 +44,10 @@ class Sandbox:
     timeout: float | None = 5400
     heartbeat: float = 60.0
     silent_timeout: float = 1800.0
+    #: Run xmake verbosely, so the log shows what it is doing instead of going
+    #: quiet for minutes at a time. The copy operations are filtered out below:
+    #: they are the bulk of that output and say nothing.
+    verbose: bool = True
 
     def xmake(
         self,
@@ -45,6 +61,8 @@ class Sandbox:
     ):
         if stream:
             return self._xmake_streaming(args, cwd=cwd, check=check)
+        if self.verbose:
+            args = list(args) + ["-v"]
         result = util.run(
             [str(self.xmake_exe)] + [str(a) for a in args],
             cwd=cwd or self.project_dir,
@@ -57,10 +75,12 @@ class Sandbox:
         output = result.stdout or ""
         if capture and output and not quiet:
             for line in output.splitlines():
-                util.log("  | " + line)
+                if not is_copy_noise(line):
+                    util.log("  | " + line)
         elif tail > 0 and output:
             for line in output.splitlines()[-tail:]:
-                util.log("  | " + line)
+                if not is_copy_noise(line):
+                    util.log("  | " + line)
         return result
 
     def _xmake_streaming(self, args: list, cwd: Path | None = None, check: bool = True):
@@ -78,6 +98,8 @@ class Sandbox:
         import queue
         import threading
 
+        if self.verbose:
+            args = list(args) + ["-v"]
         cmd = [str(self.xmake_exe)] + [str(a) for a in args]
         util.log("+ " + " ".join(cmd))
         process = subprocess.Popen(
@@ -120,7 +142,7 @@ class Sandbox:
             last = time.time()
             text = line.rstrip()
             # Progress animations redraw the same line; keep the log readable.
-            if text and text != previous:
+            if text and text != previous and not is_copy_noise(text):
                 util.log("  | " + text)
             previous = text
             collected.append(line)
@@ -351,6 +373,7 @@ def create_sandbox(
         timeout=float(config.get("xmake", {}).get("timeoutSeconds", 5400)),
         heartbeat=float(config.get("xmake", {}).get("heartbeatSeconds", 30)),
         silent_timeout=float(config.get("xmake", {}).get("silentTimeoutSeconds", 1800)),
+        verbose=bool(config.get("xmake", {}).get("verbose", True)),
     )
 
 

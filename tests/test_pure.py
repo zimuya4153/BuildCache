@@ -355,6 +355,22 @@ def test_failed_install_logs_are_found(tmp_path: Path):
     assert xmake_env.failed_packages(FakeSandbox()) == [("gsl", "v4.0.0")]
 
 
+def test_verbose_xmake_noise_is_filtered():
+    """A verbose build copies every file; those lines only drown the log.
+
+    Filtering is about printing: the line still counts as activity, otherwise a
+    long copy phase would look like the stuck step the heartbeat guards against.
+    """
+    from lib import xmake_env
+
+    assert xmake_env.is_copy_noise("> copy include/fmt/core.h to ...")
+    assert xmake_env.is_copy_noise("copy build/x.lib to lib/x.lib")
+    assert xmake_env.is_copy_noise("   > copy a b")
+    # real progress and results are kept
+    assert not xmake_env.is_copy_noise("=> install fmt 11.2.0 .. ok")
+    assert not xmake_env.is_copy_noise("[ 50%]: ccache compile src/a.cpp")
+
+
 def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     """Only the project's own package has an entry dimension."""
     config = dict(util.load_config())

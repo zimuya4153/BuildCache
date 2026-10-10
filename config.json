@@ -84,6 +84,7 @@
     "installRetries": 3,
     "heartbeatSeconds": 30,
     "silentTimeoutSeconds": 1800,
+    "verbose": true,
     "cacheDir": ".cache/xmake"
   },
   "batch": {
