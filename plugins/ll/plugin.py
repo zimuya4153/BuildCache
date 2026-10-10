@@ -110,10 +110,20 @@ def native_toolchain(ctx, version: str, commit: str) -> str:
 
 
 def xmake_version(ctx, version: str, commit: str) -> str:
-    """The xmake of that era: newest release published before the LL commit."""
+    """The xmake of that era: newest release published before the LL commit.
+
+    Deliberately *not* clamped to a recent release: an old LeviLamina tag was
+    written against the xmake of its own time. Mixing eras breaks builds in ways
+    that are invisible in a diff — for example xmake renamed ``buildir`` to
+    ``builddir`` at some point, and both the generated configs and the link
+    scripts (levibuildscript) refer to that directory name, so a modern xmake
+    driving an old recipe simply cannot agree with it.
+    """
     from lib import xmake_env
 
-    return xmake_env.xmake_version_for_date(ctx.config, commit_date(ctx, commit))
+    return xmake_env.xmake_version_for_date(
+        ctx.config, commit_date(ctx, commit), floor="0.0.0"
+    )
 
 
 def recipe_cutoff(ctx, version: str, commit: str) -> str:
