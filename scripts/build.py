@@ -85,7 +85,10 @@ def main() -> int:
     entry = next((item for item in entries if item["id"] == args.entry), entries[0])
     configs = entry.get("configs") or {}
     upstream_package = plugin.call("metadata")["package"]
-    require = f"{ctx.package_name(upstream_package)} {args.version}"
+    # Built with the era's own recipes, i.e. with the original package names;
+    # renaming to our prefix happens at publish time. That keeps a build
+    # internally consistent: era xmake + era recipes + era dependency pins.
+    require = f"{upstream_package} {args.version}"
     util.log("entry: " + entry["id"] + "  configs: " + str(configs))
 
     snapshot_mode = str(config.get("recipes", {}).get("snapshotMode", "version"))
@@ -111,8 +114,12 @@ def main() -> int:
             util.log(note)
         if source["name"] == "xmake-repo":
             main_repo = dest
-        elif source["name"] == "levimc-repo":
+        else:
             local_repos.append((source["name"], dest))
+
+    # Keep the official precompiled mirror out of the way: the closure has to be
+    # built from source with the era recipes, not fetched as someone else's artifact.
+    empty_repo = util.ensure_dir(util.sandbox_root(config) / "empty-repo")
 
     sandbox = xmake_env.create_sandbox(
         config,
@@ -122,7 +129,7 @@ def main() -> int:
         toolchain=None if toolchain == "msvc" else toolchain,
         repositories=local_repos,
         main_repo=main_repo,
-        binary_repo=Path(ctx.package_repo),
+        binary_repo=empty_repo,
         extra_lua=(
             f'add_requires("{require}", {{configs = {_lua_table(configs)}}})'
         ),
@@ -186,12 +193,12 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
             if not package_dir.is_dir():
                 continue
             name = package_dir.name
-            if not name.startswith(ctx.prefix):
-                util.log(f"skip non-prefixed package from the closure: {name}")
-                continue
             if name in skip:
                 util.log(f"skip configured tool package: {name}")
                 continue
+            # The export carries the era's original names; publishing renames
+            # them to our prefix so upstream packages are never overwritten.
+            published_name = ctx.package_name(name)
             for version_dir in sorted(package_dir.iterdir()):
                 if not version_dir.is_dir():
                     continue
@@ -202,7 +209,8 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
                     artifacts.append(
                         _publish_one(
                             config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
-                            name, version, hash_dir, plat, arch, toolset_for_key(vs_toolset, name),
+                            name, published_name, version, hash_dir, plat, arch,
+                            toolset_for_key(vs_toolset, name),
                             target_branch=target_branch, dry_run=dry_run,
                         )
                     )
@@ -240,7 +248,8 @@ def container_for(config: dict, package: str) -> str:
 
 
 def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
-                 name, version, hash_dir, plat, arch, toolset, target_branch=None, dry_run=False) -> dict:
+                 name, published_name, version, hash_dir, plat, arch, toolset,
+                 target_branch=None, dry_run=False) -> dict:
     from lib import manifest as manifest_lib
 
     container = container_for(config, name)
@@ -253,9 +262,9 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         asset = plugin.call(
             "asset_name", ctx, name, version, toolset, hash_dir.name, container
         )
-    asset = asset or f"{name.removeprefix(ctx.prefix)}-{hash_dir.name}.{suffix}"
+    asset = asset or f"{name}-{hash_dir.name}.{suffix}"
     archive = dist / asset
-    util.log(f"pack {name} {version} ({hash_dir.name})")
+    util.log(f"pack {name} -> {published_name} {version} ({hash_dir.name})")
     # xmake strips one level while extracting precompiled artifacts, so the
     # archive mirrors the package cache layout including the first-letter dir.
     store_as = f"{name[0].lower()}/{name}/{version}/{hash_dir.name}"
@@ -265,15 +274,16 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
     url = ""
     release = ""
     if dry_run:
-        release = f"{name}_dry_run"
+        release = f"{published_name}_dry_run"
         url = f"file://{archive.as_posix()}"
     else:
-        release = gh.assign_release(name, [asset], owner, repo, max_assets, config=config)
+        release = gh.assign_release(published_name, [asset], owner, repo, max_assets, config=config)
         gh.ensure_release(owner, repo, release, target=target_branch, config=config)
         gh.upload_asset(owner, repo, release, archive, config=config)
         url = gh.asset_url(owner, repo, release, asset)
     return {
-        "package": name,
+        "package": published_name,
+        "upstream_package": name,
         "version": version,
         "buildhash": hash_dir.name,
         "key": key,
