@@ -525,7 +525,8 @@
             }
           ]
         }
-      ]
+      ],
+      "compiled_with": "clang-cl"
     },
     "server": {
       "plugin": "ll",
@@ -1023,7 +1024,9 @@
             }
           ]
         }
-      ]
+      ],
+      "compiled_with": "clang-cl"
     }
-  }
+  },
+  "compiled_with": "clang-cl"
 }

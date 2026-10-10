@@ -2,20 +2,20 @@
   "package": "mifcache_symbolprovider",
   "version": "v1.3.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:06:26Z",
+  "built_at": "2026-10-10T15:09:48Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
   "configs": {
-    "target_type": "server"
+    "target_type": "client"
   },
   "alias_profiles": [
     "msvc",
     "clang-cl"
   ],
-  "produced_for": "levilamina@26.51.6",
+  "produced_for": "levilamina@v1.3.0",
   "entries": {
-    "client": {
+    "default": {
       "package": "mifcache_symbolprovider",
       "version": "v1.3.0",
       "prefix": "mifcache_",
@@ -32,58 +32,7 @@
         "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
-      "artifacts": [
-        {
-          "package": "mifcache_symbolprovider",
-          "upstream_package": "symbolprovider",
-          "version": "v1.3.0",
-          "buildhash": "8ef9d781a7854895b90a561f7f9be0ea",
-          "key": "windows-x64-vc-8ef9d781a7854895b90a561f7f9be0ea",
-          "toolset": "14.51.36231",
-          "release": "symbolprovider_0",
-          "asset": "symbolprovider-8ef9d781a7854895b90a561f7f9be0ea.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/symbolprovider_0/symbolprovider-8ef9d781a7854895b90a561f7f9be0ea.7z",
-          "sha256": "3ab55d2e9b38192a8ab57e8aee8f65d3923a3555df8ede42cc007dafcd2b8c8a",
-          "size": 5423,
-          "container": "7z",
-          "aliases": [
-            {
-              "id": "msvc",
-              "toolchain": "msvc",
-              "buildhash": "ebc9be7a4187452c8d94bfab703d73c3",
-              "key": "windows-x64-vc-ebc9be7a4187452c8d94bfab703d73c3",
-              "toolset": "14.51.36231"
-            },
-            {
-              "id": "clang-cl",
-              "toolchain": "clang-cl",
-              "buildhash": "9731305ba7704f5982e5b034fbd5e46c",
-              "key": "windows-x64-vc-9731305ba7704f5982e5b034fbd5e46c",
-              "toolset": "14.51.36231"
-            }
-          ]
-        }
-      ]
-    },
-    "server": {
-      "package": "mifcache_symbolprovider",
-      "version": "v1.3.0",
-      "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:06:26Z",
-      "xmake_version": "3.1.1",
-      "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
-      "revision": 1,
-      "configs": {
-        "target_type": "server"
-      },
-      "alias_profiles": [
-        "msvc",
-        "clang-cl"
-      ],
-      "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
+      "produced_for": "levilamina@v1.3.0",
       "artifacts": [
         {
           "package": "mifcache_symbolprovider",

@@ -2,20 +2,20 @@
   "package": "mifcache_entt",
   "version": "v4.0.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T15:06:26Z",
+  "built_at": "2026-10-10T15:09:48Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
   "configs": {
-    "target_type": "server"
+    "target_type": "client"
   },
   "alias_profiles": [
     "msvc",
     "clang-cl"
   ],
-  "produced_for": "levilamina@26.51.6",
+  "produced_for": "levilamina@v4.0.0",
   "entries": {
-    "client": {
+    "default": {
       "package": "mifcache_entt",
       "version": "v4.0.0",
       "prefix": "mifcache_",
@@ -32,43 +32,7 @@
         "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
-      "artifacts": [
-        {
-          "package": "mifcache_entt",
-          "upstream_package": "entt",
-          "version": "v4.0.0",
-          "buildhash": "0d58f676872d486790799bfc6f016197",
-          "key": "windows-x64-vc-0d58f676872d486790799bfc6f016197",
-          "toolset": "14.51.36231",
-          "release": "entt_0",
-          "asset": "entt-0d58f676872d486790799bfc6f016197.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/entt_0/entt-0d58f676872d486790799bfc6f016197.7z",
-          "sha256": "cba2b5c7c08f37935c49aafd6e67b448f2ad40e85af50c0d78094484c7b1c2e7",
-          "size": 101722,
-          "container": "7z",
-          "aliases": []
-        }
-      ]
-    },
-    "server": {
-      "package": "mifcache_entt",
-      "version": "v4.0.0",
-      "prefix": "mifcache_",
-      "built_at": "2026-10-10T15:06:26Z",
-      "xmake_version": "3.1.1",
-      "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
-      "revision": 1,
-      "configs": {
-        "target_type": "server"
-      },
-      "alias_profiles": [
-        "msvc",
-        "clang-cl"
-      ],
-      "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
+      "produced_for": "levilamina@v4.0.0",
       "artifacts": [
         {
           "package": "mifcache_entt",
