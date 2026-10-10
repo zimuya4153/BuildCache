@@ -129,7 +129,7 @@ def _inventory(ctx, package_filter: str = ""):
 
 
 # -------------------------------------------------------------------------- graph
-def _read_deps(package_repo: Path) -> dict[str, set[str]]:
+def _read_deps(package_repo: Path, prefix: str = '') -> dict[str, set[str]]:
     """Dependency edges between our prefixed packages, from the vendored recipes."""
     graph: dict[str, set[str]] = {}
     for recipe in sorted(Path(package_repo).glob("packages/*/*/xmake.lua")):
@@ -139,14 +139,14 @@ def _read_deps(package_repo: Path) -> dict[str, set[str]]:
         for path in files:
             for match in _SPEC.finditer(util.read_text(path)):
                 name = match.group(1)
-                if name.startswith("mifcahce_") and name != package:
+                if (not prefix or name.startswith(prefix)) and name != package:
                     edges.add(name)
         graph[package] = edges
     return {name: edges for name, edges in graph.items() if edges or name in graph}
 
 
 def cmd_graph(ctx, args) -> int:
-    graph = _read_deps(Path(ctx.package_repo))
+    graph = _read_deps(Path(ctx.package_repo), ctx.prefix)
     if args.package:
         focus = args.package
         util.log(f"{focus} depends on: {', '.join(sorted(graph.get(focus, []))) or '-'}")
@@ -177,7 +177,7 @@ def _closure(roots: set[str], graph: dict[str, set[str]], reverse: bool, recursi
 # ------------------------------------------------------------------------- remove
 def cmd_remove(config: dict, ctx, args) -> int:
     ctx.ensure_index()
-    graph = _read_deps(Path(ctx.package_repo))
+    graph = _read_deps(Path(ctx.package_repo), ctx.prefix)
     cached = {package for package, _, _, _ in _inventory(ctx)}
 
     if args.all or "*" in args.targets:
