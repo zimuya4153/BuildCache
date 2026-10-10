@@ -93,6 +93,61 @@ def check_index_entries(config: dict, index_root: Path) -> list[dict]:
     return problems
 
 
+def adopt_published_digests(config: dict, index_root: Path) -> list[dict]:
+    """Make the index describe the bytes that are actually published.
+
+    One dependency can be built by more than one job: the server and the client
+    entry of the same version share their whole dependency closure, i.e. the same
+    build hash and therefore the same asset name. The archives are not byte
+    identical (an archive carries timestamps, and so do the object files inside
+    it), the upload clobbers, and whichever job finished last wins.
+
+    The loser's digest is what its build result records, so an index built from
+    those results would describe a file that no longer exists -- and because
+    xmake *verifies* sha256, every consumer would silently fall back to compiling
+    the package from source. What is published is the truth, so adopt it.
+
+    Returns the changes, so the caller can report them.
+    """
+    cache_cfg = config["repos"]["cache"]
+    available = published_digests(config, cache_cfg["owner"], cache_cfg["repo"])
+    root = Path(index_root)
+    adopted: list[dict] = []
+    if not root.is_dir():
+        return adopted
+    for directory in sorted(root.iterdir()):
+        if not directory.is_dir() or directory.name.startswith("."):
+            continue
+        for meta in index_store.all_version_meta(root, directory.name):
+            version = str(meta.get("version"))
+            path = index_store.package_dir(root, directory.name) / "versions" / f"{version}.json"
+            document = util.read_json(path, None)
+            if not document:
+                continue
+            changed = False
+            for entry in index_store.entries(document).values():
+                for artifact in entry.get("artifacts") or []:
+                    info = available.get(artifact.get("asset") or "") or {}
+                    published = (info.get("sha256") or "").lower()
+                    recorded = (artifact.get("sha256") or "").lower()
+                    if not published or not recorded or published == recorded:
+                        continue
+                    adopted.append(
+                        {
+                            "asset": artifact.get("asset"),
+                            "recorded": recorded,
+                            "published": published,
+                        }
+                    )
+                    artifact["sha256"] = published
+                    if info.get("size"):
+                        artifact["size"] = int(info["size"])
+                    changed = True
+            if changed:
+                util.write_json(path, document)
+    return adopted
+
+
 def requeue(config: dict, index_root: Path, problems: list[dict]) -> list[str]:
     """Mark affected entries as stale so the next discover rebuilds them.
 

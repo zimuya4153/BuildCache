@@ -64,6 +64,13 @@ def main() -> int:
             per_package: dict[str, list] = {}
             for artifact in result.get("artifacts", []):
                 per_package.setdefault(artifact["package"], []).append(artifact)
+            # The record of the package that was built is the one `discover` and
+            # the release notes read, so it has to carry what only the build
+            # knows: the revision it is current for, and which toolchain compiled
+            # its sources (for LeviLamina that is clang-cl, forced by its own
+            # xmake.lua, even though the package resolves under msvc).
+            root_package = ctx.package_name(result["package"])
+            root_compiler = result.get("upstream_toolchain") or result.get("toolchain")
             for package, artifacts in per_package.items():
                 # The entry of the package that was built is already written in
                 # full above; rewriting it here with the per-component shape
@@ -85,8 +92,14 @@ def main() -> int:
                             "xmake_version": result.get("xmake_version"),
                             "toolchain": result.get("toolchain"),
                             "vs_toolset": result.get("vs_toolset"),
+                            "revision": result.get("revision"),
                             "configs": result.get("configs"),
                             "alias_profiles": result.get("alias_profiles") or [],
+                            "compiled_with": (
+                                root_compiler
+                                if package == root_package
+                                else result.get("toolchain")
+                            ),
                             "produced_for": f"{result['package']}@{version}",
                             "artifacts": [artifact],
                         },
@@ -99,6 +112,16 @@ def main() -> int:
         )
 
     if not args.dry_run:
+        # A dependency shared by two entries is packed by both jobs; the digest
+        # of the archive that lost the upload race would make every consumer
+        # fall back to a source build, so the index adopts what is online.
+        adopted = verify.adopt_published_digests(config, ctx.index_root)
+        for item in adopted:
+            util.warn(
+                f"{item['asset']}: indexed digest {item['recorded'][:12]} was "
+                f"overwritten by another job, kept the published "
+                f"{item['published'][:12]}"
+            )
         regenerate_manifests(config, ctx, index_root=ctx.index_root, package_repo=package_repo)
         problems = verify.check_index_entries(config, ctx.index_root)
         if problems:
@@ -155,7 +178,15 @@ def refresh_release_notes(config: dict, ctx) -> None:
                     row = {
                         "version": artifact.get("version") or meta.get("version"),
                         "entry": variant,
+                        # What compiled the sources, which is not the toolchain the
+                        # *package* resolution used: LeviLamina's own xmake.lua
+                        # forces clang-cl while the package resolves under msvc.
                         "toolchain": entry.get("toolchain") or meta.get("toolchain") or "",
+                        "compiled_with": entry.get("compiled_with")
+                        or entry.get("upstream_toolchain")
+                        or entry.get("toolchain")
+                        or meta.get("toolchain")
+                        or "",
                         "toolset": artifact.get("toolset"),
                         "buildhash": artifact.get("buildhash") or "",
                         "asset": artifact.get("asset") or "",

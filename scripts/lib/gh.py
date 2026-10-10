@@ -144,7 +144,7 @@ def release_notes(tag: str, rows: list[dict] | None = None, prefix: str = "") ->
             "",
             f"Cached builds ({len(rows)}):",
             "",
-            "| version | entry | toolchain (as compiled) | toolset | build hash | also serves | asset |",
+            "| version | entry | compiled with | toolset | build hash | also addressable as | asset |",
             "|---|---|---|---|---|---|---|",
         ]
         for row in rows:
@@ -154,7 +154,7 @@ def release_notes(tag: str, rows: list[dict] | None = None, prefix: str = "") ->
                 "`{buildhash}` | {also} | `{asset}` |".format(
                     version=row.get("version", ""),
                     entry=row.get("entry", row.get("variant", "")),
-                    toolchain=row.get("upstream_toolchain") or row.get("toolchain", ""),
+                    toolchain=row.get("compiled_with") or row.get("toolchain", ""),
                     toolset=row.get("toolset") or "-",
                     buildhash=row.get("buildhash", ""),
                     also=also,
@@ -163,10 +163,15 @@ def release_notes(tag: str, rows: list[dict] | None = None, prefix: str = "") ->
             )
         lines += [
             "",
-            "*`toolchain`* is the one the artifact was actually compiled with — it",
-            "is part of the build id. *`also serves`* lists the consumer toolchains",
-            "that were added as additional manifest entries for the very same",
-            "archive, so those projects need no second artifact either.",
+            "*`compiled with`* is the compiler that really built the sources. It can",
+            "differ from the toolchain the package was resolved under: LeviLamina's",
+            "own xmake.lua forces clang-cl for its targets, so its SDK is a clang-cl",
+            "build even though the package resolution (and therefore the build hash)",
+            "uses msvc.",
+            "",
+            "*`also addressable as`* lists the toolchain declarations this same",
+            "archive answers to, as extra manifest entries: a project that declares",
+            "one of them needs no second artifact.",
         ]
     return "\n".join(lines)
 

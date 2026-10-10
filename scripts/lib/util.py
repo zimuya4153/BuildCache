@@ -91,9 +91,19 @@ def write_text(path: Path, text: str) -> None:
 
 
 def read_json(path: Path, default=None):
+    """Read a JSON document; a missing *or unusable* file yields the default.
+
+    The index and the results are generated documents that get rewritten from
+    scratch, so one truncated file (an interrupted run leaves empty ones behind)
+    must not be able to abort the whole publish.
+    """
     if not Path(path).is_file():
         return default
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+        warn(f"{path}: unreadable JSON ({error}), treating it as absent")
+        return default
 
 
 def write_json(path: Path, data) -> None:

@@ -141,6 +141,13 @@ xmake 给产物寻址用的是「平台 + 架构 + configs + 源码 hash + 工�
 改了 `toolchain_aliases()` 后不需要手工清缓存：条目里记着 `alias_profiles`，
 `discover` 会把缺这条信息的旧条目自动重新排队。
 
+要分清两件事：**包解析用的工具链**（进 buildhash、决定命中哪条 manifest）和**真正
+编译源码的工具链**。LeviLamina 的 SDK 是 clang-cl 编出来的 —— 它自己的 `xmake.lua`
+给 target 强制了 `set_toolchains("clang-cl")`，而我们的配方 `on_install` 调的正是
+LL 自己的 xmake；但**包**是按 msvc 解析的（所以 buildhash 里没有 toolchains 段）。
+所以 release body 里 `compiled with` 和 build hash 对应的工具链可以不同，这不是
+矛盾：前者说的是「谁编的」，后者说的是「谁在用这个地址取产物」。
+
 ## 7. 日常管理（`scripts/cache.py`）
 
 ```bash
