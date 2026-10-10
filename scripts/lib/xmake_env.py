@@ -222,7 +222,9 @@ def create_sandbox(
     bin_dir = xmake_exe.parent
 
     lines = [
-        'set_xmakever("3.0.0")',
+        # Must match the xmake that actually runs here: an era-matched 2.8.x
+        # refuses to run a project that claims to need 3.0.0.
+        f'set_xmakever("{xmake_version}")',
         f'set_allowedplats("{config["platform"]["plat"]}")',
         'set_runtimes("MD")',
     ]
