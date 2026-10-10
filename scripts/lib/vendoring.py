@@ -41,7 +41,7 @@ def vendor(config: dict, ctx, plugin, refresh: bool = False) -> dict:
     prefix = ctx.prefix
     target = plugin.call("metadata")["package"]
     env = util.subprocess_env(config, proxy=ctx.proxy)
-    sources = _source_snapshots(config, ctx, env=env, refresh=refresh)
+    sources = _source_snapshots(config, ctx, env=env, refresh=refresh, plugin=plugin)
 
     owned = _collect_owned(config, ctx, plugin, sources, target)
     util.log(f"vendoring {len(owned)} packages under prefix '{prefix}': {', '.join(sorted(owned))}")
@@ -79,7 +79,7 @@ def vendor(config: dict, ctx, plugin, refresh: bool = False) -> dict:
     return marker
 
 
-def _source_snapshots(config: dict, ctx, env: dict | None = None, refresh: bool = False) -> dict[str, Path]:
+def _source_snapshots(config: dict, ctx, env: dict | None = None, refresh: bool = False, plugin=None) -> dict[str, Path]:
     """Snapshot every configured recipe source at its current HEAD."""
     root = util.absolute(config.get("_vendor_root", ".vendor"))
     mode = str(config.get("recipes", {}).get("snapshotMode", "head"))

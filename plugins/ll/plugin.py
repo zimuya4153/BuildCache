@@ -267,10 +267,16 @@ def _repair_legacy_versions(snapshot) -> list[str]:
                     if len(parts) >= 2:
                         entries[parts[0]] = parts[1]
         mapping = {}
+        shas: dict[str, str] = {}
         for version in entries:
-            legal = _legal_version(version.split(":", 1)[-1])
-            if legal and legal != version:
-                mapping[version] = legal
+            # Recipes may prefix a version with a url alias ("old:v1.21.0.3");
+            # dependency strings in other recipes only use the plain tag, so the
+            # mapping has to be keyed by the tag to keep both sides in sync.
+            tag = version.split(":", 1)[-1]
+            legal = _legal_version(tag)
+            if legal and legal != tag:
+                mapping[tag] = legal
+                shas[tag] = entries[version]
         if not mapping:
             continue
 
@@ -278,15 +284,22 @@ def _repair_legacy_versions(snapshot) -> list[str]:
         for index, (version, legal) in enumerate(sorted(mapping.items())):
             alias = f"legacy{index}"
             for template in templates:
-                literal = template.replace("$(version)", version.split(":", 1)[-1])
+                literal = template.replace("$(version)", version)
                 additions.append(f'    add_urls("{literal}", {{alias = "{alias}"}})')
-            additions.append(f'    add_versions("{alias}:{legal}", "{entries[version]}")')
+            additions.append(f'    add_versions("{alias}:{legal}", "{shas[version]}")')
 
         updated = text
         for version in mapping:
-            updated = updated.replace(
-                f'add_versions("{version}", "{entries[version]}")', ""
-            )
+            for original in (
+                version,
+                f"old:{version}",
+                f"new:{version}",
+                f"git:{version}",
+                f"release:{version}",
+            ):
+                updated = updated.replace(
+                    f'add_versions("{original}", "{shas[version]}")', ""
+                )
         updated = updated.rstrip("\n") + "\n\n    -- BuildCache: legacy versions repaired\n" + "\n".join(additions) + "\n"
         util.write_text(recipe, updated)
         for match in _ADD_VERSIONFILES.finditer(text):
@@ -296,7 +309,7 @@ def _repair_legacy_versions(snapshot) -> list[str]:
             kept = [
                 line
                 for line in util.read_text(listing).splitlines()
-                if line.split() and line.split()[0] not in mapping
+                if line.split() and line.split()[0].split(":", 1)[-1] not in mapping
             ]
             util.write_text(listing, "\n".join(kept) + "\n")
         renames[recipe.parent.name] = mapping
