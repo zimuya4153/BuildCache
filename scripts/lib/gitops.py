@@ -168,10 +168,17 @@ def ensure_branch(
         util.run(["git", "clone", "--branch", branch, url, str(directory)], env=env, quiet=True)
         return directory
     util.run(["git", "-C", str(directory), "fetch", "origin"], env=env, quiet=True, check=False)
-    util.run(["git", "-C", str(directory), "checkout", "--quiet", branch], env=env, quiet=True, check=False)
+    util.run(
+        ["git", "-C", str(directory), "checkout", "--quiet", branch],
+        env=env,
+        capture=True,
+        quiet=True,
+        check=False,
+    )
     util.run(
         ["git", "-C", str(directory), "reset", "--hard", f"origin/{branch}"],
         env=env,
+        capture=True,
         quiet=True,
         check=False,
     )

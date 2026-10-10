@@ -136,7 +136,7 @@ def summary(index_root: Path) -> str:
         return "(no index)"
     lines = []
     for directory in sorted(root.iterdir()):
-        if not directory.is_dir():
+        if not directory.is_dir() or directory.name.startswith("."):
             continue
         index = load_package(root, directory.name)
         count = len(index.get("versions") or [])
