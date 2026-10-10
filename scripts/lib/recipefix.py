@@ -77,15 +77,67 @@ def apply_fixups(config: dict, source_name: str, snapshot: Path) -> list[str]:
     return notes
 
 
-def normalize_tree(root: Path) -> list[str]:
-    """Repair referenced patch files and refresh their declared checksums."""
+def plugin_repair(config: dict, plugin, source_name: str, snapshot: Path) -> list[str]:
+    """Give the plugin a chance to fix project-specific recipe problems.
+
+    The framework only does mechanical repairs; anything that needs knowledge of
+    a particular project (legacy version numbering, renamed upstream assets, …)
+    is implemented by that project's plugin in ``repair_recipes``.
+    """
+    if plugin is None:
+        return []
+    module = getattr(plugin, "module", plugin)
+    handler = getattr(module, "repair_recipes", None)
+    if handler is None:
+        return []
+    notes = handler(config, source_name, snapshot) or []
+    return [str(note) for note in notes]
+
+
+def _report_unparseable_versions(recipe: Path, text: str) -> list[str]:
+    """Point out versions xmake cannot parse, without touching them."""
+    bad = [
+        match.group(2)
+        for match in _ADD_VERSIONS.finditer(text)
+        if not _semver_ok(match.group(2))
+    ]
+    listing = None
+    for match in _ADD_VERSIONFILES.finditer(text):
+        candidate = recipe.parent / match.group(1)
+        if candidate.is_file():
+            listing = candidate
+            bad += [
+                line.split()[0]
+                for line in util.read_text(candidate).splitlines()
+                if line.split() and not _semver_ok(line.split()[0])
+            ]
+    if not bad:
+        return []
+    return [
+        f"{recipe.parent.name}: {len(bad)} version(s) xmake cannot parse "
+        f"(e.g. {bad[0]}) — add a repair_recipes hook in the plugin"
+    ]
+
+
+def normalize_tree(root: Path, drop_unparseable: bool = False) -> list[str]:
+    """Generic, mechanical repairs only.
+
+    * malformed patch files get their blank context lines back
+    * declared checksums are refreshed to match the files on disk
+
+    Anything project-specific (for example legacy version numbering) belongs in
+    a plugin's ``repair_recipes`` hook, which runs right after this.
+    """
     root = Path(root)
     notes: list[str] = []
     for recipe in sorted(root.glob("packages/*/*/xmake.lua")):
         text = util.read_text(recipe)
         if "add_patches" not in text and "add_versions" not in text and "add_versionfiles" not in text:
             continue
-        updated, version_notes = _drop_unparseable_versions(recipe, text)
+        if drop_unparseable:
+            updated, version_notes = _drop_unparseable_versions(recipe, text)
+        else:
+            updated, version_notes = text, _report_unparseable_versions(recipe, text)
         notes.extend(version_notes)
         if "add_patches" not in text:
             if updated != text:

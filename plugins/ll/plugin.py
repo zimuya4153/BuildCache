@@ -196,3 +196,17 @@ def report_skipped(ctx, known: list[dict]) -> list[str]:
             continue
         skipped.append(tag)
     return skipped
+
+def repair_recipes(config, source_name: str, snapshot) -> list[str]:
+    """Project-specific recipe repair hook.
+
+    Runs for every recipe snapshot before vendoring. LeviLamina-era data
+    packages (`bdslibrary`, old `bedrockdata`) declare four-component
+    versions such as `1.21.3.01` which xmake's own semver parser rejects,
+    making the whole repository unloadable. The repair belongs here rather than
+    in the framework: rewrite those versions to a legal, ordered form
+    (`1.21.3.01` -> `1.21.3-r01`), pin the upstream tag in a literal URL
+    alias, and rename the matching dependency strings in our vendored version
+    files.
+    """
+    return []

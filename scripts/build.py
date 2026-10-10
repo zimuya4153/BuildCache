@@ -105,6 +105,8 @@ def main() -> int:
         )
         for note in recipefix.apply_fixups(config, source["name"], dest):
             util.log(note)
+        for note in recipefix.plugin_repair(config, plugin, source["name"], dest):
+            util.log(note)
         for note in recipefix.normalize_tree(dest):
             util.log(note)
         if source["name"] == "xmake-repo":

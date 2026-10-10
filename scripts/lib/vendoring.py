@@ -95,6 +95,8 @@ def _source_snapshots(config: dict, ctx, env: dict | None = None, refresh: bool 
         target = dest if dest.is_dir() else mirror
         for note in recipefix.apply_fixups(config, source["name"], target):
             util.log(note)
+        for note in recipefix.plugin_repair(config, plugin, source["name"], target):
+            util.log(note)
         for note in recipefix.normalize_tree(target):
             util.log(note)
         snapshots[source["name"]] = target
