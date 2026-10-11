@@ -20,7 +20,6 @@
     "oeotyan-repo": "f582a823b89d34c27daa51083c42023ee7cd0125",
     "xmake-repo": "24aa5e4bf17914d64b4fcff4fc061bfe0160e9fd"
   },
-  "prefix": "mifcache_",
   "platform": {
     "plat": "windows",
     "arch": "x64",
@@ -51,7 +50,6 @@
         "oeotyan-repo": "f582a823b89d34c27daa51083c42023ee7cd0125",
         "xmake-repo": "24aa5e4bf17914d64b4fcff4fc061bfe0160e9fd"
       },
-      "prefix": "mifcache_",
       "platform": {
         "plat": "windows",
         "arch": "x64",

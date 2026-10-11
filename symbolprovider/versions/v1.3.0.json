@@ -1,7 +1,6 @@
 {
   "package": "symbolprovider",
   "version": "v1.3.0",
-  "prefix": "mifcache_",
   "built_at": "2026-10-11T10:06:11Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
@@ -20,7 +19,6 @@
     "default": {
       "package": "symbolprovider",
       "version": "v1.3.0",
-      "prefix": "mifcache_",
       "built_at": "2026-10-11T10:06:11Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",

@@ -1,7 +1,6 @@
 {
   "package": "mimalloc",
   "version": "2.1.2",
-  "prefix": "mifcache_",
   "built_at": "2026-10-11T10:22:33Z",
   "xmake_version": "2.9.7",
   "toolchain": "msvc",
@@ -19,7 +18,6 @@
     "default": {
       "package": "mimalloc",
       "version": "2.1.2",
-      "prefix": "mifcache_",
       "built_at": "2026-10-11T10:22:33Z",
       "xmake_version": "2.9.7",
       "toolchain": "msvc",
