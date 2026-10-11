@@ -46,8 +46,8 @@
           "release": "mimalloc_0",
           "asset": "mimalloc-1dbbc847966349438c4f66166623a12b.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/mimalloc_0/mimalloc-1dbbc847966349438c4f66166623a12b.7z",
-          "sha256": "6e647dcf404672857962f5dd41122f9a7491f259a6c4c480448aa99264175ac7",
-          "size": 214035,
+          "sha256": "8c059a5039ae191802641335f4f9b511a58d72a25d5e4b8019a2fe05f404bc3d",
+          "size": 213857,
           "container": "7z",
           "aliases": [
             {

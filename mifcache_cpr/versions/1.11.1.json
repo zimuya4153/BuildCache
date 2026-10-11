@@ -46,8 +46,8 @@
           "release": "cpr_0",
           "asset": "cpr-1c9ad4a4e04341219556b734b3fdce5d.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/cpr_0/cpr-1c9ad4a4e04341219556b734b3fdce5d.7z",
-          "sha256": "eb247e2395076c25f2b0f15d0be11747c35a50722ba70e7ec0fa3813e438f119",
-          "size": 523400,
+          "sha256": "71cc9de5a6db5593e7f765cc4822a05ca54d1e46e215f557bdbb23f7f01b5864",
+          "size": 522976,
           "container": "7z",
           "aliases": [
             {

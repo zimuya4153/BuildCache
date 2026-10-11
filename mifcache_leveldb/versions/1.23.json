@@ -46,8 +46,8 @@
           "release": "leveldb_0",
           "asset": "leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/leveldb_0/leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
-          "sha256": "42688282de5051e7db8c3393ec7232b5d8f557687636256b176dfa7d76d0996b",
-          "size": 285661,
+          "sha256": "cda222f463a2effb3c241dc6f3ea2dae4aee31c93d94de56e624d8aa83d3f7cb",
+          "size": 444572,
           "container": "7z",
           "aliases": [
             {

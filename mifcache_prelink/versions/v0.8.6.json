@@ -46,8 +46,8 @@
           "release": "prelink_0",
           "asset": "prelink-2af432b8e9844196a88c103051e332ec.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/prelink_0/prelink-2af432b8e9844196a88c103051e332ec.7z",
-          "sha256": "050428e9a5848e53125fbd7ae35f259f03f3f58440aa311369d97394baa545a5",
-          "size": 4283195,
+          "sha256": "dcbfca5226fbede6c94365baee5526a70c982f036850e2b4bce1bc2144391632",
+          "size": 4283194,
           "container": "7z",
           "aliases": [
             {
