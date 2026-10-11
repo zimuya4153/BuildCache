@@ -1,51 +1,48 @@
 {
   "package": "libcurl",
   "version": "8.21.0",
-  "built_at": "2026-10-11T11:10:24Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-11T14:54:50Z",
+  "xmake_version": "3.0.8",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
-  "revision": 4,
+  "vs_toolset": "14.44.35207",
+  "revision": 5,
   "configs": {
     "target_type": "client"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@26.51.6",
+  "produced_for": "levilamina@1.9.9",
   "entries": {
     "default": {
       "package": "libcurl",
       "version": "8.21.0",
-      "built_at": "2026-10-11T11:10:24Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-11T14:54:50Z",
+      "xmake_version": "3.0.8",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
-      "revision": 4,
+      "vs_toolset": "14.44.35207",
+      "revision": 5,
       "configs": {
         "target_type": "client"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
+      "produced_for": "levilamina@1.9.9",
       "artifacts": [
         {
           "package": "libcurl",
-          "upstream_package": "libcurl",
           "version": "8.21.0",
           "buildhash": "917c16ddbf2942d1ae0e099942006c5b",
           "key": "windows-x64-vc-917c16ddbf2942d1ae0e099942006c5b",
-          "toolset": "14.51.36231",
+          "toolset": "14.44.35207",
           "release": "libcurl_0",
           "asset": "libcurl-917c16ddbf2942d1ae0e099942006c5b.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/libcurl_0/libcurl-917c16ddbf2942d1ae0e099942006c5b.7z",
-          "sha256": "b334c23e37ec7dd4abd2ddac82627fcd89403f09cc1fd1b467294fdb8b96488d",
-          "size": 1412552,
+          "sha256": "6e19780d0ab2977b0c4de4e901662b9280511a2e1632ee08ad646ed25f5eef2c",
+          "size": 1397645,
           "container": "7z",
           "aliases": [
             {
@@ -53,14 +50,14 @@
               "toolchain": "msvc",
               "buildhash": "0de27c26a1a74ad692b8b1fc35c5c59d",
               "key": "windows-x64-vc-0de27c26a1a74ad692b8b1fc35c5c59d",
-              "toolset": "14.51.36231"
+              "toolset": "14.44.35207"
             },
             {
               "id": "clang-cl",
               "toolchain": "clang-cl",
               "buildhash": "bd3caa5a72e84c5bb235d19eec2a450e",
               "key": "windows-x64-vc-bd3caa5a72e84c5bb235d19eec2a450e",
-              "toolset": "14.51.36231"
+              "toolset": "14.44.35207"
             }
           ]
         }

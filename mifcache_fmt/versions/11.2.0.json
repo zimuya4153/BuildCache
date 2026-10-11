@@ -46,8 +46,8 @@
           "release": "fmt_0",
           "asset": "fmt-ee1902dd7cff4195a287949f80dbce70.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/fmt_0/fmt-ee1902dd7cff4195a287949f80dbce70.7z",
-          "sha256": "70fbce4d1faac37dd831ab645dbc300143458c7fa01db9ec4d0af647962566a6",
-          "size": 284286,
+          "sha256": "326c19c5e6215919b0e9dd9a7a96182f3a083def72943fd3899a6f1d6cd28a56",
+          "size": 285249,
           "container": "7z",
           "aliases": [
             {
