@@ -39,6 +39,15 @@ def main() -> int:
     marker = vendoring.vendor(config, ctx, plugin, refresh=args.refresh)
     util.log(f"vendored {len(marker['packages'])} packages under '{marker['prefix']}'")
     if args.push:
+        # Vendoring re-copies the package directories, which takes the published
+        # manifests with them -- they are generated from the index, so put them
+        # back before the push leaves the repository without them.
+        import finalize
+
+        ctx.ensure_index()
+        finalize.regenerate_manifests(
+            config, ctx, ctx.index_root, Path(ctx.package_repo)
+        )
         gitops.commit_and_push(Path(ctx.package_repo), "recipes: regenerate prefixed packages")
     return 0
 
