@@ -148,24 +148,25 @@ def line_floor(era: str) -> str:
 
 
 #: Tags older than a cutoff were written against an older MSVC than the hosted
-#: images carry, and their own dependencies do not compile with the newest one:
-#: LeviLamina 0.13.5 pulls in a libhat that dies with C2143 in Process.hpp, while
-#: 1.0.1's older-but-newer dependencies build fine. That is a property of the
-#: *project's* age, not of the xmake release line, so the cutoff is a date. The
-#: build job installs the component below (which provides that MSVC generation)
-#: and pins the build to it.
+#: images carry, and their sources break with the newest one. The generation they
+#: were written against cannot be installed any more: the Visual Studio catalog on
+#: windows-2022 offers no 14.40 component at all (only 14.29 and 14.44 are
+#: present), and both of those fail the same way -- which is how we know the
+#: remaining breakage is in the *sources* (missing includes), not the compiler.
+#: What is left to do is therefore to use the oldest toolset the image has for
+#: those tags, and repair the sources in :func:`repair_recipes`.
 ERA_MSVC = [
-    # commits before this date, MSVC version, Visual Studio component
-    ("2024-11-01", "14.40", "Microsoft.VisualStudio.Component.VC.14.40.17.10.x86.x64"),
+    # commits before this date, MSVC family to use
+    ("2024-11-01", "14.29"),
 ]
 
 
 def msvc_plan(era_date: str) -> dict:
-    """The MSVC generation an era's sources were written against, if not the newest."""
-    for before, version, component in ERA_MSVC:
+    """The MSVC family an era should be built with, if not the newest one."""
+    for before, family in ERA_MSVC:
         if str(era_date)[:10] < before:
-            return {"msvc_version": version, "msvc_component": component}
-    return {"msvc_version": "", "msvc_component": ""}
+            return {"msvc_version": family}
+    return {"msvc_version": ""}
 
 
 def recipe_cutoff(ctx, version: str, commit: str) -> str:
@@ -358,7 +359,53 @@ def repair_recipes(config, source_name: str, snapshot) -> list[str]:
     alias, and rename the matching dependency strings in our vendored version
     files.
     """
-    return _repair_legacy_versions(snapshot)
+    return _repair_legacy_versions(snapshot) + _repair_era_sources(snapshot)
+
+
+#: Headers of the old-era packages that use a type from the standard library
+#: without including its header themselves: they relied on the transitive include
+#: that the STL of their time happened to provide, and no STL does today (the same
+#: failure with every toolset the image has). The repair is the one-line include.
+_ERA_INCLUDES = {
+    "libhat": [
+        ("include/libhat/Process.hpp", "<string>", "std::string"),
+    ],
+}
+
+
+def _repair_era_sources(snapshot) -> list[str]:
+    """Inject the standard includes an old-era dependency forgot to write."""
+    snapshot = Path(snapshot)
+    notes: list[str] = []
+    for package, fixes in _ERA_INCLUDES.items():
+        recipe = snapshot / "packages" / package[0] / package / "xmake.lua"
+        if not recipe.is_file():
+            continue
+        text = util.read_text(recipe)
+        if "BuildCache: era includes" in text:
+            continue
+        lines = []
+        for header, include, symbol in fixes:
+            lines.append(
+                f'        do\n'
+                f'            local file = "{header}"\n'
+                f'            local data = io.readfile(file)\n'
+                f'            if data and not data:find("#include {include}", 1, true) then\n'
+                f'                io.writefile(file, "#include {include}\\n" .. data)\n'
+                f'                print("added {include} to {header} (it uses {symbol})")\n'
+                f'            end\n'
+                f'        end'
+            )
+        match = re.search(r"^(\s*)on_install\(function", text, re.M)
+        if not match:
+            continue
+        injection = "\n        -- BuildCache: era includes\n" + "\n".join(lines) + "\n"
+        # Insert after the whole line: the anchor is the start of a call whose
+        # arguments continue on that line.
+        line_end = text.index("\n", match.end())
+        util.write_text(recipe, text[: line_end + 1] + injection + text[line_end + 1 :])
+        notes.append(f"{snapshot.name}/{package}: era includes injected ({len(fixes)})")
+    return notes
 
 
 _LEGACY_VERSION = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)\.(\d+)(.*)$")

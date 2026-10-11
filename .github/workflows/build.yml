@@ -73,70 +73,21 @@ jobs:
         uses: ZhongRuoyu/setup-llvm@v0
         with:
           llvm-version: 22
-      # An old era's sources only compile with the MSVC of their own generation
-      # (LeviLamina 0.13.5 pulls in a libhat that dies on the newest one), and the
-      # hosted image ships just that newest one. Install the era's toolset and use
-      # it for the build.
-      - name: Install the era's MSVC
+      # An old era was written against an MSVC of its own generation, which the
+      # hosted images no longer offer (the catalog on windows-2022 has 14.29 and
+      # 14.44, nothing in between), so the build uses the oldest one it has.
+      - name: Resolve the era's toolset
         id: msvc
-        if: matrix.msvc_component != ''
+        if: matrix.msvc_version != ''
         shell: pwsh
         run: |
           $vs = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
-          # Do not guess component ids: the installer answers 87 (invalid
-          # parameter) for one that is not in this Visual Studio's catalog. Ask
-          # the channel manifest which toolset components this VS can install.
-          $available = @()
-          $manifest = Get-ChildItem "C:\ProgramData\Microsoft\VisualStudio\Packages\_Channels" `
-              -Recurse -Filter channelManifest.json -ErrorAction SilentlyContinue |
-            Sort-Object LastWriteTime -Descending | Select-Object -First 1
-          if ($manifest) {
-            Write-Output "catalog: $($manifest.FullName)"
-            $available = (Get-Content $manifest.FullName -Raw | ConvertFrom-Json).channelItems |
-              Where-Object { $_.id -like "*VC.${{ matrix.msvc_version }}.*x86.x64*" } |
-              Select-Object -ExpandProperty id -Unique
-          }
-          Write-Output "components for ${{ matrix.msvc_version }}: $($available -join ', ')"
-          # The era's own generation first; older ones as a fallback, because an
-          # era's sources only compile with a compiler of about their age.
-          $candidates = @($available) + @("${{ matrix.msvc_component }}")
-          foreach ($component in $candidates) {
-            if (-not $component) { continue }
-            Write-Output "== installing $component"
-            # The bootstrapper is a GUI binary and does not report a meaningful
-            # exit code, so launch it and wait for the toolset to appear instead.
-            Start-Process -FilePath $installer -ArgumentList @(
-              'modify',
-              '--installPath', $vs,
-              '--productId', 'Microsoft.VisualStudio.Product.Enterprise',
-              '--channelId', 'VisualStudio.17.Release',
-              '--add', $component,
-              '--quiet', '--norestart'
-            ) | Out-Null
-            $found = $null
-            for ($i = 0; $i -lt 30 -and -not $found; $i++) {
-              Start-Sleep -Seconds 10
-              $found = Get-ChildItem "$vs\VC\Tools\MSVC" -ErrorAction SilentlyContinue |
-                Where-Object { $_.Name -like "${{ matrix.msvc_version }}.*" } |
-                Sort-Object Name -Descending | Select-Object -First 1
-            }
-            if ($found -and $found.Name -notlike "14.51.*" -and $found.Name -notlike "14.44.*") {
-              Write-Output "using $($found.Name)"
-              "vs_toolset=$($found.Name)" >> $env:GITHUB_OUTPUT
-              return
-            }
-            # Say why, instead of only that it did not work.
-            Get-ChildItem "$vs\VC\Tools\MSVC" -ErrorAction SilentlyContinue |
-              ForEach-Object { Write-Output "   present: $($_.Name)" }
-            $log = Get-ChildItem $env:TEMP -Filter 'dd_*.log' -ErrorAction SilentlyContinue |
-              Sort-Object LastWriteTime -Descending | Select-Object -First 1
-            if ($log) {
-              Write-Output "   installer log: $($log.FullName)"
-              Get-Content $log.FullName -Tail 20 | ForEach-Object { Write-Output "   | $_" }
-            }
-          }
-          throw "no older MSVC toolset could be installed"
+          $tools = Get-ChildItem "$vs\VC\Tools\MSVC" |
+            Where-Object { $_.Name -like "${{ matrix.msvc_version }}.*" } |
+            Sort-Object Name -Descending | Select-Object -First 1
+          if (-not $tools) { throw "this image has no ${{ matrix.msvc_version }} toolset" }
+          Write-Output "using $($tools.Name)"
+          "vs_toolset=$($tools.Name)" >> $env:GITHUB_OUTPUT
       # Which MSVC generations and platform toolsets this image has, so an era
       # failure can be read without guessing.
       - name: MSVC diagnostics

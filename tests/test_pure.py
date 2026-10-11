@@ -371,6 +371,36 @@ def test_verbose_xmake_noise_is_filtered():
     assert not xmake_env.is_copy_noise("[ 50%]: ccache compile src/a.cpp")
 
 
+def test_old_era_sources_get_the_include_they_forgot(tmp_path: Path):
+    """The repair injects the missing standard include while the package installs.
+
+    libhat 2024.4.16 uses std::string without including <string>, and that fails
+    with every toolset the CI image has, so it has to be fixed in the source.
+    """
+    recipe = tmp_path / "levimc-repo@test" / "packages" / "l" / "libhat"
+    recipe.mkdir(parents=True)
+    (recipe / "xmake.lua").write_text(
+        'package("libhat")\n'
+        "    on_install(function (package)\n"
+        '        import("package.tools.cmake").install(package)\n'
+        "    end)\n",
+        encoding="utf-8",
+    )
+    ll = next(
+        item for item in plugins.load_all(util.load_config()) if item.name == "ll"
+    )
+    snapshot = tmp_path / "levimc-repo@test"
+    notes = ll.module._repair_era_sources(snapshot)
+    assert notes and "libhat" in notes[0]
+    text = (recipe / "xmake.lua").read_text(encoding="utf-8")
+    # it belongs to the install body, not to the recipe's top level
+    assert text.index("BuildCache: era includes") > text.index("on_install(function")
+    assert 'local file = "include/libhat/Process.hpp"' in text
+    assert 'io.writefile(file, "#include <string>' in text
+    # running it twice is a no-op
+    assert ll.module._repair_era_sources(snapshot) == []
+
+
 def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     """Only the project's own package has an entry dimension."""
     config = dict(util.load_config())
@@ -458,19 +488,17 @@ def test_old_eras_use_an_xmake_of_their_own_line_that_works():
     assert floor("3.0.1") == "3.0.1"
 
 
-def test_old_eras_ask_for_the_msvc_of_their_own_generation():
-    """The build job installs this component before an old era is built.
+def test_old_eras_use_the_oldest_toolset_the_image_has():
+    """The generation an old era was written against is not installable any more.
 
-    The hosted windows images only carry the newest MSVC, and an era's sources do
-    not compile with it (0.13.5's libhat dies with C2143).
+    The windows-2022 catalog offers 14.29 and 14.44 only, so an old tag is built
+    with the oldest of those and the *sources* are repaired instead (the same
+    missing include fails under both).
     """
     ll = next(
         item for item in plugins.load_all(util.load_config()) if item.name == "ll"
     )
     plan = ll.module.msvc_plan
-    assert plan("2024-08-30T20:09:06+08:00")["msvc_version"] == "14.40"
-    assert plan("2024-08-30")["msvc_component"].startswith(
-        "Microsoft.VisualStudio.Component.VC.14.40"
-    )
+    assert plan("2024-08-30T20:09:06+08:00") == {"msvc_version": "14.29"}
     # a current era uses whatever the image has
-    assert plan("2026-10-01T00:00:00Z") == {"msvc_version": "", "msvc_component": ""}
+    assert plan("2026-10-01T00:00:00Z") == {"msvc_version": ""}
