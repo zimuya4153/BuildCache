@@ -564,3 +564,42 @@ def test_eras_use_the_toolset_the_image_has():
         item for item in plugins.load_all(util.load_config()) if item.name == "ll"
     )
     assert all(toolset is None for _floor, _runner, _imageos, toolset in ll.module.ERA_IMAGES)
+
+
+def test_pre_2_9_4_xmake_gets_the_toolset_fix_backported(tmp_path: Path):
+    """The 2.8 line turns 14.44 into "v144"; 2.9.4 maps it back and 2.8 never did.
+
+    Every CMake package of a 2.8-era build died with MSB8020, because the newest
+    toolset the image carries (14.44, still the v143 family) was handed to MSBuild
+    under the Visual Studio 2026 name.
+    """
+    from lib import xmake_env
+
+    tree = tmp_path / "v2.8.6" / "xmake"
+    cmake = tree / "modules" / "package" / "tools" / "cmake.lua"
+    cmake.parent.mkdir(parents=True)
+    cmake.write_text(
+        "function _get_vs_toolset(package)\n"
+        "        if #verinfo >= 2 then\n"
+        '            toolset_ver = "v" .. verinfo[1] .. (verinfo[2]:sub(1, 1) or "0")\n'
+        "        end\n"
+        "end\n",
+        encoding="utf-8",
+    )
+
+    assert xmake_env.patch_cmake_toolset_family(tree) is True
+    patched = cmake.read_text(encoding="utf-8")
+    assert 'toolset_ver == "v144" and _minor >= 40 and _minor < 50' in patched
+    # the derivation must survive, it is what a 14.2x/14.3x toolset still goes through
+    assert 'toolset_ver = "v" .. verinfo[1]' in patched
+    # idempotent: a second pass must not stack a copy on top
+    assert xmake_env.patch_cmake_toolset_family(tree) is False
+    assert patched.count("local _minor") == 1
+
+    # 2.9.4+ keeps this in modules/private/utils/toolchain.lua and is left alone
+    newer = tmp_path / "v2.9.4" / "xmake"
+    newer_cmake = newer / "modules" / "package" / "tools" / "cmake.lua"
+    newer_cmake.parent.mkdir(parents=True)
+    newer_cmake.write_text("-- 2.9.4 already maps v144 back\n", encoding="utf-8")
+    assert xmake_env.patch_cmake_toolset_family(newer) is False
+    assert newer_cmake.read_text(encoding="utf-8") == "-- 2.9.4 already maps v144 back\n"

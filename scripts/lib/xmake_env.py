@@ -231,29 +231,67 @@ def ensure_xmake(config: dict, version: str, proxy: str | None = None) -> Path:
 
     target = util.cache_dir(config, "xmake") / f"v{version}"
     exe = target / "xmake" / "xmake.exe"
-    if exe.is_file():
-        return exe
-    url = (
-        f"https://github.com/xmake-io/xmake/releases/download/v{version}/"
-        f"xmake-v{version}.win64.zip"
-    )
-    util.ensure_dir(target)
-    archive = target / f"xmake-v{version}.win64.zip"
-    util.log(f"downloading {url}")
-    opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({"http": proxy, "https": proxy} if proxy else {})
-    )
-    with opener.open(url) as response, open(archive, "wb") as handle:
-        while True:
-            chunk = response.read(1 << 20)
-            if not chunk:
-                break
-            handle.write(chunk)
-    with zipfile.ZipFile(archive) as zipped:
-        zipped.extractall(target)
     if not exe.is_file():
-        raise RuntimeError(f"xmake binary missing after extracting {archive}")
+        url = (
+            f"https://github.com/xmake-io/xmake/releases/download/v{version}/"
+            f"xmake-v{version}.win64.zip"
+        )
+        util.ensure_dir(target)
+        archive = target / f"xmake-v{version}.win64.zip"
+        util.log(f"downloading {url}")
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({"http": proxy, "https": proxy} if proxy else {})
+        )
+        with opener.open(url) as response, open(archive, "wb") as handle:
+            while True:
+                chunk = response.read(1 << 20)
+                if not chunk:
+                    break
+                handle.write(chunk)
+        with zipfile.ZipFile(archive) as zipped:
+            zipped.extractall(target)
+        if not exe.is_file():
+            raise RuntimeError(f"xmake binary missing after extracting {archive}")
+    # a tree that was cached before this backport existed still needs it
+    patch_cmake_toolset_family(exe.parent)
     return exe
+
+
+#: xmake before 2.9.4 derives CMake's platform toolset as "v<major><first digit of
+#: minor>". That is right up to MSVC 14.3x (v143) and wrong from 14.4x on: those are
+#: still the v143 family ("MSVC v143 - VS 2022 C++ build tools (v14.40)"), so the
+#: derivation asks MSBuild for "v144" -- a Visual Studio 2026 toolset -- and every
+#: CMake package dies with MSB8020. 2.9.4 maps 14.40..14.49 back to v143 ("@see
+#: https://github.com/xmake-io/xmake/pull/5176") and the 2.8 line never got it. An
+#: era build deliberately uses the xmake of its own time, so the backport lands on
+#: the xmake we downloaded, instead of pinning an MSVC generation the images no
+#: longer carry.
+_TOOLSET_FAMILY_OLD = '            toolset_ver = "v" .. verinfo[1] .. (verinfo[2]:sub(1, 1) or "0")'
+_TOOLSET_FAMILY_NEW = """            toolset_ver = "v" .. verinfo[1] .. (verinfo[2]:sub(1, 1) or "0")
+            -- BuildCache: 14.4x is the v143 family (VS 2022), not v144 (VS 2026).
+            local _minor = tonumber(verinfo[2]) or 0
+            if toolset_ver == "v144" and _minor >= 40 and _minor < 50 then
+                toolset_ver = "v143"
+            end"""
+
+
+def patch_cmake_toolset_family(xmake_dir: Path) -> bool:
+    """Backport 2.9.4's fix into an xmake that predates it. Idempotent.
+
+    Only the 2.8 line carries this derivation inline; 2.9.4+ moved it into
+    ``modules/private/utils/toolchain.lua`` and already maps v144 back to v143.
+    ``private/utils/upgrade_vsproj.lua`` repeats the derivation, but only
+    ``xmake project -k`` reaches it, which no package install runs.
+    """
+    path = Path(xmake_dir) / "modules" / "package" / "tools" / "cmake.lua"
+    if not path.is_file():
+        return False
+    text = util.read_text(path)
+    if _TOOLSET_FAMILY_NEW in text or _TOOLSET_FAMILY_OLD not in text:
+        return False
+    util.write_text(path, text.replace(_TOOLSET_FAMILY_OLD, _TOOLSET_FAMILY_NEW, 1))
+    util.log("patched xmake's cmake.lua: 14.4x is the v143 toolset family, not v144")
+    return True
 
 
 def detect_vs_toolset(config: dict, explicit: str | None = None) -> str | None:
