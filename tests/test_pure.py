@@ -535,21 +535,31 @@ def test_packing_is_reproducible(tmp_path: Path, monkeypatch):
 
 
 
-def test_a_version_whose_era_is_today_skips_the_dependency_pass():
-    """A recent version resolves today's recipes in its first pass already.
+def test_a_recent_version_needs_one_pass_only(tmp_path: Path, monkeypatch):
+    """Plan selection: today's recipes, unless the era already is today.
 
-    The dependency pass exists to reach the recipes a consumer resolves; when the
-    version is new enough that its era *is* today, a second compile would produce
-    the same addresses from the same sources -- so it is skipped.
+    A version whose release date is so recent that nothing moved in the recipe
+    repositories is built against today's recipes by definition, so the fallback
+    plan (the era's own recipes) is not even offered.
     """
-    today = {"levimc-repo": "abc", "xmake-repo": "def"}
-    assert build._same_sources(today, today) is True
-    assert build._same_sources({"levimc-repo": "abc"}, {"levimc-repo": "old"}) is False
-    # one source behind is enough to make the pass worth it
-    assert build._same_sources({"levimc-repo": "abc", "xmake-repo": "old"}, today) is False
-    # no information at all never silently skips work
-    assert build._same_sources({}, today) is False
-    assert build._same_sources(today, {}) is False
+    repo = tmp_path / "recipe-source"
+    repo.mkdir()
+    config = dict(util.load_config())
+    config["recipes"] = {"sources": [{"name": "test-repo", "url": str(repo)}]}
+    ctx = plugins.Context(config)
+    monkeypatch.setattr(ctx, "mirror", lambda name, url: repo)
+
+    monkeypatch.setattr(
+        sources.repos, "commit_at", lambda mirror, cutoff=None, **kwargs: cutoff or "head"
+    )
+    assert sources.sources_changed(config, ctx, "2025-01-01") is True
+
+    monkeypatch.setattr(
+        sources.repos, "commit_at", lambda mirror, cutoff=None, **kwargs: "same"
+    )
+    assert sources.sources_changed(config, ctx, "2025-01-01") is False
+    # no cutoff means "no era to speak of"
+    assert sources.sources_changed(config, ctx, "") is False
 
 
 def test_the_consumer_dependency_list_is_read_from_the_upstream_recipe(monkeypatch):

@@ -72,6 +72,24 @@ def prepare(
     return prepared
 
 
+def sources_changed(config: dict, ctx, cutoff: str | None) -> bool:
+    """Did anything move in the recipe sources since ``cutoff``?
+
+    A version released so recently that nothing did is already built against the
+    recipes a consumer resolves, so one pass covers both sides. An older one is
+    not, and there the dependencies have to be taken from today's state to reach
+    the addresses a consumer asks for.
+    """
+    if not cutoff:
+        return False
+    env = util.subprocess_env(config, proxy=getattr(ctx, "proxy", None))
+    for source in config.get("recipes", {}).get("sources", []):
+        mirror = ctx.mirror(source["name"], source["url"])
+        if repos.commit_at(mirror, cutoff, env=env) != repos.commit_at(mirror, None, env=env):
+            return True
+    return False
+
+
 def _overlay_from_cutoff(dest: Path, cutoff: str | None, path: str, env: dict | None = None) -> str:
     """Take ``path`` in the snapshot from the version's date; "" when absent.
 

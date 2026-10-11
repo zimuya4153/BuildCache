@@ -21,7 +21,7 @@ on:
         default: ""
       batch:
         description: versions per plugin, newest first
-        default: "3"
+        default: "4"
       first_only:
         description: only the newest version
         type: boolean
@@ -59,7 +59,7 @@ jobs:
           python scripts/discover.py `
             --plugin "${{ inputs.plugin }}" `
             --version "${{ inputs.version }}" `
-            --batch "${{ inputs.batch || '3' }}" `
+            --batch "${{ inputs.batch || '4' }}" `
             --report-skipped
 
   build:

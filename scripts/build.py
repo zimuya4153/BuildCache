@@ -30,6 +30,118 @@ from lib import (  # noqa: E402
 )
 
 
+def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
+               xmake_version, commit, require, configs, entry, proxy,
+               recipe_cutoff: str, git_cutoff: str, plans: list[tuple[bool, str]]):
+    """Build the closure in the first sandbox that configures and exports.
+
+    A plan is ``(use_today, label)``. The first one takes the dependencies from
+    today's recipes -- that is what a consumer resolves, so the artifacts land on
+    addresses a consumer asks for -- and keeps the project's own recipe from its
+    era, which is what pins the dependency versions and carries our repairs. It is
+    the only plan when nothing moved in the recipe sources since the version was
+    released, because then the era *is* today.
+
+    The second plan rolls everything back to the era, and is only reached when the
+    era's xmake cannot read today's recipes (0.8.3's 2.8.6 dies on `on_source`).
+    That kind of failure happens while the recipes are parsed, before anything is
+    compiled, so trying costs seconds rather than a build.
+
+    Returns ``(sandbox, prepared, recipe_commits, used_today, repo_order)``.
+    """
+    own = plugin.call("metadata")["package"]
+    overlay = (f"packages/{own[0].lower()}/{own}",)
+    empty_repo = util.ensure_dir(util.sandbox_root(config) / "empty-repo")
+    attempts = int(config.get("xmake", {}).get("installRetries", 3))
+    last = "nothing to try"
+
+    for use_today, label in plans:
+        prepared = sources.prepare(
+            config,
+            ctx,
+            plugin,
+            cutoff=None if use_today else recipe_cutoff,
+            label=label,
+            overlay=overlay if use_today else (),
+        )
+        recipe_commits = {name: sha for name, (_dir, sha) in prepared.items()}
+        main_repo = prepared.get("xmake-repo", (None, ""))[0]
+        local_repos = [
+            (name, directory)
+            for name, (directory, _sha) in prepared.items()
+            if name != "xmake-repo"
+        ]
+        # xmake searches the project's own repositories before the main one, so the
+        # recipe lookup for a package has to follow the same order.
+        repo_order = local_repos + [("xmake-repo", main_repo)]
+        requires = [f'add_requires("{require}", {{configs = {_lua_table(configs)}}})']
+        requires += extra_requires(
+            ctx, repo_order, plugin.call("extra_deps", ctx, args.version, commit) or []
+        )
+        suffix = "" if use_today else "-era"
+        sandbox = xmake_env.create_sandbox(
+            config,
+            name=_slug(f"{plugin.name}-{args.version}-{entry['id']}{suffix}"),
+            xmake_version=xmake_version,
+            proxy=proxy,
+            toolchain=None if toolchain == "msvc" else toolchain,
+            repositories=local_repos,
+            main_repo=main_repo,
+            binary_repo=empty_repo,
+            extra_lua="\n".join(requires),
+        )
+        git_shim.install(config, sandbox.env, git_cutoff)
+
+        # Some steps are known to be flaky (generating the bedrock runtime data can
+        # fail and succeed on the next attempt), so both install steps are retried
+        # instead of failing the job. The sandbox package cache is kept between
+        # attempts (it lives in the sandbox root), so a retry resumes rather than
+        # restarting.
+        util.log_step(
+            "configure (today's dependency recipes)" if use_today
+            else "configure (the era's recipes)"
+        )
+        for attempt in range(1, attempts + 1):
+            result = sandbox.configure(
+                toolchain, vs_toolset, plat, arch, stream=True, check=False
+            )
+            if result.returncode == 0:
+                break
+            util.warn(f"configure failed (attempt {attempt}/{attempts})")
+            xmake_env.dump_failed_logs(config, sandbox)
+            if attempt == attempts:
+                last = "configure failed"
+            else:
+                _retry_failed_packages(config, sandbox, attempts)
+        else:
+            continue
+
+        util.log_step("install closure")
+        # No explicit package argument: the sandbox project already declares the
+        # require (including configs), which keeps the resolved buildid identical.
+        for attempt in range(1, attempts + 1):
+            util.rmtree(sandbox.export_dir)
+            util.ensure_dir(sandbox.export_dir)
+            result = sandbox.xmake(
+                ["require", "-y", "--build", "--export", f"--packagedir={sandbox.export_dir}"],
+                stream=True,
+                check=False,
+            )
+            if result.returncode == 0:
+                break
+            util.warn(f"install closure failed (attempt {attempt}/{attempts})")
+            xmake_env.dump_failed_logs(config, sandbox)
+            if attempt == attempts:
+                last = "install closure failed"
+            else:
+                _retry_failed_packages(config, sandbox, attempts)
+        else:
+            continue
+        return sandbox, prepared, recipe_commits, use_today, repo_order
+
+    util.die(f"could not build {require}: {last}")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plugin", default="ll")
@@ -98,92 +210,23 @@ def main() -> int:
         util.log(f"skip {args.version}: {reason}")
         return 0
     upstream_package = plugin.call("metadata")["package"]
-    # Built with the era's own recipes, i.e. with the original package names;
-    # renaming to our prefix happens at publish time. That keeps a build
-    # internally consistent: era xmake + era recipes + era dependency pins.
+    # Packages are built and published under their own names: the repository we
+    # publish holds manifests only, so a consumer resolving the upstream package
+    # finds our archive without a copy of the recipe being involved.
     require = f"{upstream_package} {args.version}"
     util.log("entry: " + entry["id"] + "  configs: " + str(configs))
 
     cutoff_for_recipes = plugin.call("recipe_cutoff", ctx, args.version, commit)
-    # The whole source is rolled back to the version's era: the project's recipe
-    # (which pins the dependency versions and carries our repairs) *and* the
-    # dependency recipes, because one xmake drives both and an era's xmake cannot
-    # read today's recipes -- 0.8.3's 2.8.6 dies on `on_source`, which newer
-    # recipes use. Taking the dependencies from today would therefore need a second
-    # build with a modern xmake, not a different snapshot here.
-    prepared = sources.prepare(
-        config, ctx, plugin, cutoff=cutoff_for_recipes, label=args.version
+    changed = sources.sources_changed(config, ctx, cutoff_for_recipes)
+    plans = [(True, args.version)] if not changed else [(True, args.version), (False, args.version)]
+    sandbox, prepared, recipe_commits, used_today, repo_order = build_once(
+        config, ctx, plugin, args,
+        plat=plat, arch=arch, toolchain=toolchain, vs_toolset=vs_toolset,
+        xmake_version=xmake_version, commit=commit, require=require, configs=configs,
+        entry=entry, proxy=proxy,
+        recipe_cutoff=cutoff_for_recipes, git_cutoff=cutoff,
+        plans=plans,
     )
-    recipe_commits = {name: commit_sha for name, (_dir, commit_sha) in prepared.items()}
-    main_repo = prepared.get("xmake-repo", (None, ""))[0]
-    local_repos = [
-        (name, directory) for name, (directory, _sha) in prepared.items() if name != "xmake-repo"
-    ]
-    # xmake searches the project's own repositories before the main one, so the
-    # recipe lookup for a package has to follow the same order.
-    repo_order = local_repos + [("xmake-repo", main_repo)]
-
-    # Keep the official precompiled mirror out of the way: the closure has to be
-    # built from source with the era recipes, not fetched as someone else's artifact.
-    empty_repo = util.ensure_dir(util.sandbox_root(config) / "empty-repo")
-
-    requires = [f'add_requires("{require}", {{configs = {_lua_table(configs)}}})']
-    requires += extra_requires(
-        ctx, repo_order, plugin.call("extra_deps", ctx, args.version, commit) or []
-    )
-    sandbox = xmake_env.create_sandbox(
-        config,
-        name=_slug(f"{plugin.name}-{args.version}-{entry['id']}"),
-        xmake_version=xmake_version,
-        proxy=proxy,
-        toolchain=None if toolchain == "msvc" else toolchain,
-        repositories=local_repos,
-        main_repo=main_repo,
-        binary_repo=empty_repo,
-        extra_lua="\n".join(requires),
-    )
-    git_shim.install(config, sandbox.env, cutoff)
-
-    # Some steps are known to be flaky (generating the bedrock runtime data can
-    # fail and succeed on the next attempt), so both install steps are retried
-    # instead of failing the job. The sandbox package cache is kept between
-    # attempts (it lives in the sandbox root), so a retry resumes rather than
-    # restarting.
-    attempts = int(config.get("xmake", {}).get("installRetries", 3))
-
-    util.log_step("configure")
-    # The configure step is where the dependency closure gets installed, so a
-    # failure here has to be retried exactly like the export step below.
-    for attempt in range(1, attempts + 1):
-        result = sandbox.configure(
-            toolchain, vs_toolset, plat, arch, stream=True, check=False
-        )
-        if result.returncode == 0:
-            break
-        util.warn(f"configure failed (attempt {attempt}/{attempts})")
-        xmake_env.dump_failed_logs(config, sandbox)
-        if attempt == attempts:
-            util.die(f"configure failed after {attempts} attempt(s)")
-        _retry_failed_packages(config, sandbox, attempts)
-
-    util.log_step("install closure")
-    # No explicit package argument: the sandbox project already declares the
-    # require (including configs), which keeps the resolved buildid identical.
-    for attempt in range(1, attempts + 1):
-        util.rmtree(sandbox.export_dir)
-        util.ensure_dir(sandbox.export_dir)
-        result = sandbox.xmake(
-            ["require", "-y", "--build", "--export", f"--packagedir={sandbox.export_dir}"],
-            stream=True,
-            check=False,
-        )
-        if result.returncode == 0:
-            break
-        util.warn(f"install closure failed (attempt {attempt}/{attempts})")
-        xmake_env.dump_failed_logs(config, sandbox)
-        if attempt == attempts:
-            util.die(f"install closure failed after {attempts} attempt(s)")
-        _retry_failed_packages(config, sandbox, attempts)
 
     util.log_step("publish artifacts")
     results = publish(
@@ -194,15 +237,19 @@ def main() -> int:
         alias_profiles=alias_profiles,
         dry_run=args.dry_run,
     )
-    # The era build resolves the dependencies the way the era did. A consumer
-    # resolves them from today's recipes, so those addresses are a separate build:
-    # same specs, current sources, current xmake. One xmake cannot do both (0.8.3's
-    # 2.8.6 dies on APIs today's recipes use), which is why this is a second pass.
-    deps = build_dependency_pass(
-        config, ctx, plugin, args, plat, arch, toolchain, vs_toolset,
-        commit=commit, dry_run=args.dry_run,
-        specs=plugin.call("dependency_specs", ctx, args.version, commit) or [],
-        era_commits={name: sha for name, (_dir, sha) in prepared.items()},
+    # The pass above took today's recipes, so the dependencies already sit at the
+    # addresses a consumer asks for -- nothing left to build. It only falls back to
+    # the era's recipes (where the era's xmake cannot read today's), and then the
+    # dependencies have to be built once more, the consumer's way, with a current
+    # xmake.
+    deps = (
+        []
+        if used_today
+        else build_dependency_pass(
+            config, ctx, plugin, args, plat, arch, toolchain, vs_toolset,
+            commit=commit, dry_run=args.dry_run,
+            specs=plugin.call("dependency_specs", ctx, args.version, commit) or [],
+        )
     )
     if deps:
         results["artifacts"].extend(deps)
@@ -221,20 +268,8 @@ def main() -> int:
     return 0
 
 
-def _same_sources(era: dict[str, str], today: dict[str, str]) -> bool:
-    """Is the era build's source state the one a consumer resolves right now?
-
-    Every source has to match: the dependency pass exists to reach *today's*
-    recipes, so if the version's era already is today there is nothing to gain and
-    a second full compile to lose.
-    """
-    if not era or not today:
-        return False
-    return all(today.get(name) == sha for name, sha in era.items())
-
-
 def build_dependency_pass(config, ctx, plugin, args, plat, arch, toolchain, vs_toolset,
-                          *, commit, dry_run, specs, era_commits=None) -> list[dict]:
+                          *, commit, dry_run, specs) -> list[dict]:
     """Publish the dependencies at the addresses a *consumer* resolves.
 
     The era build uses the recipes of the version's own date. That is what the
@@ -256,12 +291,6 @@ def build_dependency_pass(config, ctx, plugin, args, plat, arch, toolchain, vs_t
             config, ctx, plugin, cutoff=None, label=f"{args.version}-deps"
         )
         repos_here = [(name, directory) for name, (directory, _sha) in prepared.items()]
-        if _same_sources(era_commits or {}, {name: sha for name, (_dir, sha) in prepared.items()}):
-            # The version is recent enough that its era *is* today: the build that
-            # just finished resolved exactly the recipes a consumer resolves, so a
-            # second pass would repeat the same work for the same addresses.
-            util.log("the era of this version is today's sources: one pass is enough")
-            return []
         main_repo = dict(repos_here).get("xmake-repo")
         local_repos = [(name, directory) for name, directory in repos_here if name != "xmake-repo"]
         newest = xmake_env.newest_xmake(config)
