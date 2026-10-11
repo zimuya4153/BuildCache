@@ -517,9 +517,20 @@ def _repair_legacy_versions(snapshot) -> list[str]:
 
 
 def _rename_dependents(snapshot, renames: dict[str, dict[str, str]]) -> list[str]:
-    """Rewrite dependency strings that point at a repaired version."""
+    """Rewrite dependency strings that point at a repaired version.
+
+    They live in the recipe's per-version files, and -- in the oldest era -- in a
+    version-to-dependencies map inside the recipe's own ``xmake.lua``. That map is
+    read while the dependency is *resolved*, long before any install runs, so
+    rewriting it only at install time is too late.
+    """
+    root = Path(snapshot) / "packages" / "l" / "levilamina"
+    candidates = sorted(root.glob("versions/*.lua"))
+    if (root / "xmake.lua").is_file():
+        candidates.append(root / "xmake.lua")
+
     notes = []
-    for path in sorted(Path(snapshot).glob("packages/l/levilamina/versions/*.lua")):
+    for path in candidates:
         text = util.read_text(path)
         updated = text
         for package, mapping in renames.items():

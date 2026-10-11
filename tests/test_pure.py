@@ -431,6 +431,40 @@ def test_old_era_sources_stop_reaching_into_the_stl(tmp_path: Path):
     assert "{plain = true})" in text
 
 
+def test_repaired_versions_are_renamed_where_the_resolver_reads_them(tmp_path: Path):
+    """The oldest era names its dependencies in the recipe's own xmake.lua.
+
+    That map is read while resolving, so a four-component version has to be
+    rewritten there, not only in the per-version files and not only at install
+    time (which is when the upstream xmake.lua gets its own renames).
+    """
+    ll = next(
+        item for item in plugins.load_all(util.load_config()) if item.name == "ll"
+    )
+    root = tmp_path / "levimc-repo@test" / "packages" / "l" / "levilamina"
+    (root / "versions").mkdir(parents=True)
+    (root / "xmake.lua").write_text(
+        'package("levilamina")\n'
+        "    local dependencies = {\n"
+        '        ["0.8.3"] = {"bdslibrary 1.20.61.01"}\n'
+        "    }\n",
+        encoding="utf-8",
+    )
+    (root / "versions" / "0_13_5.lua").write_text(
+        'add_deps("bdslibrary 1.21.0.3")\n', encoding="utf-8"
+    )
+
+    notes = ll.module._rename_dependents(
+        tmp_path / "levimc-repo@test",
+        {"bdslibrary": {"1.20.61.01": "1.20.61-r01", "1.21.0.3": "1.21.0-r3"}},
+    )
+    assert len(notes) == 2, notes
+    assert '"bdslibrary 1.20.61-r01"' in (root / "xmake.lua").read_text(encoding="utf-8")
+    assert '"bdslibrary 1.21.0-r3"' in (root / "versions" / "0_13_5.lua").read_text(
+        encoding="utf-8"
+    )
+
+
 def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     """Only the project's own package has an entry dimension."""
     config = dict(util.load_config())
