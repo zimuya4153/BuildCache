@@ -272,7 +272,7 @@ def release_rows(config: dict, ctx) -> tuple[dict[str, list[dict]], str]:
                     prefix = prefix or str(meta.get("prefix") or "")
     return (
         {
-            shard: sorted(rows.values(), key=lambda item: (item["version"], item["entry"]))
+            shard: reports.newest_first(list(rows.values()))
             for shard, rows in shards.items()
         },
         prefix,

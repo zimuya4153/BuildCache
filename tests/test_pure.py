@@ -334,6 +334,38 @@ def test_table_manager_adds_and_removes_columns():
     assert table.remove("variant").has("variant") is False
 
 
+def test_release_rows_put_the_newest_version_on_top():
+    """A version is not a string, and a reader looks the newest build up first.
+
+    Sorted as text, ``0.13.5`` lands above ``0.8.3`` -- which is exactly what the
+    published body used to show. The entries of one version keep a fixed order.
+    """
+    rows = [
+        reports.artifact_row(
+            {"buildhash": version, "asset": f"{version}.7z"},
+            version=version,
+            entry_id=entry,
+            own=True,
+        )
+        for version, entry in [
+            ("0.8.3", "server"),
+            ("0.13.5", "server"),
+            ("1.0.1", "server"),
+            ("26.51.6", "server"),
+            ("1.4.4", "server"),
+            ("26.51.6", "client"),
+        ]
+    ]
+    assert [(row["version"], row["entry"]) for row in reports.newest_first(rows)] == [
+        ("26.51.6", "client"),
+        ("26.51.6", "server"),
+        ("1.4.4", "server"),
+        ("1.0.1", "server"),
+        ("0.13.5", "server"),
+        ("0.8.3", "server"),
+    ]
+
+
 def test_failed_install_logs_are_found(tmp_path: Path):
     """xmake only points at a log inside the sandbox, so we print it ourselves."""
     logs = (

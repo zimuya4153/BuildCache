@@ -18,7 +18,7 @@ nothing for it. Tools use the same manager, so what a release body shows and wha
 
 from __future__ import annotations
 
-from . import util
+from . import semver, util
 
 
 # --------------------------------------------------------------------- renderers
@@ -182,3 +182,22 @@ def artifact_row(
             for item in artifact.get("aliases") or []
         ),
     }
+
+
+def newest_first(rows: list[dict]) -> list[dict]:
+    """Order rows the way a reader expects them: newest version on top.
+
+    A version is not a string, so the sort has to go through the version parser
+    (a plain sort ranks ``0.13.5`` above ``0.8.3``). Versions of one release
+    shard do not repeat often -- 26.51.6 is built for both entries -- so the
+    entries of a version keep a fixed order instead of being reversed with it.
+    """
+    ordered = sorted(
+        rows,
+        key=lambda item: (item.get("entry") or "", item.get("buildhash") or ""),
+    )
+    ordered.sort(
+        key=lambda item: semver.key(str(item.get("version") or "")),
+        reverse=True,
+    )
+    return ordered
