@@ -1,0 +1,64 @@
+name: Probe one build
+
+# One answer, one job: does this version compile at all, and with *which*
+# compiler? A full round takes an hour to say the same thing, so this builds the
+# one version directly. It deliberately does not install LLVM 22 -- the question
+# is usually whether the compiler the image already has can build it -- and it
+# reuses everything the cache has published, so the time is the build's own.
+#
+# Nothing here publishes anything new except that version's own artifact, and the
+# regular rounds are untouched: this workflow only ever runs when it is asked to.
+
+on:
+  workflow_dispatch:
+    inputs:
+      plugin:
+        description: plugin name (as in config.json)
+        default: bsci
+      version:
+        description: the version to build
+        default: "0.4.0"
+      entry:
+        description: entry id (empty = the first one)
+        default: ""
+      install_llvm:
+        description: install LLVM 22 first (the rounds do; a probe usually should not)
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Setup LLVM
+        if: inputs.install_llvm
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
+      # The whole question is which compiler ends up building the sources, so the
+      # log says it before anything is built.
+      - name: Which compilers are here?
+        shell: pwsh
+        run: |
+          foreach ($name in @("clang-cl", "cl", "clang")) {
+            $found = Get-Command $name -ErrorAction SilentlyContinue
+            Write-Output ("$name -> " + $(if ($found) { $found.Source } else { "(not on PATH)" }))
+          }
+          clang-cl --version 2>$null | Select-Object -First 3
+          Write-Output "== LLVM_PATH=$env:LLVM_PATH"
+      - name: Build ${{ inputs.plugin }} ${{ inputs.version }}
+        timeout-minutes: 180
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/build.py --plugin "${{ inputs.plugin }}" `
+            --version "${{ inputs.version }}" `
+            --entry "${{ inputs.entry }}" `
+            --keep-sandbox
