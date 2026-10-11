@@ -2,7 +2,7 @@
   "package": "mifcache_rapidjson",
   "version": "v1.1.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-10T17:18:12Z",
+  "built_at": "2026-10-11T07:16:47Z",
   "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
@@ -20,7 +20,7 @@
       "package": "mifcache_rapidjson",
       "version": "v1.1.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-10T17:18:12Z",
+      "built_at": "2026-10-11T07:16:47Z",
       "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
@@ -44,8 +44,8 @@
           "release": "rapidjson_0",
           "asset": "rapidjson-0f134bb496e5466f91a92e689450b200.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/rapidjson_0/rapidjson-0f134bb496e5466f91a92e689450b200.7z",
-          "sha256": "322ebc20540b11c333acb338083f5b03c62fe8ed6602a9124ac905d232896d14",
-          "size": 86440,
+          "sha256": "d51bc8f88e31c0bc34873e75006b669eeedd96766f0540b09f7cd48ba17b712f",
+          "size": 86439,
           "container": "7z",
           "aliases": []
         }

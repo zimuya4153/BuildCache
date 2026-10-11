@@ -1,0 +1,55 @@
+{
+  "package": "mifcache_ctre",
+  "version": "3.8.1",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T07:16:47Z",
+  "xmake_version": "2.9.7",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 2,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@3.8.1",
+  "entries": {
+    "default": {
+      "package": "mifcache_ctre",
+      "version": "3.8.1",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T07:16:47Z",
+      "xmake_version": "2.9.7",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 2,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@3.8.1",
+      "artifacts": [
+        {
+          "package": "mifcache_ctre",
+          "upstream_package": "ctre",
+          "version": "3.8.1",
+          "buildhash": "354f59ffe01146af8f95691d1df61dab",
+          "key": "windows-x64-vc-354f59ffe01146af8f95691d1df61dab",
+          "toolset": "14.44.35207",
+          "release": "ctre_0",
+          "asset": "ctre-354f59ffe01146af8f95691d1df61dab.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/ctre_0/ctre-354f59ffe01146af8f95691d1df61dab.7z",
+          "sha256": "fe895de1a91754bd9e5ce5d883b63789fd85e5360dc5b6beca3be70a9f3a9485",
+          "size": 85378,
+          "container": "7z",
+          "aliases": []
+        }
+      ]
+    }
+  }
+}

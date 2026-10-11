@@ -2,6 +2,7 @@
   "package": "mifcache_expected-lite",
   "latest": "v0.8.0",
   "versions": [
-    "v0.8.0"
+    "v0.8.0",
+    "v0.7.0"
   ]
 }
