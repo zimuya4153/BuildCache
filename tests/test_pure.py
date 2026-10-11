@@ -452,6 +452,10 @@ def test_the_revision_gate_decides_whether_a_dependency_can_be_reused(tmp_path: 
     # built by an older revision: a build is not offered it, so it cannot reuse it
     assert not index_store.has_artifacts(index_root, "levilamina", "1.9.9", 5)
     assert not index_store.has_artifacts(index_root, "levilamina", "1.9.8", 4)
+    # the same question for a whole package, which is what tells one release line
+    # from another
+    assert index_store.versions_with_artifacts(index_root, "levilamina", 4) == {"1.9.9"}
+    assert index_store.versions_with_artifacts(index_root, "levilamina", 5) == set()
 
 
 def test_a_job_reuses_what_the_round_just_published(tmp_path: Path):
@@ -1133,6 +1137,24 @@ def test_every_release_line_gets_a_build_before_any_gets_two():
     assert ordered[4:] == ["26.51.6", "26.51.5", "26.51.2", "26.51.1", "26.51.0", "26.40.5", "1.4.3"]
     # stable: the same input always yields the same order
     assert discover.cover_lines_first(pending) == ordered
+
+
+def test_a_line_the_ledger_already_covers_comes_last():
+    """`discover` takes the first two, so the order has to move down the lines.
+
+    With 26.51 (26.51.4, 26.51.6) and 26.40 (26.40.3) already built, a round that
+    re-represented those lines would pick 26.51.x and 26.40.x again -- and the
+    round after that, and every round after, so 26.32, 26.20, ... and 1.9 would
+    never be reached. A line the ledger has nothing for comes first instead.
+    """
+    pending = [
+        "26.51.6", "26.51.4", "26.40.6", "26.40.3", "26.32.2", "26.32.0", "26.20.7",
+    ]
+    assert discover.cover_lines_first(pending)[:2] == ["26.51.6", "26.40.6"]
+    covered = {"26.51.6", "26.51.4", "26.40.3"}
+    assert discover.cover_lines_first(pending, covered)[:2] == ["26.32.2", "26.20.7"]
+    # and once those are built, the next lines follow
+    assert discover.cover_lines_first(pending, covered | {"26.32.2"})[:1] == ["26.20.7"]
 
 
 def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):

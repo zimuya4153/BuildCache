@@ -98,6 +98,27 @@ def has_artifacts(index_root: Path, package: str, version: str, revision: int | 
     return False
 
 
+def versions_with_artifacts(
+    index_root: Path, package: str, revision: int | None = None
+) -> set[str]:
+    """The versions of a package the ledger can already serve.
+
+    ``revision`` filters the same way a build's manifest repository does, so what
+    this returns is what a round does *not* have to build again. ``discover`` uses
+    it to tell a release line that has been built from one that has not.
+    """
+    found: set[str] = set()
+    for meta in all_version_meta(index_root, package):
+        version = str(meta.get("version"))
+        for entry in entries(meta).values():
+            if revision is not None and int(entry.get("revision") or 0) != int(revision):
+                continue
+            if entry.get("artifacts"):
+                found.add(version)
+                break
+    return found
+
+
 def entry_artifacts(index_root: Path, package: str, version: str, entry_id: str) -> list[dict]:
     entry = entries(version_meta(index_root, package, version)).get(entry_id) or {}
     return list(entry.get("artifacts") or [])

@@ -33,7 +33,7 @@ def _line_of(version: str) -> str:
     return ".".join(parts[:-1]) if len(parts) > 1 else str(version)
 
 
-def cover_lines_first(versions: list[str]) -> list[str]:
+def cover_lines_first(versions: list[str], built=()) -> list[str]:
     """Order versions so that every release line gets a build before any line gets two.
 
     Patch levels of one line differ in which upstream commits they carry, while
@@ -43,13 +43,22 @@ def cover_lines_first(versions: list[str]) -> list[str]:
     the middle patch level, biased towards the newest: neither the oldest (usually
     the least useful) nor the newest, which upstream may still be moving.
 
+    ``built`` is what the ledger already holds for this package, because "before
+    any line gets two" is a statement about the *ledger*, not about the order of
+    the pending list. A line that already has a build -- 26.51 with 26.51.4 and
+    26.51.6, say -- must not come before one that has none, or every round would
+    pick 26.51.x and 26.40.x again and never reach 26.32, 26.20, ..., 1.9 at all.
+
     ``versions`` arrives newest first and the order of the rest is preserved, so
     picking the next few from the front of the result is stable across runs.
     """
     lines: dict[str, list[str]] = {}
     for version in versions:
         lines.setdefault(_line_of(version), []).append(version)
-    picks = [members[(len(members) - 1) // 2] for members in lines.values()]
+    started_lines = {_line_of(version) for version in built}
+    fresh = [members for line, members in lines.items() if line not in started_lines]
+    started = [members for line, members in lines.items() if line in started_lines]
+    picks = [members[(len(members) - 1) // 2] for members in fresh + started]
     chosen = set(picks)
     return picks + [version for version in versions if version not in chosen]
 
@@ -85,7 +94,18 @@ def main() -> int:
                 util.die(f"version {args.version} is not tracked by the recipe repository")
         else:
             pending = [item for item in entries if item["version"] not in built]
-        pending = cover_lines_first(semver.sort_desc([item["version"] for item in pending]))
+        # A release line the ledger has nothing for comes before one it already
+        # covers: see cover_lines_first().
+        covered = (
+            set()
+            if args.rebuild_all
+            else index_store.versions_with_artifacts(
+                ctx.index_root, package, int(config.get("revision", 1))
+            )
+        )
+        pending = cover_lines_first(
+            semver.sort_desc([item["version"] for item in pending]), covered
+        )
         by_version = {item["version"]: item for item in entries}
         if args.first_only:
             pending = pending[:1]
