@@ -46,8 +46,8 @@
           "release": "trampoline_0",
           "asset": "trampoline-552c1d2061e44233a497ba064002bba0.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/trampoline_0/trampoline-552c1d2061e44233a497ba064002bba0.7z",
-          "sha256": "cf748e44fd181d5af9521a66d04177f53f60ec5823bff62cb0794149fd7e7127",
-          "size": 5239,
+          "sha256": "0bfe2bb65776127350ab3a9366ca298022bb76f3e51cdbae374df15fa9abbe8c",
+          "size": 5243,
           "container": "7z",
           "aliases": [
             {

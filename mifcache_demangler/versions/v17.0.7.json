@@ -46,8 +46,8 @@
           "release": "demangler_0",
           "asset": "demangler-57206051c21c41009d4a5306cebc56d2.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/demangler_0/demangler-57206051c21c41009d4a5306cebc56d2.7z",
-          "sha256": "45b9c103d1d1e13056b1e2722e3e54fcdd58df7db44af920bf8d7d9715ea0136",
-          "size": 247414,
+          "sha256": "8566722c4ad542b54965a2de744de2ed46c3cbf2093157ad9326f7b6161165e0",
+          "size": 243489,
           "container": "7z",
           "aliases": [
             {

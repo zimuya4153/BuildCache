@@ -42,8 +42,8 @@
           "release": "bdslibrary_0",
           "asset": "bdslibrary-813c57eabb134b8e9dc2800d9cd97bcc.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/bdslibrary_0/bdslibrary-813c57eabb134b8e9dc2800d9cd97bcc.7z",
-          "sha256": "96654e7cba4bb1550259b3a617266ec2de279a2353a5f8d1759c4ca258784ca7",
-          "size": 10145633,
+          "sha256": "207b6541dd8ff26399731a036f6f35760ccb8537b1413da41bed456dd3169826",
+          "size": 10145634,
           "container": "7z",
           "aliases": [
             {
