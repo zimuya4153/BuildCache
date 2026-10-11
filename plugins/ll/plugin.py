@@ -147,28 +147,6 @@ def line_floor(era: str) -> str:
     return era
 
 
-#: Tags older than a cutoff were written against an older MSVC than the hosted
-#: images carry, and their sources break with the newest one. The generation they
-#: were written against cannot be installed any more: the Visual Studio catalog on
-#: windows-2022 offers no 14.40 component at all (only 14.29 and 14.44 are
-#: present), and both of those fail the same way -- which is how we know the
-#: remaining breakage is in the *sources* (missing includes), not the compiler.
-#: What is left to do is therefore to use the oldest toolset the image has for
-#: those tags, and repair the sources in :func:`repair_recipes`.
-ERA_MSVC = [
-    # commits before this date, MSVC family to use
-    ("2024-11-01", "14.29"),
-]
-
-
-def msvc_plan(era_date: str) -> dict:
-    """The MSVC family an era should be built with, if not the newest one."""
-    for before, family in ERA_MSVC:
-        if str(era_date)[:10] < before:
-            return {"msvc_version": family}
-    return {"msvc_version": ""}
-
-
 def recipe_cutoff(ctx, version: str, commit: str) -> str:
     """Date the recipe repositories are rolled back to for this build.
 
@@ -574,7 +552,6 @@ def toolchain_plan(ctx, version: str, commit: str) -> dict:
     era = xmake_env.xmake_version_for_date(
         ctx.config, commit_date(ctx, commit), floor="0.0.0"
     )
-    msvc = msvc_plan(commit_date(ctx, commit))
     for floor, runner, imageos, toolset in ERA_IMAGES:
         if semver.ge(era, floor):
             return {
@@ -582,14 +559,12 @@ def toolchain_plan(ctx, version: str, commit: str) -> dict:
                 "image": runner,
                 "imageos": imageos,
                 "vs_toolset": toolset,
-                **msvc,
             }
     return {
         "era_xmake": era,
         "image": "windows-2022",
         "imageos": "win22",
         "vs_toolset": None,
-        **msvc,
     }
 
 

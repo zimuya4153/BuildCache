@@ -491,17 +491,15 @@ def test_old_eras_use_an_xmake_of_their_own_line_that_works():
     assert floor("3.0.1") == "3.0.1"
 
 
-def test_old_eras_use_the_oldest_toolset_the_image_has():
-    """The generation an old era was written against is not installable any more.
+def test_eras_use_the_toolset_the_image_has():
+    """No era pins an MSVC generation: the images carry one, plus 14.29.
 
-    The windows-2022 catalog offers 14.29 and 14.44 only, so an old tag is built
-    with the oldest of those and the *sources* are repaired instead (the same
-    missing include fails under both).
+    Pinning an old tag to 14.29 was tried and made things worse -- its STL is too
+    old for those sources (preloader dies in unordered_set, LeviLamina's own
+    optional_ref.h cannot use std::optional the way it does), while the missing
+    include the newest STL complained about is repaired in the sources instead.
     """
     ll = next(
         item for item in plugins.load_all(util.load_config()) if item.name == "ll"
     )
-    plan = ll.module.msvc_plan
-    assert plan("2024-08-30T20:09:06+08:00") == {"msvc_version": "14.29"}
-    # a current era uses whatever the image has
-    assert plan("2026-10-01T00:00:00Z") == {"msvc_version": ""}
+    assert all(toolset is None for _floor, _runner, _imageos, toolset in ll.module.ERA_IMAGES)

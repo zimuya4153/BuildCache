@@ -73,21 +73,6 @@ jobs:
         uses: ZhongRuoyu/setup-llvm@v0
         with:
           llvm-version: 22
-      # An old era was written against an MSVC of its own generation, which the
-      # hosted images no longer offer (the catalog on windows-2022 has 14.29 and
-      # 14.44, nothing in between), so the build uses the oldest one it has.
-      - name: Resolve the era's toolset
-        id: msvc
-        if: matrix.msvc_version != ''
-        shell: pwsh
-        run: |
-          $vs = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          $tools = Get-ChildItem "$vs\VC\Tools\MSVC" |
-            Where-Object { $_.Name -like "${{ matrix.msvc_version }}.*" } |
-            Sort-Object Name -Descending | Select-Object -First 1
-          if (-not $tools) { throw "this image has no ${{ matrix.msvc_version }} toolset" }
-          Write-Output "using $($tools.Name)"
-          "vs_toolset=$($tools.Name)" >> $env:GITHUB_OUTPUT
       # Which MSVC generations and platform toolsets this image has, so an era
       # failure can be read without guessing.
       - name: MSVC diagnostics
@@ -115,7 +100,7 @@ jobs:
             --version "${{ matrix.version }}" `
             --entry "${{ matrix.entry }}" `
             --commit "${{ matrix.commit }}" `
-            ${{ (steps.msvc.outputs.vs_toolset || matrix.vs_toolset) && format('--vs-toolset={0}', steps.msvc.outputs.vs_toolset || matrix.vs_toolset) || '' }}
+            ${{ matrix.vs_toolset && format('--vs-toolset={0}', matrix.vs_toolset) || '' }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
