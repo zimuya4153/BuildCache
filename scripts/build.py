@@ -282,8 +282,13 @@ def main() -> int:
 
     entries = plugin.call("list_versions", ctx) or []
     entry = next((item for item in entries if item["version"] == args.version), None)
-    if entry is None:
+    if entry is None and not args.commit:
         util.die(f"version {args.version} is not tracked by the recipe repository")
+    if entry is None:
+        # With the commit given, a version the plugin keeps out of its *queue* can
+        # still be built -- which is how a probe asks "would this one work now?"
+        # about something the rounds skip on purpose.
+        entry = {"version": args.version, "commit": args.commit}
     commit = args.commit or entry["commit"]
 
     util.log_step(f"{plugin.name} {args.version} ({commit[:12]})")

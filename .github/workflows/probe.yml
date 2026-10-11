@@ -21,6 +21,9 @@ on:
       entry:
         description: entry id (empty = the first one)
         default: ""
+      commit:
+        description: upstream commit (needed for a version the plugin keeps unqueued)
+        default: ""
       install_llvm:
         description: install LLVM 22 first (the rounds do; a probe usually should not)
         type: boolean
@@ -61,4 +64,5 @@ jobs:
           python scripts/build.py --plugin "${{ inputs.plugin }}" `
             --version "${{ inputs.version }}" `
             --entry "${{ inputs.entry }}" `
+            ${{ inputs.commit && format('--commit={0}', inputs.commit) || '' }} `
             --keep-sandbox
