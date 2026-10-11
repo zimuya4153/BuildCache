@@ -283,8 +283,11 @@ def build_dependency_pass(config, ctx, plugin, args, plat, arch, toolchain, vs_t
     project's own sources stay in their era. It is an improvement, never a
     requirement -- anything that goes wrong is reported and the round keeps what
     the era build produced.
+
+    A dry run builds the pass too (that is how its viability is checked without a
+    CI round) and publishes nothing, like the pass above it.
     """
-    if dry_run or not specs:
+    if not specs:
         return []
     try:
         prepared = sources.prepare(
@@ -322,6 +325,7 @@ def build_dependency_pass(config, ctx, plugin, args, plat, arch, toolchain, vs_t
             config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, newest,
             commit, "", {}, {"id": "default", "configs": {}}, {}, "",
             plugin_name=plugin.name, plugin=plugin, repo_order=repos_here, force=True,
+            dry_run=dry_run,
         )
         return published["artifacts"]
     except Exception as error:  # noqa: BLE001 - a missing extra is not a failed round
