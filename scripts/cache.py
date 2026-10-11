@@ -294,16 +294,29 @@ def cmd_remove(config: dict, ctx, args) -> int:
                 )
                 util.log(f"removed empty release and tag {shard}")
 
+    package_repo = Path(ctx.package_repo)
+    package_cfg = config["repos"]["package"]
+    gitops.ensure_checkout(
+        config,
+        f"https://github.com/{package_cfg['owner']}/{package_cfg['repo']}.git",
+        package_repo,
+        branch=package_cfg.get("branch"),
+    )
+    # Regenerating on a stale checkout keeps whatever it still holds, and a
+    # manifest it rewrites from a stale tree can name an asset this run just
+    # deleted. Sync first, then say what the ledger holds.
+    gitops.sync_branch(package_repo)
+
     import finalize  # regenerates manifests from the index
 
-    finalize.regenerate_manifests(config, ctx, index_root=ctx.index_root, package_repo=Path(ctx.package_repo))
+    finalize.regenerate_manifests(config, ctx, index_root=ctx.index_root, package_repo=package_repo)
     # A release body lists what its shard currently holds, so the artifacts that
     # were just removed have to disappear from it here: a body that keeps naming a
     # deleted asset is the first thing a reader would try to download, and only a
     # round of `finalize` would ever rewrite it.
     finalize.refresh_release_notes(config, ctx)
     if not args.no_push:
-        gitops.commit_and_push(Path(ctx.package_repo), f"manifests: drop {len(plan)} version(s)")
+        gitops.commit_and_push(package_repo, f"manifests: drop {len(plan)} version(s)")
         gitops.commit_and_push(ctx.index_root, f"index: drop {len(plan)} version(s)")
     util.log(f"removed {len(plan)} package version(s)")
     return 0
