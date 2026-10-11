@@ -13,3 +13,7 @@ results/
 # Consumer smoke test locals
 tests/consumer/.xmake/
 tests/consumer/build/
+
+# Scratch logs kept in the checkout (a redirected console session, e.g. the
+# consumer smoke test output) are not repository content
+output.txt
