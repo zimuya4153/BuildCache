@@ -479,6 +479,55 @@ def test_a_dependency_that_cannot_be_resolved_does_not_block_anything():
     assert notes and "cannot resolve" in notes[0]
 
 
+def test_a_version_only_one_plugin_tracks_does_not_stop_the_round(monkeypatch, tmp_path: Path):
+    """`-f version=X` is routinely meant for one plugin out of several.
+
+    The input pins the round to that version; plugins that have no such version are
+    simply not part of it. Failing the whole discovery instead meant a version was
+    only usable together with `-f plugin=`, so "this SDK version, whichever plugin
+    owns it" could not be said at all.
+    """
+    import pytest
+
+    ll = _FakePlugin(
+        "ll",
+        "levilamina",
+        versions=[{"version": "26.20.7", "commit": "aaa"}],
+        entries=[{"id": "server", "configs": {}}],
+    )
+    md = _FakePlugin(
+        "moredimensions",
+        "more-dimensions",
+        versions=[{"version": "0.14.1", "commit": "bbb"}],
+        entries=[{"id": "default", "configs": {}}],
+    )
+    monkeypatch.setattr(discover.plugins, "load_all", lambda config: [ll, md])
+    monkeypatch.setattr(
+        discover.plugins.Context, "ensure_index", lambda self, create=False: self.index_root
+    )
+    monkeypatch.setattr(
+        discover.util,
+        "load_config",
+        lambda: {"repos": {}, "revision": 1, "batch": {}, "_index_dir": str(tmp_path / "index")},
+    )
+    out = tmp_path / "matrix.json"
+    monkeypatch.setattr(
+        discover.sys, "argv", ["discover.py", "--version", "26.20.7", "--out", str(out)]
+    )
+
+    assert discover.main() == 0
+    assert [(item["plugin"], item["version"]) for item in util.read_json(out, [])] == [
+        ("ll", "26.20.7")
+    ]
+
+    # a version nobody tracks is still an error worth reporting
+    monkeypatch.setattr(
+        discover.sys, "argv", ["discover.py", "--version", "9.9.9", "--out", str(out)]
+    )
+    with pytest.raises(SystemExit):
+        discover.main()
+
+
 def test_the_revision_gate_decides_whether_a_dependency_can_be_reused(tmp_path: Path):
     index_root = tmp_path / "index"
     index_store.write_entry(

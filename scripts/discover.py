@@ -72,6 +72,7 @@ def main() -> int:
     batch = args.batch if args.batch is not None else int(config.get("batch", {}).get("defaultSize", 20))
 
     available = plugins.load_all(config)
+    matched_version = False
     matrix: list[dict] = []
     for plugin in available:
         if args.plugin and plugin.name != args.plugin:
@@ -91,7 +92,12 @@ def main() -> int:
         if args.version:
             pending = [item for item in entries if item["version"] == args.version]
             if not pending:
-                util.die(f"version {args.version} is not tracked by the recipe repository")
+                # One plugin not tracking a version is normal: a version input is
+                # routinely meant for exactly one of them (`-f version=26.20.7`
+                # with plugins that have no 26.20 line at all).
+                util.log(f"[{plugin.name}] does not track {args.version}")
+                continue
+            matched_version = True
         else:
             pending = [item for item in entries if item["version"] not in built]
         # A release line the ledger has nothing for comes before one it already
@@ -139,6 +145,8 @@ def main() -> int:
 
     limit = int(config.get("batch", {}).get("maxMatrix", 200))
     matrix = matrix[:limit]
+    if args.version and not matched_version:
+        util.die(f"version {args.version} is not tracked by any plugin")
     # A plugin's own SDK dependency (LeviLamina, for each of its plugins) is built
     # ahead of it when the ledger has no artifact for the version it resolves: see
     # lib/plan.py. Everything that cannot be resolved that way stays in one stage.
