@@ -2,7 +2,7 @@
   "package": "mifcache_fmt",
   "version": "10.2.1",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T10:05:46Z",
+  "built_at": "2026-10-11T10:22:33Z",
   "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
@@ -14,13 +14,13 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.0.1",
+  "produced_for": "levilamina@0.13.5",
   "entries": {
     "default": {
       "package": "mifcache_fmt",
       "version": "10.2.1",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T10:05:46Z",
+      "built_at": "2026-10-11T10:22:33Z",
       "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
@@ -32,7 +32,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.0.1",
+      "produced_for": "levilamina@0.13.5",
       "artifacts": [
         {
           "package": "mifcache_fmt",

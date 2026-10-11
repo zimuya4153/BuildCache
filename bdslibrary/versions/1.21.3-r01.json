@@ -1,0 +1,70 @@
+{
+  "package": "bdslibrary",
+  "version": "1.21.3-r01",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T10:22:33Z",
+  "xmake_version": "2.9.7",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 3,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@0.13.5",
+  "entries": {
+    "default": {
+      "package": "bdslibrary",
+      "version": "1.21.3-r01",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:22:33Z",
+      "xmake_version": "2.9.7",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 3,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@0.13.5",
+      "artifacts": [
+        {
+          "package": "mifcache_bdslibrary",
+          "upstream_package": "bdslibrary",
+          "version": "1.21.3-r01",
+          "buildhash": "813c57eabb134b8e9dc2800d9cd97bcc",
+          "key": "windows-x64-vc-813c57eabb134b8e9dc2800d9cd97bcc",
+          "toolset": "14.44.35207",
+          "release": "bdslibrary_0",
+          "asset": "bdslibrary-813c57eabb134b8e9dc2800d9cd97bcc.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/bdslibrary_0/bdslibrary-813c57eabb134b8e9dc2800d9cd97bcc.7z",
+          "sha256": "96654e7cba4bb1550259b3a617266ec2de279a2353a5f8d1759c4ca258784ca7",
+          "size": 10145633,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "65a8566e5f1240f28c6e3c5c6bbf0fa9",
+              "key": "windows-x64-vc-65a8566e5f1240f28c6e3c5c6bbf0fa9",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "b0da7d6c7d844c9f84d533ef2b792972",
+              "key": "windows-x64-vc-b0da7d6c7d844c9f84d533ef2b792972",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "package": "mifcache_libhat",
+  "version": "2024.4.16",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T10:22:33Z",
+  "xmake_version": "2.9.7",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 3,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@0.13.5",
+  "entries": {
+    "default": {
+      "package": "mifcache_libhat",
+      "version": "2024.4.16",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:22:33Z",
+      "xmake_version": "2.9.7",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 3,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@0.13.5",
+      "artifacts": [
+        {
+          "package": "mifcache_libhat",
+          "upstream_package": "libhat",
+          "version": "2024.4.16",
+          "buildhash": "89bad1c8b6484db9ba10f75a6b0b82d6",
+          "key": "windows-x64-vc-89bad1c8b6484db9ba10f75a6b0b82d6",
+          "toolset": "14.44.35207",
+          "release": "libhat_0",
+          "asset": "libhat-89bad1c8b6484db9ba10f75a6b0b82d6.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/libhat_0/libhat-89bad1c8b6484db9ba10f75a6b0b82d6.7z",
+          "sha256": "9193e8e08c43dc050c925b136406d95f97e3fe7bf8a32b996efc8022bbfae1fd",
+          "size": 41479,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "1d3ce0885f6a4a83994b09f712f2a915",
+              "key": "windows-x64-vc-1d3ce0885f6a4a83994b09f712f2a915",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "8922f03fad3a4913b417248b18e84eb1",
+              "key": "windows-x64-vc-8922f03fad3a4913b417248b18e84eb1",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
