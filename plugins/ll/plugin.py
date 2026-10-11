@@ -255,6 +255,9 @@ def register_release_columns(table, ctx=None) -> None:
     table.add(
         "entry",
         title="entry",
+        # Beside the version: which build this is matters more to a reader than
+        # the name of the file, and far more than how it was built.
+        order=reports.ORDER_ENTRY,
         render=reports.code,
         note="*`entry`* is the build this artifact belongs to; a dependency is the\n"
         "same artifact either way and therefore has no entry.",

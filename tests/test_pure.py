@@ -316,22 +316,34 @@ def test_release_table_only_shows_columns_that_carry_information():
     assert "| entry |" in owned and "| compiled with |" in owned
     # the asset name is a direct download link
     assert "[levilamina-906b0696836741eda5b5749d54146a8c.7z](https://example.invalid/" in owned
+    # the columns a reader looks up come first, the build details last
+    assert table.render([own_row])[1] == (
+        "| version | entry | asset | compiled with | also addressable as "
+        "| build hash | toolset |"
+    )
 
     dependency = "\n".join(table.render([dependency_row]))
     assert "| entry |" not in dependency
     assert "| compiled with |" not in dependency
     assert "| version |" in dependency and "| asset |" in dependency
+    assert table.render([dependency_row])[1] == "| version | asset | build hash |"
 
 
 def test_table_manager_adds_and_removes_columns():
     table = reports.Table()
-    assert table.keys() == ["version", "buildhash", "toolset", "asset"]
+    # What a reader looks up comes first, how it was built trails behind.
+    assert table.keys() == ["version", "asset", "buildhash", "toolset"]
     table.add("variant", title="variant", render=reports.code)
-    assert table.has("variant") and table.keys()[-1] == "variant"
+    assert table.has("variant")
+    assert table.keys() == ["version", "asset", "variant", "buildhash", "toolset"]
+    # a column names its own slot: an entry belongs beside the version
+    table.add("variant", title="variant", render=reports.code, order=reports.ORDER_ENTRY)
+    assert table.keys() == ["version", "variant", "asset", "buildhash", "toolset"]
     # registering the same key twice replaces instead of duplicating
-    table.add("variant", title="build entry")
+    table.add("variant", title="build entry", order=reports.ORDER_ENTRY)
     assert table.keys().count("variant") == 1
     assert table.remove("variant").has("variant") is False
+    assert table.keys() == ["version", "asset", "buildhash", "toolset"]
 
 
 def test_release_rows_put_the_newest_version_on_top():
@@ -592,6 +604,11 @@ def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     )
     assert set(dependency) == {"default"}, dependency
     assert len(dependency["default"]["artifacts"]) == 1
+    # and it says which project pulled it in -- with *that* project's version,
+    # not the dependency's own (``levilamina@41aab920`` read as if LeviLamina
+    # were the one at 41aab920, the version of the entt it needs)
+    assert dependency["default"]["version"] == "11.2.0"
+    assert dependency["default"]["produced_for"] == "levilamina@26.51.6"
 
 
 def test_dependency_addresses_follow_the_windows_abi():

@@ -136,7 +136,9 @@ def _component_record(result: dict, package: str, version: str) -> dict:
         "configs": result.get("configs"),
         "alias_profiles": result.get("alias_profiles") or [],
         "compiled_with": result.get("toolchain"),
-        "produced_for": f"{result['package']}@{version}",
+        # The project and *its* version; ``version`` here is the dependency's own,
+        # which the record already carries on its own.
+        "produced_for": f"{result['package']}@{result.get('version') or ''}",
         "artifacts": [],
     }
 

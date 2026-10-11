@@ -46,14 +46,24 @@ def listed(value, row: dict | None = None) -> str:
     return ", ".join(f"`{item}`" for item in value)
 
 
-#: Columns every table has, in this order.
+#: Where a column sits in a table. Left to right is "what a reader looks up" to
+#: "how it happens to have been built": the version, whatever the project needs
+#: to say about it, the file to download -- the hash and the toolset trail.
+ORDER_VERSION = 0
+ORDER_ENTRY = 10
+ORDER_ARTIFACT = 20
+ORDER_DEFAULT = 50
+ORDER_BUILD = 80
+
+#: Columns every table has. The hash and the toolset share one order: they are
+#: registered in the order they are meant to appear.
 CORE = (
-    {"key": "version", "title": "version", "render": code},
-    {"key": "buildhash", "title": "build hash", "render": code},
+    {"key": "version", "title": "version", "render": code, "order": ORDER_VERSION},
+    {"key": "asset", "title": "asset", "render": link, "order": ORDER_ARTIFACT},
+    {"key": "buildhash", "title": "build hash", "render": code, "order": ORDER_BUILD},
     # A property of any Windows artifact, not of a project: which toolset it was
     # built for (a consumer can only select it with an at-least-as-new toolset).
-    {"key": "toolset", "title": "toolset", "render": code},
-    {"key": "asset", "title": "asset", "render": link},
+    {"key": "toolset", "title": "toolset", "render": code, "order": ORDER_BUILD},
 )
 
 
@@ -71,8 +81,13 @@ class Table:
         title: str | None = None,
         render=None,
         note: str = "",
+        order: int = ORDER_DEFAULT,
     ) -> "Table":
-        """Register (or replace) a column. Registering twice replaces it."""
+        """Register (or replace) a column. Registering twice replaces it.
+
+        ``order`` places it among the others; the ``ORDER_*`` constants name the
+        slots (a project's own columns default to just after the artifact).
+        """
         self.remove(key)
         self._fields.append(
             {
@@ -80,8 +95,10 @@ class Table:
                 "title": title or key,
                 "render": render or plain,
                 "note": note,
+                "order": order,
             }
         )
+        self._fields.sort(key=lambda field: field.get("order", ORDER_DEFAULT))
         return self
 
     def remove(self, key: str) -> "Table":
