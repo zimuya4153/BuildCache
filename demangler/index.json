@@ -1,7 +1,8 @@
 {
   "package": "demangler",
-  "latest": "v17.0.7",
+  "latest": "v20.0.0",
   "versions": [
+    "v20.0.0",
     "v17.0.7"
   ]
 }

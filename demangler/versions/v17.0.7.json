@@ -1,67 +1,64 @@
 {
   "package": "demangler",
   "version": "v17.0.7",
-  "built_at": "2026-10-11T10:27:54Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-11T10:53:32Z",
+  "xmake_version": "2.8.6",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
-  "revision": 3,
+  "vs_toolset": "14.44.35207",
+  "revision": 4,
   "configs": {
-    "target_type": "client"
+    "target_type": "server"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@26.51.6",
+  "produced_for": "levilamina@0.8.3",
   "entries": {
     "default": {
       "package": "demangler",
       "version": "v17.0.7",
-      "prefix": "mifcache_",
-      "built_at": "2026-10-11T10:27:54Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-11T10:53:32Z",
+      "xmake_version": "2.8.6",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
-      "revision": 3,
+      "vs_toolset": "14.44.35207",
+      "revision": 4,
       "configs": {
-        "target_type": "client"
+        "target_type": "server"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
+      "produced_for": "levilamina@0.8.3",
       "artifacts": [
         {
-          "package": "mifcache_demangler",
+          "package": "demangler",
           "upstream_package": "demangler",
           "version": "v17.0.7",
-          "buildhash": "57206051c21c41009d4a5306cebc56d2",
-          "key": "windows-x64-vc-57206051c21c41009d4a5306cebc56d2",
-          "toolset": "14.51.36231",
+          "buildhash": "b2a79211a1ad4cda9f4eab810db284b7",
+          "key": "windows-x64-vc-b2a79211a1ad4cda9f4eab810db284b7",
+          "toolset": "14.44.35207",
           "release": "demangler_0",
-          "asset": "demangler-57206051c21c41009d4a5306cebc56d2.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/demangler_0/demangler-57206051c21c41009d4a5306cebc56d2.7z",
-          "sha256": "45b9c103d1d1e13056b1e2722e3e54fcdd58df7db44af920bf8d7d9715ea0136",
-          "size": 247414,
+          "asset": "demangler-b2a79211a1ad4cda9f4eab810db284b7.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/demangler_0/demangler-b2a79211a1ad4cda9f4eab810db284b7.7z",
+          "sha256": "9db708f0c6f207da7772c3a0f49ac5f5511e9b6a1df7e8be393a4974c3829eeb",
+          "size": 244231,
           "container": "7z",
           "aliases": [
             {
               "id": "msvc",
               "toolchain": "msvc",
-              "buildhash": "0605db7b334a4133bdea05de941f5f33",
-              "key": "windows-x64-vc-0605db7b334a4133bdea05de941f5f33",
-              "toolset": "14.51.36231"
+              "buildhash": "71f034b6daaf41debd91b4f7136dfad5",
+              "key": "windows-x64-vc-71f034b6daaf41debd91b4f7136dfad5",
+              "toolset": "14.44.35207"
             },
             {
               "id": "clang-cl",
               "toolchain": "clang-cl",
-              "buildhash": "7f9e4d586bbc41e1921315e1c4dbb684",
-              "key": "windows-x64-vc-7f9e4d586bbc41e1921315e1c4dbb684",
-              "toolset": "14.51.36231"
+              "buildhash": "8de7a952e2bd4c12ac2d362683104fe2",
+              "key": "windows-x64-vc-8de7a952e2bd4c12ac2d362683104fe2",
+              "toolset": "14.44.35207"
             }
           ]
         }

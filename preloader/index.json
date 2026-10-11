@@ -1,7 +1,8 @@
 {
   "package": "preloader",
-  "latest": "v1.16.2",
+  "latest": "v1.16.3",
   "versions": [
+    "v1.16.3",
     "v1.16.2",
     "v1.15.3",
     "v1.12.0",

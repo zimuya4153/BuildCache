@@ -1,0 +1,68 @@
+{
+  "package": "preloader",
+  "version": "v1.16.3",
+  "built_at": "2026-10-11T10:53:32Z",
+  "xmake_version": "2.8.6",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 4,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@0.8.3",
+  "entries": {
+    "default": {
+      "package": "preloader",
+      "version": "v1.16.3",
+      "built_at": "2026-10-11T10:53:32Z",
+      "xmake_version": "2.8.6",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 4,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@0.8.3",
+      "artifacts": [
+        {
+          "package": "preloader",
+          "upstream_package": "preloader",
+          "version": "v1.16.3",
+          "buildhash": "94e8ee5d3d384268b8b9434ec9d019ba",
+          "key": "windows-x64-vc-94e8ee5d3d384268b8b9434ec9d019ba",
+          "toolset": "14.44.35207",
+          "release": "preloader_0",
+          "asset": "preloader-94e8ee5d3d384268b8b9434ec9d019ba.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/preloader_0/preloader-94e8ee5d3d384268b8b9434ec9d019ba.7z",
+          "sha256": "0437a70f265ac8e21ea5415d44686576de95b5ebaf4e80317ab36b8d110f69c2",
+          "size": 3098603,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "482e977f64e54090945f3e2c8954f24e",
+              "key": "windows-x64-vc-482e977f64e54090945f3e2c8954f24e",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "ea2f199ff3584d5288f550f07bf5ba32",
+              "key": "windows-x64-vc-ea2f199ff3584d5288f550f07bf5ba32",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

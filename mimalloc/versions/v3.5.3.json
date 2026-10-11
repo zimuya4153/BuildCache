@@ -1,0 +1,68 @@
+{
+  "package": "mimalloc",
+  "version": "v3.5.3",
+  "built_at": "2026-10-11T10:53:32Z",
+  "xmake_version": "2.8.6",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 4,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@0.8.3",
+  "entries": {
+    "default": {
+      "package": "mimalloc",
+      "version": "v3.5.3",
+      "built_at": "2026-10-11T10:53:32Z",
+      "xmake_version": "2.8.6",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 4,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@0.8.3",
+      "artifacts": [
+        {
+          "package": "mimalloc",
+          "upstream_package": "mimalloc",
+          "version": "v3.5.3",
+          "buildhash": "46ec54dd8e614c4a95aa6309002acd20",
+          "key": "windows-x64-vc-46ec54dd8e614c4a95aa6309002acd20",
+          "toolset": "14.44.35207",
+          "release": "mimalloc_0",
+          "asset": "mimalloc-46ec54dd8e614c4a95aa6309002acd20.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/mimalloc_0/mimalloc-46ec54dd8e614c4a95aa6309002acd20.7z",
+          "sha256": "dc3836bdc3638096f41546be6656fc1bb045e5bc642d532b985e217bd80489e3",
+          "size": 215204,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "9cc0cfcf128746e59514633d1beea500",
+              "key": "windows-x64-vc-9cc0cfcf128746e59514633d1beea500",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "e2099b3f3dcd4e0aafc98275cae83fbe",
+              "key": "windows-x64-vc-e2099b3f3dcd4e0aafc98275cae83fbe",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

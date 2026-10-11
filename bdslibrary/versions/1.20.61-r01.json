@@ -1,11 +1,11 @@
 {
   "package": "bdslibrary",
   "version": "1.20.61-r01",
-  "built_at": "2026-10-11T10:03:37Z",
+  "built_at": "2026-10-11T10:53:32Z",
   "xmake_version": "2.8.6",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 3,
+  "revision": 4,
   "configs": {
     "target_type": "server"
   },
@@ -18,11 +18,11 @@
     "default": {
       "package": "bdslibrary",
       "version": "1.20.61-r01",
-      "built_at": "2026-10-11T10:03:37Z",
+      "built_at": "2026-10-11T10:53:32Z",
       "xmake_version": "2.8.6",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 3,
+      "revision": 4,
       "configs": {
         "target_type": "server"
       },
@@ -33,7 +33,7 @@
       "produced_for": "levilamina@0.8.3",
       "artifacts": [
         {
-          "package": "mifcache_bdslibrary",
+          "package": "bdslibrary",
           "upstream_package": "bdslibrary",
           "version": "1.20.61-r01",
           "buildhash": "716af8244c2d486fbc64053c1cc511b0",
@@ -42,8 +42,8 @@
           "release": "bdslibrary_0",
           "asset": "bdslibrary-716af8244c2d486fbc64053c1cc511b0.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/bdslibrary_0/bdslibrary-716af8244c2d486fbc64053c1cc511b0.7z",
-          "sha256": "2d92dcc430b96465c6ff89b01dec8209027ff39414906b7466f73f515b965fff",
-          "size": 10778045,
+          "sha256": "20a13ddd68108e6bf2a4a46d94957bab37b6fe7c2c22bcdb56213910796d28a6",
+          "size": 10778001,
           "container": "7z",
           "aliases": [
             {

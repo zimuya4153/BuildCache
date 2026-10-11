@@ -1,0 +1,68 @@
+{
+  "package": "demangler",
+  "version": "v20.0.0",
+  "built_at": "2026-10-11T10:53:32Z",
+  "xmake_version": "2.8.6",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 4,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@0.8.3",
+  "entries": {
+    "default": {
+      "package": "demangler",
+      "version": "v20.0.0",
+      "built_at": "2026-10-11T10:53:32Z",
+      "xmake_version": "2.8.6",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 4,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@0.8.3",
+      "artifacts": [
+        {
+          "package": "demangler",
+          "upstream_package": "demangler",
+          "version": "v20.0.0",
+          "buildhash": "dda0d4e8c19748b79616b76a4f6dd505",
+          "key": "windows-x64-vc-dda0d4e8c19748b79616b76a4f6dd505",
+          "toolset": "14.44.35207",
+          "release": "demangler_0",
+          "asset": "demangler-dda0d4e8c19748b79616b76a4f6dd505.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/demangler_0/demangler-dda0d4e8c19748b79616b76a4f6dd505.7z",
+          "sha256": "2a4213b3c537a8fc0be8d2e69e4150fc3cc9c719549e424e3a0309113b4574e8",
+          "size": 288812,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "b6017f8f874141ad9c67918829edd2a5",
+              "key": "windows-x64-vc-b6017f8f874141ad9c67918829edd2a5",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "e8eba72f9c9d49169a0ce779d15cf4c9",
+              "key": "windows-x64-vc-e8eba72f9c9d49169a0ce779d15cf4c9",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

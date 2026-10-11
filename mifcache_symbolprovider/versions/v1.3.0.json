@@ -46,8 +46,8 @@
           "release": "symbolprovider_0",
           "asset": "symbolprovider-8ef9d781a7854895b90a561f7f9be0ea.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/symbolprovider_0/symbolprovider-8ef9d781a7854895b90a561f7f9be0ea.7z",
-          "sha256": "683803d99492996328674d89d182df1220ca57d65473777432e6a4b86a8d7a77",
-          "size": 5390,
+          "sha256": "282d85ca4f5ac3ea6f2c49faf1405002e8eef3db36e506bae4eec403e617a243",
+          "size": 5037,
           "container": "7z",
           "aliases": [
             {
