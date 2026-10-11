@@ -1,0 +1,70 @@
+{
+  "package": "snappy",
+  "version": "1.2.1",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T10:05:46Z",
+  "xmake_version": "2.9.7",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 3,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@1.0.1",
+  "entries": {
+    "default": {
+      "package": "snappy",
+      "version": "1.2.1",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:05:46Z",
+      "xmake_version": "2.9.7",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 3,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@1.0.1",
+      "artifacts": [
+        {
+          "package": "mifcache_snappy",
+          "upstream_package": "snappy",
+          "version": "1.2.1",
+          "buildhash": "95042f33987c4d339f7e96106057275f",
+          "key": "windows-x64-vc-95042f33987c4d339f7e96106057275f",
+          "toolset": "14.44.35207",
+          "release": "snappy_0",
+          "asset": "snappy-95042f33987c4d339f7e96106057275f.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/snappy_0/snappy-95042f33987c4d339f7e96106057275f.7z",
+          "sha256": "db0b566d6d65bd633a20362a78b3cde114e315ddc9e8cfc11b016ace385e0cd0",
+          "size": 39264,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "b006208d1f3e4cc89cd3eff70fce6c32",
+              "key": "windows-x64-vc-b006208d1f3e4cc89cd3eff70fce6c32",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "305dc11badd04558a565d9b43c8742f3",
+              "key": "windows-x64-vc-305dc11badd04558a565d9b43c8742f3",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

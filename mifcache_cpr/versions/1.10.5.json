@@ -1,0 +1,70 @@
+{
+  "package": "mifcache_cpr",
+  "version": "1.10.5",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T10:05:46Z",
+  "xmake_version": "2.9.7",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 3,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@1.0.1",
+  "entries": {
+    "default": {
+      "package": "mifcache_cpr",
+      "version": "1.10.5",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:05:46Z",
+      "xmake_version": "2.9.7",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 3,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@1.0.1",
+      "artifacts": [
+        {
+          "package": "mifcache_cpr",
+          "upstream_package": "cpr",
+          "version": "1.10.5",
+          "buildhash": "0b80567aac994078bc55c3b4f67b040e",
+          "key": "windows-x64-vc-0b80567aac994078bc55c3b4f67b040e",
+          "toolset": "14.44.35207",
+          "release": "cpr_0",
+          "asset": "cpr-0b80567aac994078bc55c3b4f67b040e.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/cpr_0/cpr-0b80567aac994078bc55c3b4f67b040e.7z",
+          "sha256": "7b2d30b6f59a08becfab28c36872db3a90a5722835581a2324ae9c3070eb4674",
+          "size": 234533,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "e85d543dacd44424aca1ae0629aa22dd",
+              "key": "windows-x64-vc-e85d543dacd44424aca1ae0629aa22dd",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "158c09735a09468baf01bd4d42fee708",
+              "key": "windows-x64-vc-158c09735a09468baf01bd4d42fee708",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -2,8 +2,8 @@
   "package": "symbolprovider",
   "version": "v1.2.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T09:25:08Z",
-  "xmake_version": "3.0.1",
+  "built_at": "2026-10-11T10:05:46Z",
+  "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 3,
@@ -14,14 +14,14 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.4.4",
+  "produced_for": "levilamina@1.0.1",
   "entries": {
     "default": {
       "package": "symbolprovider",
       "version": "v1.2.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T09:25:08Z",
-      "xmake_version": "3.0.1",
+      "built_at": "2026-10-11T10:05:46Z",
+      "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 3,
@@ -32,7 +32,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.4.4",
+      "produced_for": "levilamina@1.0.1",
       "artifacts": [
         {
           "package": "mifcache_symbolprovider",
@@ -44,8 +44,8 @@
           "release": "symbolprovider_0",
           "asset": "symbolprovider-716edebcb0f14dbbbc97a0d6aa352593.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/symbolprovider_0/symbolprovider-716edebcb0f14dbbbc97a0d6aa352593.7z",
-          "sha256": "752e7c29f858c6e81960d98f2537f4d1793e9e975f85fcf4fad0cdddb7149f83",
-          "size": 5469,
+          "sha256": "7180b68746b369c717d93b6d0711a109e157417ee29f0ccdfc8ff8247722b70c",
+          "size": 5472,
           "container": "7z",
           "aliases": [
             {

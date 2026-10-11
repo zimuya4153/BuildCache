@@ -44,8 +44,8 @@
           "release": "snappy_0",
           "asset": "snappy-b3244272357b4994abb43dc0aa939d28.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/snappy_0/snappy-b3244272357b4994abb43dc0aa939d28.7z",
-          "sha256": "181ac62fedcb0de27031d383b0468da3253b0e160d82ecfada6c4128136616e8",
-          "size": 59546,
+          "sha256": "791542ffb27ef70b7f89e7f873372ba4d8ed559c58f3326dd828b3b012b059a7",
+          "size": 56140,
           "container": "7z",
           "aliases": [
             {

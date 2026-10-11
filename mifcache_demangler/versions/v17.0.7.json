@@ -2,8 +2,8 @@
   "package": "mifcache_demangler",
   "version": "v17.0.7",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T10:03:37Z",
-  "xmake_version": "2.8.6",
+  "built_at": "2026-10-11T10:05:46Z",
+  "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 3,
@@ -14,14 +14,14 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@0.8.3",
+  "produced_for": "levilamina@1.0.1",
   "entries": {
     "default": {
       "package": "mifcache_demangler",
       "version": "v17.0.7",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T10:03:37Z",
-      "xmake_version": "2.8.6",
+      "built_at": "2026-10-11T10:05:46Z",
+      "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 3,
@@ -32,34 +32,34 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@0.8.3",
+      "produced_for": "levilamina@1.0.1",
       "artifacts": [
         {
           "package": "mifcache_demangler",
           "upstream_package": "demangler",
           "version": "v17.0.7",
-          "buildhash": "b2a79211a1ad4cda9f4eab810db284b7",
-          "key": "windows-x64-vc-b2a79211a1ad4cda9f4eab810db284b7",
+          "buildhash": "57206051c21c41009d4a5306cebc56d2",
+          "key": "windows-x64-vc-57206051c21c41009d4a5306cebc56d2",
           "toolset": "14.44.35207",
           "release": "demangler_0",
-          "asset": "demangler-b2a79211a1ad4cda9f4eab810db284b7.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/demangler_0/demangler-b2a79211a1ad4cda9f4eab810db284b7.7z",
-          "sha256": "62bafe5eb2d7aea76cbec1174366238684a55a59922063a2ca856fa966fed5a8",
-          "size": 243586,
+          "asset": "demangler-57206051c21c41009d4a5306cebc56d2.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/demangler_0/demangler-57206051c21c41009d4a5306cebc56d2.7z",
+          "sha256": "bd5f73f8232edd0da2a4c6d7b5d43532846d78d7d114a7c2405daf848c25ee78",
+          "size": 243588,
           "container": "7z",
           "aliases": [
             {
               "id": "msvc",
               "toolchain": "msvc",
-              "buildhash": "71f034b6daaf41debd91b4f7136dfad5",
-              "key": "windows-x64-vc-71f034b6daaf41debd91b4f7136dfad5",
+              "buildhash": "0605db7b334a4133bdea05de941f5f33",
+              "key": "windows-x64-vc-0605db7b334a4133bdea05de941f5f33",
               "toolset": "14.44.35207"
             },
             {
               "id": "clang-cl",
               "toolchain": "clang-cl",
-              "buildhash": "8de7a952e2bd4c12ac2d362683104fe2",
-              "key": "windows-x64-vc-8de7a952e2bd4c12ac2d362683104fe2",
+              "buildhash": "7f9e4d586bbc41e1921315e1c4dbb684",
+              "key": "windows-x64-vc-7f9e4d586bbc41e1921315e1c4dbb684",
               "toolset": "14.44.35207"
             }
           ]

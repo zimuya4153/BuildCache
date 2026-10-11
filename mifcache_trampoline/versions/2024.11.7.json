@@ -2,8 +2,8 @@
   "package": "mifcache_trampoline",
   "version": "2024.11.7",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T09:25:08Z",
-  "xmake_version": "3.0.1",
+  "built_at": "2026-10-11T10:05:46Z",
+  "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 3,
@@ -14,14 +14,14 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.4.4",
+  "produced_for": "levilamina@1.0.1",
   "entries": {
     "default": {
       "package": "mifcache_trampoline",
       "version": "2024.11.7",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T09:25:08Z",
-      "xmake_version": "3.0.1",
+      "built_at": "2026-10-11T10:05:46Z",
+      "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 3,
@@ -32,7 +32,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.4.4",
+      "produced_for": "levilamina@1.0.1",
       "artifacts": [
         {
           "package": "mifcache_trampoline",
@@ -44,8 +44,8 @@
           "release": "trampoline_0",
           "asset": "trampoline-552c1d2061e44233a497ba064002bba0.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/trampoline_0/trampoline-552c1d2061e44233a497ba064002bba0.7z",
-          "sha256": "59c75b8667f6a22982f4ec7d302ef628cba365c8f7dd5eaf49edb155052fab33",
-          "size": 5286,
+          "sha256": "bf3cfc82cc6dee8f158de38f431128d342f14ecc8d71730ec3ef62e62a0f22c4",
+          "size": 5288,
           "container": "7z",
           "aliases": [
             {
