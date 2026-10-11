@@ -304,10 +304,17 @@ def _remove_legacy_index(config: dict) -> None:
 
 
 def regenerate_manifests(config: dict, ctx, index_root: Path, package_repo: Path) -> None:
-    """Rewrite every manifest from the index so the repo is always reproducible."""
+    """Rewrite every manifest from the index so the repo is always reproducible.
+
+    A version the index no longer has also loses its manifest: a manifest points
+    at a released asset, so one left behind would send a consumer to a file that
+    is gone. The recipe stays, and that is enough -- a package without a manifest
+    simply builds from source.
+    """
     index_root = Path(index_root)
     if not index_root.is_dir():
         return
+    indexed: dict[str, set[str]] = {}
     for directory in sorted(index_root.iterdir()):
         if not directory.is_dir():
             continue
@@ -328,6 +335,39 @@ def regenerate_manifests(config: dict, ctx, index_root: Path, package_repo: Path
                         alias.get("toolset") or artifact.get("toolset"),
                     )
             manifest_lib.write_all(package_repo, package, version, entries)
+            indexed.setdefault(package, set()).add(version)
+    _drop_stale_manifests(package_repo, indexed, ctx.prefix)
+
+
+def _drop_stale_manifests(
+    package_repo: Path, indexed: dict[str, set[str]], prefix: str
+) -> None:
+    """Delete the manifest directories of packages the cache no longer holds."""
+    root = Path(package_repo) / "packages"
+    if not root.is_dir():
+        return
+    dropped: list[str] = []
+    for recipe in sorted(root.glob("*/*/xmake.lua")):
+        package = recipe.parent.name
+        if not package.startswith(prefix) and package not in indexed:
+            continue
+        for version_dir in sorted(recipe.parent.iterdir()):
+            if not version_dir.is_dir():
+                continue
+            # Only a directory that holds nothing but a manifest is ours: a
+            # recipe keeps its own files (xmake.lua, versions/versions.txt).
+            if {item.name for item in version_dir.iterdir()} != {"manifest.txt"}:
+                continue
+            if version_dir.name in indexed.get(package, set()):
+                continue
+            util.rmtree(version_dir)
+            dropped.append(f"{package} {version_dir.name}")
+    if dropped:
+        util.log(
+            f"dropped {len(dropped)} manifest(s) the index does not back: "
+            + ", ".join(sorted(dropped)[:3])
+            + (f" (+{len(dropped) - 3})" if len(dropped) > 3 else "")
+        )
 
 
 if __name__ == "__main__":

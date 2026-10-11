@@ -239,16 +239,16 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
                 for hash_dir in sorted(version_dir.iterdir()):
                     if not hash_dir.is_dir():
                         continue
-                    artifacts.append(
-                        _publish_one(
-                            config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
-                            name, published_name, version, hash_dir, plat, arch,
-                            toolset_for_key(vs_toolset, name),
-                            repo_order=repo_order or [], commit=commit, toolchain=toolchain,
-                            root_package=package_name,
-                            target_branch=target_branch, dry_run=dry_run,
-                        )
+                    artifact = _publish_one(
+                        config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
+                        name, published_name, version, hash_dir, plat, arch,
+                        toolset_for_key(vs_toolset, name),
+                        repo_order=repo_order or [], commit=commit, toolchain=toolchain,
+                        root_package=package_name,
+                        target_branch=target_branch, dry_run=dry_run,
                     )
+                    if artifact:
+                        artifacts.append(artifact)
 
     return {
         "plugin": plugin_name,
@@ -284,6 +284,36 @@ def container_for(config: dict, package: str) -> str:
     return override or artifacts_cfg.get("container") or packer.default_container()
 
 
+#: What a compiler leaves behind in an install directory.
+_BUILD_OUTPUT_SUFFIXES = (
+    ".lib", ".exp", ".dll", ".exe", ".pdb", ".obj", ".ilk", ".res",
+    ".a", ".o", ".so", ".dylib",
+)
+
+
+def has_build_output(hash_dir: Path) -> bool:
+    """Did this install produce anything a compiler built?"""
+    for path in Path(hash_dir).rglob("*"):
+        if path.is_file() and path.suffix.lower() in _BUILD_OUTPUT_SUFFIXES:
+            return True
+    return False
+
+
+def should_publish(name: str, root_package: str, hash_dir: Path) -> bool:
+    """Is this package worth an artifact in the cache?
+
+    The project's own package always is: that is what a consumer installs, so a
+    release is the whole point. A *dependency* that carries nothing compiled is
+    not worth one -- installing it is a download plus a copy (a header-only
+    library, a data package), which a consumer can do as cheaply as fetching an
+    archive, and its hash does not even depend on the toolchain that built the
+    project around it.
+    """
+    if name == root_package:
+        return True
+    return has_build_output(hash_dir)
+
+
 def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
     """Rebuild the packages that failed, one by one, before retrying the whole step."""
     failed = xmake_env.failed_packages(sandbox)
@@ -315,9 +345,14 @@ def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
 def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
                  name, published_name, version, hash_dir, plat, arch, toolset,
                  repo_order=None, commit="", toolchain="msvc", root_package="",
-                 target_branch=None, dry_run=False) -> dict:
+                 target_branch=None, dry_run=False) -> dict | None:
     from lib import manifest as manifest_lib
 
+    if not should_publish(name, root_package, hash_dir):
+        # A dependency with nothing compiled in it: an archive would save a
+        # consumer nothing, so it does not get one.
+        util.log(f"skip {name} {version}: nothing was compiled, nothing to precompile")
+        return None
     container = container_for(config, name)
     suffix = "tar.zst" if container == "tar.zst" else "7z"
     # The build hash already encodes plat/arch/toolchain/configs and the source

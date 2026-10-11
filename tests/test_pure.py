@@ -378,6 +378,79 @@ def test_release_rows_put_the_newest_version_on_top():
     ]
 
 
+def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
+    """A manifest points at a released asset, so it cannot outlive the entry.
+
+    The recipe stays behind (a package without a manifest simply builds from
+    source); only the directory that holds nothing but a manifest goes. Files a
+    recipe owns -- its ``xmake.lua``, its ``versions/`` listing -- are untouched.
+    """
+    config = dict(util.load_config())
+    config["_index_dir"] = str(tmp_path / "index")
+    ctx = plugins.Context(config)
+    repo = tmp_path / "repo"
+
+    meta = {
+        "package": "mifcache_fmt",
+        "version": "11.2.0",
+        "prefix": "mifcache_",
+        "artifacts": [
+            {
+                "package": "mifcache_fmt",
+                "version": "11.2.0",
+                "buildhash": "ee1902dd7cff4195a287949f80dbce70",
+                "key": "windows-x64-vc-ee1902dd7cff4195a287949f80dbce70",
+                "toolset": "14.44.35207",
+                "url": "https://example.invalid/fmt.7z",
+                "sha256": "ab" * 32,
+                "aliases": [],
+            }
+        ],
+    }
+    index_store.write_entry(ctx.index_root, "mifcache_fmt", "11.2.0", "default", meta)
+    # a package the cache no longer holds, and the recipe that must survive it
+    stale = repo / "packages" / "m" / "mifcache_entt"
+    (stale / "v3.13.1").mkdir(parents=True)
+    (stale / "v3.13.1" / "manifest.txt").write_text("{}", encoding="utf-8")
+    (stale / "xmake.lua").write_text('package("mifcache_entt")\n', encoding="utf-8")
+    (stale / "versions").mkdir()
+    (stale / "versions" / "versions.txt").write_text("v3.13.1 abc\n", encoding="utf-8")
+
+    finalize.regenerate_manifests(config, ctx, ctx.index_root, repo)
+
+    assert (repo / "packages" / "m" / "mifcache_fmt" / "11.2.0" / "manifest.txt").is_file()
+    assert (stale / "v3.13.1").exists() is False
+    assert (stale / "xmake.lua").is_file() and (stale / "versions" / "versions.txt").is_file()
+
+
+def test_copy_only_dependencies_are_not_cached(tmp_path: Path):
+    """Nothing compiled means nothing to precompile.
+
+    A header-only library or a data package is installed by downloading and
+    copying files: an archive would save a consumer nothing, and that is also why
+    those packages used to show up with no address for the other toolchain (their
+    hash does not carry one). The project's own package is always published --
+    that is what a consumer installs.
+    """
+    dependency = tmp_path / "entt" / "v3.13.1" / "3c37e4785cbf4e5da3ed26348f465135"
+    (dependency / "include" / "entt").mkdir(parents=True)
+    (dependency / "include" / "entt" / "entt.hpp").write_text("//\n", encoding="utf-8")
+    (dependency / "manifest.txt").write_text("", encoding="utf-8")
+    assert build.has_build_output(dependency) is False
+    assert build.should_publish("entt", "levilamina", dependency) is False
+
+    # a dependency that compiled something keeps its artifact
+    (dependency / "lib").mkdir()
+    (dependency / "lib" / "entt.lib").write_text("", encoding="utf-8")
+    assert build.should_publish("entt", "levilamina", dependency) is True
+
+    # the project's own package is published whatever it installs: it is the SDK
+    own = tmp_path / "levilamina" / "0.8.3" / "1744349df0da4502a23929f25a067945"
+    (own / "include").mkdir(parents=True)
+    (own / "include" / "LeviLamina.h").write_text("", encoding="utf-8")
+    assert build.should_publish("levilamina", "levilamina", own) is True
+
+
 def test_failed_install_logs_are_found(tmp_path: Path):
     """xmake only points at a log inside the sandbox, so we print it ourselves."""
     logs = (

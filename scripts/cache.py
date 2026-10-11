@@ -314,9 +314,14 @@ def _drop_from_index(ctx, plan) -> None:
             path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
         index_path = ctx.index_root / package / "index.json"
         remaining = sorted(item.stem.replace(".json", "") for item in (ctx.index_root / package / "versions").glob("*.json"))
+        if not remaining:
+            # No version left: the package is gone from the cache, and an empty
+            # package directory would only be noise in the ledger.
+            util.rmtree(ctx.index_root / package)
+            continue
         index = index_store.load_package(ctx.index_root, package)
         index["versions"] = remaining
-        index["latest"] = remaining[0] if remaining else None
+        index["latest"] = remaining[0]
         index_path.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
 
 
