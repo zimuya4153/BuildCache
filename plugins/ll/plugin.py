@@ -385,23 +385,36 @@ def _repair_era_sources(snapshot) -> list[str]:
         text = util.read_text(recipe)
         if "BuildCache: era includes" in text:
             continue
+        # Every repair is conditional on the file being there at all: the paths
+        # differ between versions (1.4.4 has no ``src/mc/common/wrapper``), and a
+        # failing ``io.readfile`` inside a package script *raises* -- an edit the
+        # version does not need would fail its install.
         lines = []
         for header, include, symbol in _ERA_INCLUDES.get(package, []):
             lines.append(
                 f'        do\n'
                 f'            local file = "{header}"\n'
-                f'            local data = io.readfile(file)\n'
-                f'            if data and not data:find("#include {include}", 1, true) then\n'
-                f'                io.writefile(file, "#include {include}\\n" .. data)\n'
-                f'                print("added {include} to {header} (it uses {symbol})")\n'
+                f'            if os.isfile(file) then\n'
+                f'                local data = io.readfile(file)\n'
+                f'                if data and not data:find("#include {include}", 1, true) then\n'
+                f'                    io.writefile(file, "#include {include}\\n" .. data)\n'
+                f'                    print("added {include} to {header} (it uses {symbol})")\n'
+                f'                end\n'
                 f'            end\n'
                 f'        end'
             )
         for path, old, new in _ERA_EDITS.get(package, []):
             lines.append(
-                f'        io.replace("{path}",\n'
-                f"            [==[{old}]==],\n"
-                f"            [==[{new}]==], {{plain = true}})"
+                f'        do\n'
+                f'            local file = "{path}"\n'
+                f'            if os.isfile(file) then\n'
+                f'                local data = io.readfile(file)\n'
+                f'                if data and data:find([==[{old}]==], 1, true) then\n'
+                f"                    io.replace(file, [==[{old}]==], [==[{new}]==], {{plain = true}})\n"
+                f'                    print("patched {path}")\n'
+                f'                end\n'
+                f'            end\n'
+                f'        end'
             )
         match = re.search(r"^(\s*)on_install\(function", text, re.M)
         if not match:
@@ -630,12 +643,22 @@ def _patch_upstream_sources(snapshot, renames: dict[str, dict[str, str]]) -> lis
     for package, mapping in renames.items():
         for old, new in mapping.items():
             lines.append(
-                f'        io.replace("xmake.lua", "{package} {old}", '
-                f'"{package} {new}", {{plain = true}})'
+                f'        do\n'
+                f'            local file = "xmake.lua"\n'
+                f'            if os.isfile(file) then\n'
+                f'                io.replace(file, "{package} {old}", '
+                f'"{package} {new}", {{plain = true}})\n'
+                f'            end\n'
+                f'        end'
             )
             lines.append(
-                f'        io.replace("xmake.lua", "{package} v{old}", '
-                f'"{package} v{new}", {{plain = true}})'
+                f'        do\n'
+                f'            local file = "xmake.lua"\n'
+                f'            if os.isfile(file) then\n'
+                f'                io.replace(file, "{package} v{old}", '
+                f'"{package} v{new}", {{plain = true}})\n'
+                f'            end\n'
+                f'        end'
             )
     # The era that needs this writes ``on_install(function (package)`` -- with a
     # space -- so the anchor cannot be a literal string.

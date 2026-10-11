@@ -349,28 +349,40 @@ def _drop_stale_manifests(
     prefix: str,
     upstream_names: set[str],
 ) -> None:
-    """Delete the manifest directories of packages the cache no longer holds."""
+    """Delete the manifest directories of packages the cache no longer holds.
+
+    The scan looks for manifest directories, not for recipes: a project is also
+    published under its upstream name, and that directory (``packages/l/levilamina``)
+    holds manifests only -- the recipe lives under the prefixed name.
+    """
     root = Path(package_repo) / "packages"
     if not root.is_dir():
         return
-    dropped: list[str] = []
-    for recipe in sorted(root.glob("*/*/xmake.lua")):
-        package = recipe.parent.name
-        if not (
+
+    def ours(package: str) -> bool:
+        return (
             package.startswith(prefix) or package in upstream_names or package in indexed
-        ):
+        )
+
+    dropped: list[str] = []
+    for version_dir in sorted(root.glob("*/*/*")):
+        if not version_dir.is_dir():
             continue
-        for version_dir in sorted(recipe.parent.iterdir()):
-            if not version_dir.is_dir():
-                continue
-            # Only a directory that holds nothing but a manifest is ours: a
-            # recipe keeps its own files (xmake.lua, versions/versions.txt).
-            if {item.name for item in version_dir.iterdir()} != {"manifest.txt"}:
-                continue
-            if version_dir.name in indexed.get(package, set()):
-                continue
-            util.rmtree(version_dir)
-            dropped.append(f"{package} {version_dir.name}")
+        package = version_dir.parent.name
+        if not ours(package):
+            continue
+        # Only a directory that holds nothing but a manifest is ours: a recipe
+        # keeps its own files (xmake.lua, versions/versions.txt) where they are.
+        if {item.name for item in version_dir.iterdir()} != {"manifest.txt"}:
+            continue
+        if version_dir.name in indexed.get(package, set()):
+            continue
+        util.rmtree(version_dir)
+        dropped.append(f"{package} {version_dir.name}")
+    # A package that had nothing but manifests disappears with its last one.
+    for package_dir in sorted(root.glob("*/*")):
+        if package_dir.is_dir() and ours(package_dir.name) and not any(package_dir.iterdir()):
+            package_dir.rmdir()
     if dropped:
         util.log(
             f"dropped {len(dropped)} manifest(s) the index does not back: "

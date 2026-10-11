@@ -416,11 +416,11 @@ def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
     (stale / "versions").mkdir()
     (stale / "versions" / "versions.txt").write_text("v3.13.1 abc\n", encoding="utf-8")
     # the project is published under its upstream name too, and after a wipe the
-    # index cannot say that name is ours -- the plugin can
+    # index cannot say that name is ours -- the plugin can. That directory holds
+    # manifests only; the recipe lives under the prefixed name.
     upstream = repo / "packages" / "l" / "levilamina"
     (upstream / "0.8.3").mkdir(parents=True)
     (upstream / "0.8.3" / "manifest.txt").write_text("{}", encoding="utf-8")
-    (upstream / "xmake.lua").write_text('package("levilamina")\n', encoding="utf-8")
 
     finalize.regenerate_manifests(config, ctx, ctx.index_root, repo)
 
@@ -428,7 +428,7 @@ def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
     assert (stale / "v3.13.1").exists() is False
     assert (stale / "xmake.lua").is_file() and (stale / "versions" / "versions.txt").is_file()
     assert (upstream / "0.8.3").exists() is False
-    assert (upstream / "xmake.lua").is_file()
+    assert upstream.exists() is False
 
 
 def test_copy_only_dependencies_are_not_cached(tmp_path: Path):
@@ -550,7 +550,13 @@ def test_old_era_sources_stop_reaching_into_the_stl(tmp_path: Path):
     notes = ll.module._repair_era_sources(tmp_path / "levimc-repo@test")
     assert notes
     text = (recipe / "xmake.lua").read_text(encoding="utf-8")
-    assert 'io.replace("src/mc/common/wrapper/optional_ref.h"' in text
+    # the edit is guarded by existence: 1.4.4 has no such file, and inside a
+    # package script a failing io.readfile *raises*, which would fail its install
+    assert 'local file = "src/mc/common/wrapper/optional_ref.h"' in text
+    assert "if os.isfile(file) then" in text
+    assert "local data = io.readfile(file)" in text
+    assert "if data and data:find([==[" in text
+    assert "io.replace(file, [==[" in text
     assert "std::_Construct_from_invoke_result_tag{}," in text
     assert "std::invoke(std::forward<Fn>(fn), static_cast<T&>(*mPtr))" in text
     assert "{plain = true})" in text
@@ -618,9 +624,11 @@ def test_upstream_pins_are_rewritten_while_the_project_builds(tmp_path: Path):
     assert len(notes) == 1, notes
     injected = recipe.read_text(encoding="utf-8")
     assert (
-        'io.replace("xmake.lua", "bdslibrary 1.20.61.01", '
+        'io.replace(file, "bdslibrary 1.20.61.01", '
         '"bdslibrary 1.20.61-r01", {plain = true})' in injected
     )
+    # the same guard as the era repairs: the project file has to be there
+    assert injected.count("if os.isfile(file) then") == 2
     # the rewrite has to happen before the step that configures the project
     assert injected.index("io.replace") < injected.index("package.tools.xmake")
     # injected once, however often the recipe is prepared
