@@ -1,5 +1,5 @@
 {
-  "revision": 3,
+  "revision": 4,
   "platform": {
     "plat": "windows",
     "arch": "x64",
@@ -27,7 +27,7 @@
   "artifacts": {
     "container": "7z",
     "containers": {
-    "levilamina": "7z"
+      "levilamina": "7z"
     }
   },
   "bot": {

@@ -105,8 +105,19 @@ def main() -> int:
     util.log("entry: " + entry["id"] + "  configs: " + str(configs))
 
     cutoff_for_recipes = plugin.call("recipe_cutoff", ctx, args.version, commit)
+    # Dependencies are taken at their newest state -- that is the recipe a consumer
+    # resolves, so the artifact we publish lands on an address a consumer asks for.
+    # Only the project's own package keeps the recipe of its era, which pins the
+    # dependency versions and carries the repairs for old sources; both changes end
+    # up in the same snapshot.
+    own = plugin.call("metadata")["package"]
     prepared = sources.prepare(
-        config, ctx, plugin, cutoff=cutoff_for_recipes, label=args.version
+        config,
+        ctx,
+        plugin,
+        cutoff=cutoff_for_recipes,
+        label=args.version,
+        overlay=(f"packages/{own[0].lower()}/{own}",),
     )
     recipe_commits = {name: commit_sha for name, (_dir, commit_sha) in prepared.items()}
     main_repo = prepared.get("xmake-repo", (None, ""))[0]

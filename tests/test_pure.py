@@ -25,6 +25,7 @@ from lib import (  # noqa: E402
     reports,
     schemas,
     semver,
+    sources,
     util,
 )
 
@@ -532,6 +533,52 @@ def test_packing_is_reproducible(tmp_path: Path, monkeypatch):
     # modification, creation and access times are all left out of the archive
     assert {"-mtm=off", "-mtc=off", "-mta=off"} <= set(calls[0])
 
+
+
+def test_dependencies_come_from_today_and_the_project_from_its_era(tmp_path: Path):
+    """The artifact must land on an address a consumer asks for.
+
+    A consumer resolves the dependencies from the recipes of today, so those are
+    what this build has to use; the project's own recipe stays the one of its era,
+    because that is what pins the dependency versions (and what our repairs are
+    written for). The snapshot is a clone of the mirror with the whole history, so
+    the older state of one directory is a checkout away.
+    """
+    import os
+    import subprocess
+
+    def git(*args, date=None):
+        env = dict(os.environ)
+        if date:
+            env.update(GIT_AUTHOR_DATE=date, GIT_COMMITTER_DATE=date)
+        subprocess.run(
+            ["git", "-C", str(repo), *args], check=True, capture_output=True, env=env
+        )
+
+    repo = tmp_path / "source"
+    (repo / "packages" / "l" / "levilamina").mkdir(parents=True)
+    (repo / "packages" / "f" / "fmt").mkdir(parents=True)
+    git("init", "-q")
+    (repo / "packages" / "l" / "levilamina" / "xmake.lua").write_text("era\n", encoding="utf-8")
+    (repo / "packages" / "f" / "fmt" / "xmake.lua").write_text("old\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "era", date="2024-01-01T00:00:00")
+    (repo / "packages" / "l" / "levilamina" / "xmake.lua").write_text("head\n", encoding="utf-8")
+    (repo / "packages" / "f" / "fmt" / "xmake.lua").write_text("new\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "head", date="2026-01-01T00:00:00")
+
+    when = sources._overlay_from_cutoff(repo, "2025-01-01", "packages/l/levilamina")
+    assert when
+    # the project's recipe went back to the era, its dependencies did not
+    assert (repo / "packages" / "l" / "levilamina" / "xmake.lua").read_text(
+        encoding="utf-8"
+    ) == "era\n"
+    assert (repo / "packages" / "f" / "fmt" / "xmake.lua").read_text(
+        encoding="utf-8"
+    ) == "new\n"
+    # a source that does not carry that package is simply skipped
+    assert sources._overlay_from_cutoff(repo, "2025-01-01", "packages/x/nothing") == ""
 
 
 def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):

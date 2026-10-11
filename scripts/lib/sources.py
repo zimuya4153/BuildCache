@@ -25,12 +25,21 @@ def prepare(
     refresh: bool = False,
     only: str | None = None,
     env: dict | None = None,
+    overlay: tuple[str, ...] = (),
 ) -> dict[str, tuple[Path, str]]:
     """Return ``{source name: (directory, commit)}`` for every configured source.
 
     ``cutoff`` rolls the source back to the ecosystem of the version being built
     (``label`` names the snapshot directory so per-version snapshots coexist);
     ``only`` limits the work to a single source.
+
+    ``overlay`` is the other way round: take every source at its **newest** state
+    -- a dependency has to be the recipe a consumer resolves today, or the
+    artifact we publish sits at an address nobody asks for -- and then take the
+    named package directories from ``cutoff`` instead. That is what the project's
+    own package needs: its recipe is the one of its era, which is what pins the
+    dependency versions and carries the repairs. The returned commit is the one
+    the sources were taken at.
     """
     env = env or util.subprocess_env(config, proxy=getattr(ctx, "proxy", None))
     root = util.absolute(config.get("_vendor_root", ".vendor"))
@@ -42,12 +51,16 @@ def prepare(
         if only and name != only:
             continue
         mirror = ctx.mirror(name, source["url"])
-        wanted = None if mode == "head" else cutoff
+        wanted = None if mode == "head" or overlay else cutoff
         commit = repos.commit_at(mirror, wanted, env=env)
         tag = label or commit[:12]
         dest = root / f"{name}@{tag}"
         util.log(f"snapshot {name} @ {commit[:12]}" + (f" (before {wanted})" if wanted else ""))
         repos.snapshot(mirror, dest, commit=commit, env=env)
+        for path in overlay:
+            age = _overlay_from_cutoff(dest, cutoff, path, env=env)
+            if age:
+                util.log(f"  {path} kept at {age[:12]} (the project's own recipe)")
         for note in recipefix.apply_fixups(config, name, dest):
             util.log(note)
         for note in recipefix.plugin_repair(config, plugin, name, dest):
@@ -57,3 +70,30 @@ def prepare(
         prepared[name] = (dest, commit)
 
     return prepared
+
+
+def _overlay_from_cutoff(dest: Path, cutoff: str | None, path: str, env: dict | None = None) -> str:
+    """Take ``path`` in the snapshot from the version's date; "" when absent.
+
+    The snapshot is a clone of the mirror, so the older state is already there:
+    one checkout of that directory is enough, and a source that does not carry
+    the package (only one of them holds the project's recipe) is simply skipped.
+    """
+    if not cutoff:
+        return ""
+    commit = repos.commit_at(Path(dest), cutoff, env=env)
+    if not commit:
+        return ""
+    listed = util.run_out(
+        ["git", "-C", str(dest), "ls-tree", "-r", "--name-only", commit, "--", path],
+        env=env,
+        check=False,
+    )
+    if not listed:
+        return ""
+    util.run(
+        ["git", "-C", str(dest), "checkout", commit, "--", path],
+        env=env,
+        quiet=True,
+    )
+    return commit

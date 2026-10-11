@@ -183,8 +183,10 @@ cache.py trigger --plugin ll --entry client --local   # 只编某个条目
 
 ## 8. 一次构建都做了什么
 
-1. 快照 `xmake-repo` / `levimc-repo`，叠加 `recipes/fixups/`，并修历史遗留（补丁空
-   上下文行、xmake 解析不了的四段版本号）。
+1. 取配方源：**依赖取当前最新**（消费端解析到的就是它，这样产物地址才对得上），
+   **项目自己的那个包回到它的年代**（年代配方才是锁定依赖版本、并配上我们那些修复
+   的那一份）；随后叠加 `recipes/fixups/`，并修历史遗留（补丁空上下文行、xmake 解析
+   不了的四段版本号）。
 2. 装对应年代的 xmake，`XMAKE_GLOBALDIR` 指向沙箱（沙箱放在 `<盘>:\.buildcache`，
    因为 CMake 拒绝超过 250 字符的目标文件路径）。
 3. PATH 前置 git shim：把**未锁版本**的 clone 回退到该版本发布日期之前；已由配方锁定
