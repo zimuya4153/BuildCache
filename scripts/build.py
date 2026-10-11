@@ -73,18 +73,15 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
         # recipe lookup for a package has to follow the same order.
         repo_order = local_repos + [("xmake-repo", main_repo)]
         requires = [f'add_requires("{require}", {{configs = {_lua_table(configs)}}})']
+        extra = plan.extra_deps(
+            plugin, ctx, args.version, commit, _own_recipe_dir(prepared, own)
+        )
         # The project's own file may name a dependency its recipe already pins to
         # another version; asking for both would build a second SDK nobody uses.
-        requires += extra_requires(
-            config,
-            ctx,
-            repo_order,
-            plan.extra_deps(
-                plugin, ctx, args.version, commit,
-                _own_recipe_dir(prepared, own),
-            ),
-            cutoff=recipe_cutoff,
-        )
+        # Not `sources`: that is the module this loop already uses.
+        declared_sources = {name: Path(directory) for name, directory in repo_order}
+        pins = dependency_pins(config, ctx, declared_sources, extra, cutoff=recipe_cutoff)
+        requires += extra_requires(config, ctx, repo_order, extra, pinned=pins)
         suffix = "" if use_today else "-era"
         sandbox = xmake_env.create_sandbox(
             config,
@@ -98,6 +95,16 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
             extra_lua="\n".join(requires),
         )
         git_shim.install(config, sandbox.env, git_cutoff)
+        if pins:
+            # The project's own build runs a fresh xmake of its own; the versions
+            # travel to it through the recipe (see plugins/upstream.py).
+            sandbox.env["BUILDCACHE_PINS"] = ",".join(
+                f"{name}={version}" for name, version in sorted(pins.items())
+            )
+            util.log(
+                "pinned for the project's own build: "
+                + ", ".join(f"{name}={version}" for name, version in sorted(pins.items()))
+            )
 
         # Some steps are known to be flaky (generating the bedrock runtime data can
         # fail and succeed on the next attempt), so both install steps are retried
@@ -514,7 +521,39 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
     }
 
 
-def extra_requires(config: dict, ctx, repos, extra: list[dict], *, cutoff: str | None = None) -> list[str]:
+def dependency_pins(
+    config: dict, ctx, sources: dict[str, Path], extra: list[dict], *, cutoff: str | None
+) -> dict[str, str]:
+    """The version to use for each SDK the project's own file leaves open.
+
+    A require *without* a version resolves to the newest SDK there is, and one the
+    recipe has since dropped has no answer at all: for a package we publish, the
+    version of the project's own era is what its sources were written against (see
+    ``plan.era_version``). ``bsci`` 0.4.0 asks for ``levilamina`` and was then
+    compiled against 26.51.6; its era's own newest is 26.20.0.
+
+    This decides the version twice -- for our sandbox's top-level require, and for
+    the project's own build, which resolves it again in a fresh xmake of its own
+    (the same map is handed to that build through the recipe, see
+    ``plugins/upstream.py``).
+    """
+    owned = {name.lower() for name in plugins.project_packages(config, ctx)}
+    pins: dict[str, str] = {}
+    for item in extra:
+        name = str(item.get("name") or "")
+        if not name or name.lower() not in owned:
+            continue
+        if _declared_version(sources, name, item.get("version", "")) not in ("", None):
+            continue
+        version = plan.era_version(config, ctx, name, cutoff)
+        if version:
+            pins[name] = version
+    return pins
+
+
+def extra_requires(
+    config: dict, ctx, repos, extra: list[dict], *, pinned: dict[str, str] | None = None
+) -> list[str]:
     """``add_requires`` lines for the dependencies only the project file names.
 
     A consumer resolving the project gets them (they are named by the project's
@@ -533,20 +572,18 @@ def extra_requires(config: dict, ctx, repos, extra: list[dict], *, cutoff: str |
     if not extra:
         return []
     sources = {name: Path(directory) for name, directory in repos}
-    owned = {name.lower() for name in plugins.project_packages(config, ctx)}
+    pinned = pinned or {}
     lines = []
     for item in extra:
         version = _declared_version(sources, item["name"], item.get("version", ""))
         if version is None:
             # The recipe dropped that version: the package's own era is the only
-            # answer that is not a guess.
-            if item["name"].lower() not in owned:
-                continue
-            version = plan.era_version(config, ctx, item["name"], cutoff)
+            # answer that is not a guess (see dependency_pins).
+            version = pinned.get(item["name"])
             if version is None:
                 continue
-        elif not version and item["name"].lower() in owned:
-            version = plan.era_version(config, ctx, item["name"], cutoff) or ""
+        elif not version:
+            version = pinned.get(item["name"], "")
         spec = f'{item["name"]} {version}'.strip()
         lines.append(f'add_requires("{spec}")')
     return lines

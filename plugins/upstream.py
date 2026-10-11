@@ -31,6 +31,33 @@ from lib import repos, semver, util
 
 _ADD_VERSIONS = re.compile(r'add_versions\(\s*"([^"]+)"\s*,\s*"([0-9a-fA-F]{7,40})"')
 _ADD_REQUIRES = re.compile(r'add_requires\(\s*"([^"]+)"')
+_ON_INSTALL = re.compile(r"^\s*on_install\(function", re.M)
+
+#: Runs inside the recipe, in the project's own directory, just before the project
+#: is built. A require the project leaves *without* a version resolves to the
+#: newest SDK there is, and a project of two years ago was written against one of
+#: its own: `bsci` 0.4.0 asks for "levilamina" and was then compiled against
+#: 26.51.6, whose headers its sources never saw. The versions come from the
+#: environment, so the framework decides them (build.py::dependency_pins), and a
+#: project that pins everything itself makes this a no-op.
+_PIN_BLOCK = """        do
+            -- BuildCache: pin what this project leaves unpinned to the SDK of its
+            -- own era (the map comes from the environment; usually empty).
+            local pins = os.getenv("BUILDCACHE_PINS")
+            if pins and os.isfile("xmake.lua") then
+                local data = io.readfile("xmake.lua")
+                local updated = data
+                for name, version in pins:gmatch("([%w_%-%.]+)=([^,;]+)") do
+                    local pattern = 'add_requires%("' .. name .. '"'
+                    local pinned = 'add_requires("' .. name .. " " .. version .. '"'
+                    updated = updated:gsub(pattern, pinned)
+                end
+                if updated ~= data then
+                    io.writefile("xmake.lua", updated)
+                    print("BuildCache: pinned the open SDK versions: " .. pins)
+                end
+            end
+        end"""
 
 
 def create(settings: dict):
@@ -216,22 +243,21 @@ class _UpstreamPlugin:
         consumer: the published repository carries manifests and no recipes, and a
         package's build hash comes from the source commit, not from recipe text.
         """
-        edits = self.settings.get("recipeEdits") or []
-        package = self.settings["recipe_package"]
-        if not edits or source_name != self.settings.get("recipe_source"):
+        if source_name != self.settings.get("recipe_source"):
             return []
+        package = self.settings["recipe_package"]
         recipe = (
             Path(snapshot) / "packages" / package[0].lower() / package / "xmake.lua"
         )
         if not recipe.is_file():
             return []
-        text = util.read_text(recipe)
-        notes: list[str] = []
-        for edit in edits:
+        notes = _pin_project_requires(recipe)
+        for edit in self.settings.get("recipeEdits") or []:
             find = str(edit.get("find") or "")
             replace = str(edit.get("replace") or "")
             if not find:
                 continue
+            text = util.read_text(recipe)
             if find not in text:
                 # Either the recipe was fixed upstream, or the declaration no
                 # longer matches: both are worth hearing about.
@@ -239,11 +265,28 @@ class _UpstreamPlugin:
                     f"{package}: declared recipe edit does not apply ({find!r})"
                 )
                 continue
-            text = text.replace(find, replace)
+            util.write_text(recipe, text.replace(find, replace))
             notes.append(f"{package}: repaired recipe ({find!r} -> {replace!r})")
-        if notes:
-            util.write_text(recipe, text)
         return notes
+
+
+def _pin_project_requires(recipe: Path) -> list[str]:
+    """Add the block that pins the SDK versions a project leaves open.
+
+    Idempotent: a recipe that already carries it is left alone, because the same
+    snapshot is prepared more than once (the dependency pass prepares it again).
+    """
+    text = util.read_text(recipe)
+    if "BuildCache: pin what this project leaves unpinned" in text:
+        return []
+    anchor = _ON_INSTALL.search(text)
+    if anchor is None:
+        return []
+    # After the whole line: the anchor is the start of a call whose arguments
+    # continue on that line.
+    line_end = text.index("\n", anchor.end())
+    util.write_text(recipe, text[: line_end + 1] + "\n" + _PIN_BLOCK + "\n" + text[line_end + 1 :])
+    return [f"{recipe.parent.name}: pins the SDK versions it leaves open"]
 
     def asset_name(self, ctx, package: str, version: str, toolset, build_hash: str, container: str):
         """Optional ``assetName`` template from the settings, e.g. ``"{version}-{hash}.7z"``."""

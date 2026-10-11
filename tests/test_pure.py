@@ -1561,7 +1561,14 @@ def test_a_declared_recipe_edit_repairs_what_xmake_cannot_import(tmp_path: Path)
     )
 
     notes = plugin.module.repair_recipes(config, "levimc-repo", snapshot)
-    assert len(notes) == 1, notes
+    # the recipe gets the edit, and the block that pins what the project leaves open
+    assert len(notes) == 2, notes
+    assert "pins the SDK versions it leaves open" in notes[0], notes
+    assert "package.tools.xmake" in util.read_text(recipe)
+    assert "BUILDCACHE_PINS" in util.read_text(recipe)
+    # idempotent: the pin block is not injected twice
+    assert plugin.module.repair_recipes(config, "levimc-repo", snapshot) == []
+    assert util.read_text(recipe).count("BUILDCACHE_PINS") == 1
     assert 'import("package.tools.xmake")' in util.read_text(recipe)
     # a source that does not carry this project's recipe is left alone, and the
     # repair is idempotent: a second pass has nothing left to replace
