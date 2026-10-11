@@ -4,7 +4,9 @@ on:
   # A round is incremental: `discover` only queues what is missing or built by an
   # older revision, so a run with nothing to do costs a couple of minutes of
   # discovery and no build jobs at all -- which is what makes a frequent schedule
-  # affordable, and what drains a backlog of versions a few per run.
+  # affordable, and what drains a backlog of versions a few per run. `batch` is
+  # *per plugin*, and every entry of a version is its own job, so the number of
+  # jobs a run queues is roughly batch x plugins x entries.
   schedule:
     - cron: "0 */4 * * *"
   # A `revision` bump (or a new plugin) in config.json is the signal "everything
@@ -21,8 +23,8 @@ on:
         description: only build this exact SDK version
         default: ""
       batch:
-        description: versions per plugin, newest first
-        default: "4"
+        description: versions per plugin, newest first (jobs ≈ batch x plugins x entries)
+        default: "2"
       first_only:
         description: only the newest version
         type: boolean
@@ -60,7 +62,7 @@ jobs:
           python scripts/discover.py `
             --plugin "${{ inputs.plugin }}" `
             --version "${{ inputs.version }}" `
-            --batch "${{ inputs.batch || '4' }}" `
+            --batch "${{ inputs.batch || '2' }}" `
             --report-skipped
 
   build:
