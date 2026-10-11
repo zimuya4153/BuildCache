@@ -105,19 +105,14 @@ def main() -> int:
     util.log("entry: " + entry["id"] + "  configs: " + str(configs))
 
     cutoff_for_recipes = plugin.call("recipe_cutoff", ctx, args.version, commit)
-    # Dependencies are taken at their newest state -- that is the recipe a consumer
-    # resolves, so the artifact we publish lands on an address a consumer asks for.
-    # Only the project's own package keeps the recipe of its era, which pins the
-    # dependency versions and carries the repairs for old sources; both changes end
-    # up in the same snapshot.
-    own = plugin.call("metadata")["package"]
+    # The whole source is rolled back to the version's era: the project's recipe
+    # (which pins the dependency versions and carries our repairs) *and* the
+    # dependency recipes, because one xmake drives both and an era's xmake cannot
+    # read today's recipes -- 0.8.3's 2.8.6 dies on `on_source`, which newer
+    # recipes use. Taking the dependencies from today would therefore need a second
+    # build with a modern xmake, not a different snapshot here.
     prepared = sources.prepare(
-        config,
-        ctx,
-        plugin,
-        cutoff=cutoff_for_recipes,
-        label=args.version,
-        overlay=(f"packages/{own[0].lower()}/{own}",),
+        config, ctx, plugin, cutoff=cutoff_for_recipes, label=args.version
     )
     recipe_commits = {name: commit_sha for name, (_dir, commit_sha) in prepared.items()}
     main_repo = prepared.get("xmake-repo", (None, ""))[0]
@@ -199,6 +194,17 @@ def main() -> int:
         alias_profiles=alias_profiles,
         dry_run=args.dry_run,
     )
+    # The era build resolves the dependencies the way the era did. A consumer
+    # resolves them from today's recipes, so those addresses are a separate build:
+    # same specs, current sources, current xmake. One xmake cannot do both (0.8.3's
+    # 2.8.6 dies on APIs today's recipes use), which is why this is a second pass.
+    deps = build_dependency_pass(
+        config, ctx, plugin, args, plat, arch, toolchain, vs_toolset,
+        commit=commit, dry_run=args.dry_run,
+        specs=plugin.call("dependency_specs", ctx, args.version, commit) or [],
+    )
+    if deps:
+        results["artifacts"].extend(deps)
     out = Path(args.results)
     util.ensure_dir(out)
     result_file = out / f"build-result-{plugin.name}-{args.version}-{entry['id']}.json"
@@ -214,10 +220,71 @@ def main() -> int:
     return 0
 
 
+def build_dependency_pass(config, ctx, plugin, args, plat, arch, toolchain, vs_toolset,
+                          *, commit, dry_run, specs) -> list[dict]:
+    """Publish the dependencies at the addresses a *consumer* resolves.
+
+    The era build uses the recipes of the version's own date. That is what the
+    project's sources need, but not what a consumer resolves: it resolves today's
+    recipes, so a dependency built against an older sibling (cpr against libcurl
+    8.11 instead of 8.21) is rejected by xmake's compatibility check and compiled
+    from source on every machine that has not seen it yet -- the one thing a
+    prebuilt cache exists to prevent.
+
+    Same specs, current sources, current xmake, and only the dependencies: the
+    project's own sources stay in their era. It is an improvement, never a
+    requirement -- anything that goes wrong is reported and the round keeps what
+    the era build produced.
+    """
+    if dry_run or not specs:
+        return []
+    try:
+        prepared = sources.prepare(
+            config, ctx, plugin, cutoff=None, label=f"{args.version}-deps"
+        )
+        repos_here = [(name, directory) for name, (directory, _sha) in prepared.items()]
+        main_repo = dict(repos_here).get("xmake-repo")
+        local_repos = [(name, directory) for name, directory in repos_here if name != "xmake-repo"]
+        newest = xmake_env.newest_xmake(config)
+        util.log_step(f"dependency pass ({len(specs)} spec(s), xmake {newest})")
+        sandbox = xmake_env.create_sandbox(
+            config,
+            name=_slug(f"{plugin.name}-{args.version}-deps"),
+            xmake_version=newest,
+            proxy=ctx.proxy,
+            toolchain=None if toolchain == "msvc" else toolchain,
+            repositories=local_repos,
+            main_repo=main_repo,
+            binary_repo=util.ensure_dir(util.sandbox_root(config) / "empty-repo"),
+            extra_lua="\n".join(f'add_requires("{spec}")' for spec in specs),
+        )
+        result = sandbox.configure(toolchain, vs_toolset, plat, arch, stream=True, check=False)
+        if result.returncode == 0:
+            util.rmtree(sandbox.export_dir)
+            util.ensure_dir(sandbox.export_dir)
+            result = sandbox.xmake(
+                ["require", "-y", "--build", "--export", f"--packagedir={sandbox.export_dir}"],
+                stream=True,
+                check=False,
+            )
+        if result.returncode != 0:
+            util.warn("the dependency pass could not build; the era artifacts stand")
+            return []
+        published = publish(
+            config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, newest,
+            commit, "", {}, {"id": "default", "configs": {}}, {}, "",
+            plugin_name=plugin.name, plugin=plugin, repo_order=repos_here, force=True,
+        )
+        return published["artifacts"]
+    except Exception as error:  # noqa: BLE001 - a missing extra is not a failed round
+        util.warn(f"the dependency pass failed: {error}")
+        return []
+
+
 def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake_version,
             commit, cutoff, recipe_commits, entry, configs, package_name,
             plugin_name="", upstream_toolchain="", plugin=None, repo_order=None,
-            alias_profiles=None, dry_run=False) -> dict:
+            alias_profiles=None, dry_run=False, force=False) -> dict:
     owner = config["repos"]["cache"]["owner"]
     repo = config["repos"]["cache"]["repo"]
     max_assets = int(config["release"]["maxAssetsPerRelease"])
@@ -264,7 +331,7 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
                         toolset_for_key(vs_toolset, name),
                         repo_order=repo_order or [], commit=commit, toolchain=toolchain,
                         root_package=package_name,
-                        target_branch=target_branch, dry_run=dry_run,
+                        target_branch=target_branch, dry_run=dry_run, force=force,
                     )
                     if artifact:
                         artifacts.append(artifact)
@@ -465,7 +532,7 @@ def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
 def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
                  name, version, hash_dir, plat, arch, toolset,
                  repo_order=None, commit="", toolchain="msvc", root_package="",
-                 target_branch=None, dry_run=False) -> dict | None:
+                 target_branch=None, dry_run=False, force=False) -> dict | None:
     from lib import manifest as manifest_lib
 
     if not should_publish(name, root_package, hash_dir):
@@ -473,7 +540,7 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         # consumer nothing, so it does not get one.
         util.log(f"skip {name} {version}: nothing was compiled, nothing to precompile")
         return None
-    if not dry_run:
+    if not dry_run and not force:
         reused = cached_artifact(
             ctx, name, version, hash_dir.name, int(config.get("revision", 1))
         )

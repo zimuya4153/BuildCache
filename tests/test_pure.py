@@ -535,6 +535,47 @@ def test_packing_is_reproducible(tmp_path: Path, monkeypatch):
 
 
 
+def test_the_consumer_dependency_list_is_read_from_the_upstream_recipe(monkeypatch):
+    """The dependency pass has to ask for what a consumer asks for.
+
+    A consumer resolves the version out of the upstream (today's) recipe, so that
+    version file is the list; the dependencies only the project's own xmake.lua
+    names are added on top, because our artifacts record them and a consumer ends
+    up installing them too.
+    """
+    from lib import repos
+
+    ll = next(item for item in plugins.load_all(util.load_config()) if item.name == "ll")
+    file_text = (
+        "local deps_common = {\n"
+        '    "entt v3.14.0",\n'
+        '    "fmt 11.2.0"\n'
+        "}\n"
+        "function load(package)\n"
+        '    if package:config("target_type") == "server" then\n'
+        '        package:add("deps", "bedrockdata v1.21.93-server.6")\n'
+        "    end\n"
+        "end\n"
+    )
+    monkeypatch.setattr(repos, "file_at", lambda *args, **kwargs: file_text)
+    monkeypatch.setattr(
+        ll.module,
+        "upstream_xmake_lua",
+        lambda *args, **kwargs: 'add_requires("mimalloc")\nadd_requires("cpr[ssl=y] 1.11.1")\n',
+    )
+
+    ctx = plugins.Context(dict(util.load_config()))
+    specs = ll.module.dependency_specs(ctx, "1.4.4", "deadbeef")
+    # only the dependency specs survive the loader around them
+    assert specs == [
+        "entt v3.14.0",
+        "fmt 11.2.0",
+        "bedrockdata v1.21.93-server.6",
+        "cpr 1.11.1",
+        "mimalloc",
+    ], specs
+
+
 def test_dependencies_come_from_today_and_the_project_from_its_era(tmp_path: Path):
     """The artifact must land on an address a consumer asks for.
 

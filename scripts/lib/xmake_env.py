@@ -225,6 +225,19 @@ def xmake_version_for_date(config: dict, cutoff_iso: str, floor: str | None = No
     return chosen
 
 
+def newest_xmake(config: dict) -> str:
+    """The newest xmake there is.
+
+    An era build uses the xmake of its own time; anything built for a *consumer*
+    has to use the current one, because that is what the project on the other side
+    runs -- and because today's recipes use today's APIs.
+    """
+    import datetime
+
+    today = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+    return xmake_version_for_date(config, today)
+
+
 def ensure_xmake(config: dict, version: str, proxy: str | None = None) -> Path:
     """Download + extract ``xmake-v<version>.win64.zip``; returns ``xmake.exe``."""
     import urllib.request

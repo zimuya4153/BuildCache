@@ -301,6 +301,55 @@ def extra_deps(ctx, version: str, commit: str) -> list[dict]:
     return [{"name": name, "version": found[name]} for name in sorted(found)]
 
 
+def dependency_specs(ctx, version: str, commit: str) -> list[str]:
+    """The dependency specs a *consumer* of this version resolves.
+
+    A consumer resolves the version out of the upstream recipe -- today's one, as
+    the Liteldev repository keeps it -- so the version file of that recipe is the
+    list to ask for. On top of it come the dependencies only LeviLamina's own
+    xmake.lua names: the project's build needs them, and our artifacts record
+    them, which is how a consumer ends up installing them as well.
+
+    This is the list the dependency pass builds with current sources and a current
+    xmake, so that its addresses are the ones a consumer asks for.
+    """
+    from lib import repos
+
+    specs = _recipe_specs(ctx, version)
+    known = {spec.split()[0].split("[", 1)[0] for spec in specs}
+    for item in extra_deps(ctx, version, commit) or []:
+        name = item["name"]
+        if name in known:
+            continue
+        known.add(name)
+        specs.append(name + (f" {item['version']}" if item.get("version") else ""))
+    return specs
+
+
+#: Quoted strings in a version file that are dependency specs rather than values
+#: of the loader around them ("server", "client", the config keys, ...).
+_SPEC_LINE = re.compile(r'"([A-Za-z0-9][A-Za-z0-9_.\-]*[^\s"]*(?:\s+[^"]+)?)"')
+_NOT_A_SPEC = {"server", "client", "default", "deps", "systemdeps", "target_type"}
+
+
+def _recipe_specs(ctx, version: str) -> list[str]:
+    """The dependency list of an upstream version file, as it is written today."""
+    directory = _recipe_dir(ctx)
+    name = version.replace(".", "_").replace("-", "_")
+    path = f"packages/l/{RECIPE_PACKAGE}/versions/{name}.lua"
+    text = repos.file_at(directory, "HEAD", path)
+    if not text:
+        return []
+    specs: list[str] = []
+    for match in _SPEC_LINE.finditer(text):
+        spec = match.group(1).strip()
+        if spec in _NOT_A_SPEC or spec.split()[0].split("[", 1)[0] in _NOT_A_SPEC:
+            continue
+        if spec not in specs:
+            specs.append(spec)
+    return specs
+
+
 def report_skipped(ctx, known: list[dict]) -> list[str]:
     """Upstream tags that never made it into the recipe repository."""
     from lib import util
