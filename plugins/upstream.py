@@ -80,7 +80,36 @@ class _UpstreamPlugin:
                     seen.add(parts[0])
                     versions.append({"version": parts[0], "commit": parts[1]})
         versions.sort(key=lambda item: semver.key(item["version"]), reverse=True)
-        return versions
+        return self._kept(versions)
+
+    def _kept(self, versions: list[dict]) -> list[dict]:
+        """Drop the versions this project does not want built (see ``skipBelow``).
+
+        The oldest releases of a project are sometimes impossible to build at all --
+        their own sources do not compile with a current compiler, whatever SDK they
+        are linked against. Such a version is not a backlog item: queued, it takes a
+        job every round and fails that job, which is how a round ends up red for
+        something that cannot be fixed. Which of its own versions a project gives up
+        on is that project's decision, so it is declared with the rest of it.
+        """
+        below = self.settings.get("skipBelow")
+        named = {str(item) for item in (self.settings.get("skipVersions") or [])}
+        if not below and not named:
+            return versions
+        kept, skipped = [], []
+        for item in versions:
+            version = item["version"]
+            if version in named or (below and semver.lt(version, below)):
+                skipped.append(version)
+                continue
+            kept.append(item)
+        if skipped:
+            shown = ", ".join(skipped[:3]) + (", ..." if len(skipped) > 3 else "")
+            util.log(
+                f"{self.metadata()['package']}: {len(skipped)} version(s) this project "
+                f"cannot build are not queued ({shown})"
+            )
+        return kept
 
     def should_skip(self, ctx, version: str, commit: str) -> tuple[bool, str]:
         return False, ""

@@ -1242,6 +1242,64 @@ def test_a_line_the_ledger_already_covers_comes_last():
     assert discover.cover_lines_first(pending, covered | {"26.32.2"})[:1] == ["26.20.7"]
 
 
+def test_a_version_the_recipe_dropped_is_not_swapped_for_a_newer_sdk(tmp_path: Path):
+    """A project pinning an SDK that old is written against its own era.
+
+    `bsci` 0.4.0 names a LeviLamina its recipe no longer declares; asking for "the
+    newest" instead is how it ended up compiled against 26.51.6, whose headers its
+    sources never saw. Nothing extra is asked for then, so the failure is the
+    project's own and happens where it means something.
+    """
+    recipe = tmp_path / "packages" / "l" / "levilamina"
+    recipe.mkdir(parents=True)
+    (recipe / "xmake.lua").write_text(
+        'package("levilamina")\n    add_versions("1.9.9", "abc")\n', encoding="utf-8"
+    )
+    sources = {"levimc-repo": tmp_path}
+
+    assert build._declared_version(sources, "levilamina", "1.9.9") == "1.9.9"
+    # a range is left to xmake
+    assert build._declared_version(sources, "levilamina", ">=1.9.2 <1.10.0") == ">=1.9.2 <1.10.0"
+    # nothing to ask for, and deliberately not the newest either
+    assert build._declared_version(sources, "levilamina", "1.9.4") is None
+    assert build._declared_version(sources, "unknown-package", "1.0.0") is None
+
+
+def test_versions_a_project_gives_up_on_are_not_queued():
+    """`bsci` 0.1.x-0.4.0 do not compile with a current compiler at all.
+
+    Their own sources fail (clang rejects a copy constructor defined after the
+    implicit one is used), whatever SDK they link. Queued, they would take a job
+    every round and fail it, so the project declares them out of its version list.
+    """
+    def config_plugin(**settings):
+        config = {
+            "plugins": [
+                {
+                    "name": "bsci",
+                    "module": "plugins/upstream.py",
+                    "settings": dict(recipe_package="bsci", **settings),
+                }
+            ]
+        }
+        return plugins.load_all(config)[0].module
+
+    plugin = config_plugin(skipBelow="1.0.0")
+    found = plugin._kept(
+        [
+            {"version": "26.32.2", "commit": "a"},
+            {"version": "0.4.0", "commit": "b"},
+            {"version": "1.0.0", "commit": "c"},
+        ]
+    )
+    assert [item["version"] for item in found] == ["26.32.2", "1.0.0"]
+    named = config_plugin(skipVersions=["26.32.2"])
+    assert [item["version"] for item in named._kept([{"version": "26.32.2"}])] == []
+    # nothing declared, nothing filtered
+    plain = config_plugin()
+    assert plain._kept([{"version": "0.4.0"}]) == [{"version": "0.4.0"}]
+
+
 def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):
     """Deps that only the project's own xmake.lua names are part of the closure.
 

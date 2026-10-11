@@ -529,17 +529,23 @@ def extra_requires(ctx, repos, extra: list[dict]) -> list[str]:
     lines = []
     for item in extra:
         version = _declared_version(sources, item["name"], item.get("version", ""))
+        if version is None:
+            continue
         spec = f'{item["name"]} {version}'.strip()
         lines.append(f'add_requires("{spec}")')
     return lines
 
 
-def _declared_version(sources: dict[str, Path], name: str, wanted: str) -> str:
-    """The version to ask for, or "" to let xmake pick the newest.
+def _declared_version(sources: dict[str, Path], name: str, wanted: str) -> str | None:
+    """The version to ask for, "" to let xmake choose, or ``None`` to ask for nothing.
 
     A version the recipe spells with a leading ``v`` is asked for that way, and a
-    range (``~1.6.2``) is left to xmake. A version the recipe no longer declares is
-    not asked for at all: xmake resolves the newest one instead.
+    range (``~1.6.2``) is left to xmake. A version the recipe no longer declares
+    means *nothing* is asked for -- deliberately not the newest one: a project
+    pinning an SDK that old is written against its own, and swapping in a current
+    SDK compiles it against something it was never built for. It then fails
+    somewhere further along, or, worse, succeeds and produces an artifact that
+    links a version its own sources never saw.
     """
     if not wanted:
         return ""
@@ -550,8 +556,11 @@ def _declared_version(sources: dict[str, Path], name: str, wanted: str) -> str:
         return wanted
     if f"v{wanted}" in available:
         return f"v{wanted}"
-    util.warn(f"recipe for '{name}' has no version {wanted}; using the newest available")
-    return ""
+    util.warn(
+        f"recipe for '{name}' no longer declares {wanted}; the project's own pin is "
+        f"dropped rather than replaced by a newer SDK"
+    )
+    return None
 
 
 def _find_recipe_dir(sources: dict[str, Path], name: str) -> Path | None:
@@ -652,31 +661,27 @@ def cached_artifact(
 
 
 def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
-    """Rebuild the packages that failed, one by one, before retrying the whole step."""
+    """Report what failed before the step is retried as a whole.
+
+    It used to rebuild every failed package on its own (``xmake require --build
+    <name> <version>``), which looks cheaper and is not: with a spec on the command
+    line xmake resolves a git source by *tag* instead of the commit the recipe
+    pins, so for a package whose tags are named differently ("v0.13.0" upstream,
+    "0.13.0" in the recipe) every one of those retries died in a clone -- hiding the
+    error that actually failed the build, which is the whole point of retrying.
+    The step itself is retried next, and xmake skips what is already installed, so
+    that retry only rebuilds what failed.
+    """
     failed = xmake_env.failed_packages(sandbox)
     if not failed:
         return
     util.log(
-        f"retrying {len(failed)} failed package(s) on their own: "
+        f"{len(failed)} package(s) failed, retrying the step: "
         + ", ".join(f"{name} {version}" for name, version in failed)
     )
-    for name, version in failed:
-        for attempt in range(1, attempts + 1):
-            # Say what is being retried and how it went: a silent retry loop is
-            # indistinguishable from a hang in the log.
-            util.log(f"== retry {name} {version} (attempt {attempt}/{attempts})")
-            single = sandbox.xmake(
-                ["require", "-y", "--build", f"{name} {version}"],
-                stream=True,
-                check=False,
-            )
-            if single.returncode == 0:
-                util.log(f"== retry {name} {version} ok")
-                break
-            util.warn(f"{name} {version} failed (attempt {attempt}/{attempts})")
-            # The reason is in the package's own install log, which lives inside
-            # the sandbox: print it per failed attempt, not only at the end.
-            xmake_env.dump_failed_logs(config, sandbox)
+    # The reason is in the package's own install log, which lives inside the
+    # sandbox: print it per attempt, not only at the end.
+    xmake_env.dump_failed_logs(config, sandbox)
 
 
 def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
