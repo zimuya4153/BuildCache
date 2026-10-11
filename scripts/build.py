@@ -21,6 +21,7 @@ from lib import (  # noqa: E402
     gitops,
     manifest as manifest_lib,
     packer,
+    plan,
     plugins,
     sources,
     util,
@@ -72,8 +73,15 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
         # recipe lookup for a package has to follow the same order.
         repo_order = local_repos + [("xmake-repo", main_repo)]
         requires = [f'add_requires("{require}", {{configs = {_lua_table(configs)}}})']
+        # The project's own file may name a dependency its recipe already pins to
+        # another version; asking for both would build a second SDK nobody uses.
         requires += extra_requires(
-            ctx, repo_order, plugin.call("extra_deps", ctx, args.version, commit) or []
+            ctx,
+            repo_order,
+            plan.extra_deps(
+                plugin, ctx, args.version, commit,
+                _own_recipe_dir(prepared, own),
+            ),
         )
         suffix = "" if use_today else "-era"
         sandbox = xmake_env.create_sandbox(
@@ -165,6 +173,15 @@ def parse_args() -> argparse.Namespace:
 
 def now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _own_recipe_dir(prepared: dict, package: str):
+    """The project's own recipe inside the snapshots this plan builds from."""
+    for _name, (directory, _sha) in (prepared or {}).items():
+        candidate = Path(directory) / "packages" / package[0].lower() / package
+        if (candidate / "xmake.lua").is_file():
+            return candidate
+    return None
 
 
 def published_manifests(config: dict, ctx, results_dir: str = "") -> Path:

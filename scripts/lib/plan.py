@@ -153,13 +153,40 @@ def _version_file(version: str) -> str:
 def dependency_specs(plugin, ctx, version: str, commit: str, recipe_dir) -> list[str]:
     """Every spec that could pull an owned package into this project's build."""
     specs = list(recipe_specs(recipe_dir, version))
-    for item in plugin.call("extra_deps", ctx, version, commit) or []:
+    for item in extra_deps(plugin, ctx, version, commit, recipe_dir):
         name = item.get("name") if isinstance(item, dict) else item
         wanted = item.get("version", "") if isinstance(item, dict) else ""
         specs.append(f"{name} {wanted}".strip())
     for spec in plugin.call("dependency_specs", ctx, version, commit) or []:
         specs.append(str(spec))
     return [spec for spec in specs if spec_name(spec)]
+
+
+def extra_deps(plugin, ctx, version: str, commit: str, recipe_dir) -> list[dict]:
+    """The project's own requires, minus the ones its recipe already declares.
+
+    A project's ``xmake.lua`` names what *it* builds against, and the recipe names
+    what the *package* depends on; when the two disagree, asking for both installs
+    two SDKs. ``more-dimensions`` 0.13.0 pins ``levilamina 1.9.4`` in its own file
+    while its recipe resolves ``>=1.9.2 <1.10.0`` to 1.9.9: the build then
+    downloads 1.9.9 from the cache and compiles a whole 1.9.4 nobody asked for
+    (xmake keeps it as ``levilamina_1``, a second version of the same package).
+
+    The recipe's declaration is the one a consumer resolves, so it is the one that
+    decides; an extra require only survives when the recipe says nothing about it
+    (``bsci`` depends on LeviLamina that way).
+    """
+    declared = {spec_name(spec) for spec in recipe_specs(recipe_dir, version)}
+    found: list[dict] = []
+    for item in plugin.call("extra_deps", ctx, version, commit) or []:
+        if isinstance(item, dict):
+            name = str(item.get("name") or "")
+        else:
+            name, item = str(item), {"name": item}
+        if not name or name.lower() in declared:
+            continue
+        found.append(item)
+    return found
 
 
 def job(config: dict, ctx, plugin, version: str, commit: str, entry: dict) -> dict:

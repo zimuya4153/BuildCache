@@ -345,6 +345,36 @@ def test_the_era_dependency_table_is_read(tmp_path: Path):
     assert plan.recipe_specs(recipe, "0.12.2") == []
 
 
+def test_an_extra_require_the_recipe_already_declares_is_dropped(tmp_path: Path):
+    """A project's own file and its recipe can pin different versions of one SDK.
+
+    `more-dimensions` 0.13.0 names `levilamina 1.9.4` in its own xmake.lua while
+    its recipe resolves to 1.9.9. Asking for both installs both -- xmake keeps the
+    second as `levilamina_1` -- so the build downloads 1.9.9 from the cache and
+    compiles a whole 1.9.4 nobody asked for. The recipe is what a consumer
+    resolves, so it decides; only a dependency the recipe says nothing about (how
+    `bsci` gets LeviLamina) survives.
+    """
+    recipe = tmp_path / "packages" / "m" / "more-dimensions"
+    recipe.mkdir(parents=True)
+    (recipe / "xmake.lua").write_text(
+        'package("more-dimensions")\n'
+        '        ["0.13.*"] = {"levilamina >=1.9.2 <1.10.0"},\n',
+        encoding="utf-8",
+    )
+    pinned = _FakePlugin(
+        "moredimensions", "more-dimensions", extra=[("levilamina", "1.9.4")]
+    )
+    assert plan.extra_deps(pinned, None, "0.13.0", "bbb", recipe) == []
+    assert plan.dependency_specs(pinned, None, "0.13.0", "bbb", recipe) == [
+        "levilamina >=1.9.2 <1.10.0"
+    ]
+    silent = _FakePlugin("bsci", "bsci", extra=[("levilamina", "26.51.0")])
+    assert plan.extra_deps(silent, None, "26.40.0", "ccc", None) == [
+        {"name": "levilamina", "version": "26.51.0"}
+    ]
+
+
 def test_an_sdk_the_ledger_lacks_is_built_ahead_of_its_plugins():
     """A plugin would otherwise compile the whole SDK itself, every round."""
     ll = _levilamina_plugin()
