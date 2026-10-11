@@ -161,6 +161,12 @@ def test_the_build_offers_the_published_manifests_to_xmake(tmp_path: Path, monke
 
     assert repo == sandbox_root / "binary-repo"
     assert manifest.read(repo, "levilamina", "26.51.6")
+    # the directory has to exist even when nothing was written: xmake reads an
+    # existing directory as a repository and anything else as a URL to clone
+    assert repo.is_dir()
+    empty = dict(config)
+    empty["_index_dir"] = str(tmp_path / "no-index")
+    assert build.published_manifests(empty, context).is_dir()
     # a bumped revision says the earlier build is stale: the build is not offered
     # the artifact it would otherwise silently keep reusing
     stale = dict(config)

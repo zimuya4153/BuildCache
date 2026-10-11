@@ -217,6 +217,10 @@ def published_manifests(config: dict, ctx, results_dir: str = "") -> Path:
                 f"this round published {total_fresh} package version(s) that this "
                 f"build can already reuse"
             )
+    # It has to exist even when nothing was written: xmake takes an existing
+    # directory as a repository and anything else as a URL, and then tries to
+    # *clone* it ("execv(git clone ... binary-repo) failed") for every package.
+    util.ensure_dir(directory)
     total = sum(len(versions) for versions in written.values())
     util.log(
         f"precompiled artifacts on offer: {total} package version(s) "
