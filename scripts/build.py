@@ -7,7 +7,6 @@ sandbox, then exported, packed and published as precompiled artifacts.
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 from datetime import datetime, timezone
@@ -20,10 +19,9 @@ from lib import (  # noqa: E402
     gh,
     git_shim,
     gitops,
+    manifest as manifest_lib,
     packer,
     plugins,
-    recipefix,
-    repos,
     sources,
     util,
     xmake_env,
@@ -32,7 +30,7 @@ from lib import (  # noqa: E402
 
 def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
                xmake_version, commit, require, configs, entry, proxy,
-               recipe_cutoff: str, git_cutoff: str, plans: list[tuple[bool, str]]):
+               recipe_cutoff: str, git_cutoff: str, binary_repo, plans: list[tuple[bool, str]]):
     """Build the closure in the first sandbox that configures and exports.
 
     A plan is ``(use_today, label)``. The first one takes the dependencies from
@@ -51,7 +49,6 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
     """
     own = plugin.call("metadata")["package"]
     overlay = (f"packages/{own[0].lower()}/{own}",)
-    empty_repo = util.ensure_dir(util.sandbox_root(config) / "empty-repo")
     attempts = int(config.get("xmake", {}).get("installRetries", 3))
     last = "nothing to try"
 
@@ -87,7 +84,7 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
             toolchain=None if toolchain == "msvc" else toolchain,
             repositories=local_repos,
             main_repo=main_repo,
-            binary_repo=empty_repo,
+            binary_repo=binary_repo,
             extra_lua="\n".join(requires),
         )
         git_shim.install(config, sandbox.env, git_cutoff)
@@ -156,12 +153,76 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--keep-sandbox", action="store_true")
     parser.add_argument("--proxy", default=None)
     parser.add_argument("--results", default="results", help="directory for build-result JSON files")
+    parser.add_argument(
+        "--dependency-results",
+        default="",
+        help="directory of build results to reuse: the SDK stage's output, when this "
+        "job depends on a package another job in the same round just published",
+    )
     parser.add_argument("--shared-cache", default=".work/pkgcache", help="reused xmake package cache")
     return parser.parse_args()
 
 
 def now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def published_manifests(config: dict, ctx, results_dir: str = "") -> Path:
+    """A local repository of every artifact this cache has already published.
+
+    xmake resolves a precompiled artifact by looking for
+    ``packages/<letter>/<package>/<version>/manifest.txt`` in *every* repository it
+    has loaded (``artifacts_manifest()``), so a sandbox that carries the recipe
+    snapshots only never sees ours -- and then compiles the whole closure from
+    source, once per project, every round. LeviLamina is the dependency every
+    plugin shares, so the cost lands on each of them.
+
+    The manifests are generated from the ledger, i.e. from the same data
+    ``finalize`` publishes, and handed over as xmake's *binary* repository. That
+    is also what keeps the official precompiled mirror out of the picture: one
+    repository, and it is ours.
+
+    A ledger that cannot be read (a network hiccup) leaves an empty repository
+    behind, which is the behaviour this used to have: everything compiles.
+
+    Only entries of the *current* revision are offered: a bumped revision says
+    every earlier build is stale, and handing xmake the older artifact would
+    quietly undo that.
+
+    ``results_dir`` adds the artifacts a *job of this round* has just published.
+    The ledger cannot know about them yet -- ``finalize`` writes it at the end --
+    and a job cannot see another job's files, but the workflow hands its build
+    results over, and those carry exactly what a manifest needs.
+    """
+    directory = util.sandbox_root(config) / "binary-repo"
+    util.rmtree(directory)
+    try:
+        ctx.ensure_index()
+        written = manifest_lib.write_repo(
+            ctx.index_root, directory, revision=int(config.get("revision", 1))
+        )
+    except Exception as error:  # noqa: BLE001 - the build goes on without reuse
+        util.warn(f"cannot read the ledger, nothing precompiled will be reused: {error}")
+        util.ensure_dir(directory)
+        return directory
+    if results_dir:
+        results = [
+            util.read_json(path, None)
+            for path in sorted(Path(results_dir).glob("build-result-*.json"))
+        ]
+        fresh = manifest_lib.write_results(results, directory)
+        if fresh:
+            total_fresh = sum(len(versions) for versions in fresh.values())
+            util.log(
+                f"this round published {total_fresh} package version(s) that this "
+                f"build can already reuse"
+            )
+    total = sum(len(versions) for versions in written.values())
+    util.log(
+        f"precompiled artifacts on offer: {total} package version(s) "
+        f"in {len(written)} package(s)"
+    )
+    return directory
 
 
 def main() -> int:
@@ -209,23 +270,26 @@ def main() -> int:
     if skip:
         util.log(f"skip {args.version}: {reason}")
         return 0
-    upstream_package = plugin.call("metadata")["package"]
+    own_package = plugin.call("metadata")["package"]
     # Packages are built and published under their own names: the repository we
-    # publish holds manifests only, so a consumer resolving the upstream package
-    # finds our archive without a copy of the recipe being involved.
-    require = f"{upstream_package} {args.version}"
+    # publish holds manifests only, so a consumer resolving that name finds our
+    # archive without a copy of the recipe being involved.
+    require = f"{own_package} {args.version}"
     util.log("entry: " + entry["id"] + "  configs: " + str(configs))
 
     cutoff_for_recipes = plugin.call("recipe_cutoff", ctx, args.version, commit)
     changed = sources.sources_changed(config, ctx, cutoff_for_recipes)
     plans = [(True, args.version)] if not changed else [(True, args.version), (False, args.version)]
+    # What the cache has already published, handed to xmake as its binary
+    # repository: a dependency then installs instead of being compiled again.
+    binary_repo = published_manifests(config, ctx, args.dependency_results)
     sandbox, prepared, recipe_commits, used_today, repo_order = build_once(
         config, ctx, plugin, args,
         plat=plat, arch=arch, toolchain=toolchain, vs_toolset=vs_toolset,
         xmake_version=xmake_version, commit=commit, require=require, configs=configs,
         entry=entry, proxy=proxy,
         recipe_cutoff=cutoff_for_recipes, git_cutoff=cutoff,
-        plans=plans,
+        binary_repo=binary_repo, plans=plans,
     )
 
     util.log_step("publish artifacts")
@@ -249,6 +313,7 @@ def main() -> int:
             config, ctx, plugin, args, plat, arch, toolchain, vs_toolset,
             commit=commit, dry_run=args.dry_run,
             specs=plugin.call("dependency_specs", ctx, args.version, commit) or [],
+            binary_repo=binary_repo,
         )
     )
     if deps:
@@ -269,7 +334,7 @@ def main() -> int:
 
 
 def build_dependency_pass(config, ctx, plugin, args, plat, arch, toolchain, vs_toolset,
-                          *, commit, dry_run, specs) -> list[dict]:
+                          *, commit, dry_run, specs, binary_repo=None) -> list[dict]:
     """Publish the dependencies at the addresses a *consumer* resolves.
 
     The era build uses the recipes of the version's own date. That is what the
@@ -306,7 +371,7 @@ def build_dependency_pass(config, ctx, plugin, args, plat, arch, toolchain, vs_t
             toolchain=None if toolchain == "msvc" else toolchain,
             repositories=local_repos,
             main_repo=main_repo,
-            binary_repo=util.ensure_dir(util.sandbox_root(config) / "empty-repo"),
+            binary_repo=binary_repo or published_manifests(config, ctx),
             extra_lua="\n".join(f'add_requires("{spec}")' for spec in specs),
         )
         result = sandbox.configure(toolchain, vs_toolset, plat, arch, stream=True, check=False)
@@ -366,10 +431,9 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
                 util.log(f"skip configured tool package: {name}")
                 continue
             # Packages keep their own names: the repository we publish holds
-            # manifests only, so a consumer resolving the upstream package finds
-            # our archive (xmake looks the manifest up by the resolved name, in
-            # every repository) without carrying a copy of the recipe.
-            published_name = name
+            # manifests only, so a consumer resolving that name finds our archive
+            # (xmake looks the manifest up by the resolved name, in *every*
+            # repository) without carrying a copy of the recipe.
             for version_dir in sorted(package_dir.iterdir()):
                 if not version_dir.is_dir():
                     continue
@@ -380,7 +444,10 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
                     artifact = _publish_one(
                         config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
                         name, version, hash_dir, plat, arch,
-                        toolset_for_key(vs_toolset, name),
+                        # The manifest's toolset field is compared against a
+                        # consumer's VCToolsVersion, so it records the toolset the
+                        # build really used.
+                        vs_toolset,
                         repo_order=repo_order or [], commit=commit, toolchain=toolchain,
                         root_package=package_name,
                         target_branch=target_branch, dry_run=dry_run, force=force,
@@ -396,7 +463,6 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
         "configs": configs,
         "revision": int(config.get("revision", 1)),
         "upstream_commit": commit,
-        "entry": entry["id"],
         "xmake_version": xmake_version,
         "toolchain": toolchain,
         "upstream_toolchain": upstream_toolchain,
@@ -407,11 +473,6 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
         "built_at": now(),
         "artifacts": artifacts,
     }
-
-
-def toolset_for_key(vs_toolset: str | None, package: str) -> str | None:
-    """The manifest toolset field is compared against a consumer's VCToolsVersion."""
-    return vs_toolset
 
 
 def extra_requires(ctx, repos, extra: list[dict]) -> list[str]:
@@ -585,8 +646,6 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
                  name, version, hash_dir, plat, arch, toolset,
                  repo_order=None, commit="", toolchain="msvc", root_package="",
                  target_branch=None, dry_run=False, force=False) -> dict | None:
-    from lib import manifest as manifest_lib
-
     if not should_publish(name, root_package, hash_dir):
         # A dependency with nothing compiled in it: an archive would save a
         # consumer nothing, so it does not get one.
@@ -636,16 +695,15 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         release = f"{name}_dry_run"
         url = f"file://{archive.as_posix()}"
     else:
-        # Shards and their tags are named after the *upstream* package: the
-        # prefix only exists to keep published package names distinct, it has no
-        # business showing up in release tags or titles.
+        # A shard and its tag are named after the package, because the tag is an
+        # address: the version, the entry and the hash all live in the index and
+        # the release body instead of in a longer name.
         release = gh.assign_release(name, [asset], owner, repo, max_assets, config=config)
         gh.ensure_release(owner, repo, release, target=target_branch, config=config)
         gh.upload_asset(owner, repo, release, archive, config=config)
         url = gh.asset_url(owner, repo, release, asset)
     return {
         "package": name,
-        "upstream_package": name,
         "version": version,
         "buildhash": hash_dir.name,
         "key": key,

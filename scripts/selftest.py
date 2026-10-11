@@ -64,7 +64,6 @@ def main() -> int:
         f"(built with {toolchain}, toolset {toolset})"
     )
 
-    source = config["recipes"]["sources"]
     main_snapshot = _snapshot(config, ctx, "xmake-repo", proxy)
     levimc_snapshot = _snapshot(config, ctx, "levimc-repo", proxy)
     published = _published_repo(config, ctx, proxy)

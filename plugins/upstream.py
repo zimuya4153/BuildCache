@@ -12,7 +12,7 @@ means writing framework code:
     "upstream_repo": "LiteLDev/MoreDimensions",
     "recipe_source": "levimc-repo",
     "recipe_package": "more-dimensions",
-    "variants": [{"name": "default", "configs": {}}]
+    "entries": [{"id": "default", "configs": {}}]
   }
 }
 ```
@@ -163,6 +163,58 @@ class _UpstreamPlugin:
             if name in wanted:
                 found[name] = parts[1] if len(parts) > 1 else ""
         return [{"name": name, "version": version} for name, version in sorted(found.items())]
+
+    def recipe_dir(self, ctx, version: str, commit: str):
+        """Where this project's recipe lives, so a round can read its dependencies."""
+        try:
+            return self._recipe_dir(ctx)
+        except RuntimeError:
+            return None
+
+    def repair_recipes(self, config, source_name: str, snapshot) -> list[str]:
+        """Apply the ``recipeEdits`` this project declares.
+
+        An upstream recipe is written against the project's own build, and one of
+        them can simply not work: ``more-dimensions`` asks xmake to
+        ``import("package.tools.*make")``, and a module name *is* a path in
+        xmake's importer -- it maps the dots to separators and looks for that file,
+        so no version resolves a wildcard there. The install dies with "cannot
+        import module: ... not found!" before a single file is compiled, which is
+        why the package never had an artifact.
+
+        The edit is project knowledge, so it is declared in ``config.json`` under
+        this plugin and applied to *our* snapshot only. None of it reaches a
+        consumer: the published repository carries manifests and no recipes, and a
+        package's build hash comes from the source commit, not from recipe text.
+        """
+        edits = self.settings.get("recipeEdits") or []
+        package = self.settings["recipe_package"]
+        if not edits or source_name != self.settings.get("recipe_source"):
+            return []
+        recipe = (
+            Path(snapshot) / "packages" / package[0].lower() / package / "xmake.lua"
+        )
+        if not recipe.is_file():
+            return []
+        text = util.read_text(recipe)
+        notes: list[str] = []
+        for edit in edits:
+            find = str(edit.get("find") or "")
+            replace = str(edit.get("replace") or "")
+            if not find:
+                continue
+            if find not in text:
+                # Either the recipe was fixed upstream, or the declaration no
+                # longer matches: both are worth hearing about.
+                util.warn(
+                    f"{package}: declared recipe edit does not apply ({find!r})"
+                )
+                continue
+            text = text.replace(find, replace)
+            notes.append(f"{package}: repaired recipe ({find!r} -> {replace!r})")
+        if notes:
+            util.write_text(recipe, text)
+        return notes
 
     def asset_name(self, ctx, package: str, version: str, toolset, build_hash: str, container: str):
         """Optional ``assetName`` template from the settings, e.g. ``"{version}-{hash}.7z"``."""

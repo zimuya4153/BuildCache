@@ -35,12 +35,12 @@ packages/<首字母>/<包名>/<版本>/manifest.txt
 | `index` 分支 | 生成物：`<包名>/index.json`、`<包名>/versions/<版本>.json` |
 | `assets` 分支 | 空分支，只作为 release tag 的落点，避免污染 main 的 tag |
 | GitHub Releases | 产物本体，按 `<包名>_<序号>` 分片（每片 ≤800 asset）；asset 名形如 `<原库名>-<buildhash>.7z`，release body 里是**直接下载直链** |
-| `zimuya4153/xmake-repo` | **只有 manifest**，没有配方。<br>xmake 找 manifest 用的是 `repository.artifacts_manifest(name, version)`：按**正在解析的包名**在**所有**仓库里找 `packages/<包名>/<版本>/manifest.txt`，所以配方来自官方仓库、产物来自我们这边 —— 消费端写 `add_requires("levilamina 1.4.4")` 就直接命中预编译产物，包名与依赖都不需要改。没有 manifest 的包＝消费端按官方配方自行编源码 |
+| `MiracleForest/xmake-repo` | **只有 manifest**，没有配方。<br>xmake 找 manifest 用的是 `repository.artifacts_manifest(name, version)`：按**正在解析的包名**在**所有**仓库里找 `packages/<包名>/<版本>/manifest.txt`，所以配方来自官方仓库、产物来自我们这边 —— 消费端写 `add_requires("levilamina 1.4.4")` 就直接命中预编译产物，包名与依赖都不需要改。没有 manifest 的包＝消费端按官方配方自行编源码 |
 
 ## 4. 快速开始（本机）
 
 ```bash
-# 依赖：Python 3.14+、已登录的 gh CLI；第三方包（semver）首次运行会自动 pip 安装
+# 依赖：Python 3.14+、已登录的 gh CLI；第三方包（semver / pydantic / pytest）首次运行会自动 pip 安装
 python scripts/cache.py trigger --plugin ll --first-only --local   # 编一个版本并发布
 python scripts/cache.py verify               # 校验「索引 ↔ 线上 asset」一致
 cd tests/consumer && xmake f -y -p windows -a x64 -m release      # 消费端验证
@@ -55,7 +55,7 @@ cd tests/consumer && xmake f -y -p windows -a x64 -m release      # 消费端验
 
 ```lua
 add_repositories("levimc-repo https://github.com/LiteLDev/xmake-repo.git")
-add_repositories("llsdk https://github.com/zimuya4153/xmake-repo.git")
+add_repositories("llsdk https://github.com/MiracleForest/xmake-repo.git")
 
 set_toolchains("msvc")     -- 写在工程文件里才会命中缓存（原因见下表）
 set_runtimes("MD")
@@ -95,7 +95,11 @@ msvc 工具链，而它的预编译选择逻辑要求「存在已 check、带 vc
 | `configs(ctx, version, commit)` | 单条目项目的默认 configs |
 | `xmake_version` / `toolchain` / `native_toolchain` | 用哪个 xmake、用哪个工具链编缓存 |
 | `toolchain_aliases(ctx, version, commit)` | 产物还能被哪些消费端工具链使用：`[{"id": "clang-cl", "toolchain": "clang-cl"}]`，命中同一份压缩包、只补 manifest 条目；只声明这个版本真的支持的那些（见下） |
-| `recipe_cutoff` / `git_cutoff` | 配方快照与「未锁版本的 git clone 回退到的日期」 |
+| `toolchain_plan(ctx, version, commit)` | 这个年代要哪台 CI 镜像（`image`）与 `vs_toolset`；`discover` 把它写进矩阵，`should_skip` 用它判断当前镜像/本机能不能编 |
+| `dependency_specs(ctx, version, commit)` | 消费端解析这个版本时拿到的那串依赖；年代 xmake 读不了今天的配方时，用它 + 当前 xmake 补编一遍依赖（见 §8） |
+| `register_release_columns(table, ctx)` | 往 release body / `cache.py list` 的表格里注册项目自己的列；两处共用同一张表，空列不渲染 |
+| `repair_recipes(config, source, snapshot)` | 项目特有的配方修复（历史版本号、上游改名等），在通用修复之后运行 |
+| `recipe_cutoff` / `git_cutoff` | 配方快照与「未锁版本的 git clone 回退到的日期」；偏移量分别是 `recipes.cutoffOffsetDays` 与 `gitShim.offsetDays`（默认都是 3 天） |
 | `extra_deps(ctx, version, commit)` | 只在上游自身 `xmake.lua` 里出现的依赖（`extra_packages` 名单内的）：既注入消费端配方，也**在构建时顶层 require**，否则只声明不编译，消费端每次都得自己编 |
 | `asset_name(...)` | 自定义 asset 文件名（默认 `<原库名>-<buildhash>.<ext>`） |
 | `should_skip` / `report_skipped` | 过滤与报表 |
@@ -191,21 +195,46 @@ cache.py trigger --plugin ll --entry client --local   # 只编某个条目
    因为 CMake 拒绝超过 250 字符的目标文件路径）。
 3. PATH 前置 git shim：把**未锁版本**的 clone 回退到该版本发布日期之前；已由配方锁定
    commit 的包不受影响。
-4. `xmake require --export` 导出整棵闭包，逐个打包为 `<字母>/<包名>/<版本>/<hash>/`；
+4. 沙箱里放一份**由账本生成**的 manifest 仓库（`<沙箱根>/binary-repo`），把它当作 xmake 的
+   binary repository。xmake 找预编译产物是「在**所有**已加载仓库里找
+   `packages/<包名>/<版本>/manifest.txt`」，所以少了它连依赖都会重新编：LL 是每个 LL 插件
+   共用的依赖 = 每个插件每一轮都重编一次整个 SDK。有了它，依赖按 buildhash 命中就直接下载
+   安装（同一份 manifest 生成器也供 `finalize` 用，两边不会跑偏）。
+5. `xmake require --export` 导出整棵闭包，逐个打包为 `<字母>/<包名>/<版本>/<hash>/`；
    只下载/复制文件的依赖跳过（没有编译器产出就没有可省的时间），工程自己的包必打。
    打包前先查账本：`(包, 版本, buildhash)` 已经在缓存里、且 revision 未变，就直接
    复用已有产物，不重新打包也不重传（buildhash 就是一次构建的身份）。要强制重做就
    把 `config.json` 的 `revision` 加一。压缩包**不写时间戳**，所以同一个包任何一次
    重打包都是同一份字节，manifest 里的 sha256 不会指向"另一次上传"。
-5. 为每个产物离线重算其它消费工具链的 buildhash，作为 manifest 别名记进索引。
-6. 上传分片、写索引；`finalize` 从索引重生成 manifest（含别名）、刷新 release body、
+6. 为每个产物离线重算其它消费工具链的 buildhash，作为 manifest 别名记进索引。
+7. 上传分片、写索引；`finalize` 从索引重生成 manifest（含别名）、刷新 release body、
    校验一致性。
+
+### 两阶段：SDK 先编，插件复用
+
+LL 插件都依赖 `levilamina`，如果插件轮自己编 LL，就是"每个插件、每一轮都重编一遍整个
+SDK"。所以 `discover` 在排队列时会先**把依赖版本提取出来**：读配方的 `add_deps` 与
+版本相关的 `dependencies` 表（`["0.13.*"] = {"levilamina >=1.9.2 <1.10.0"}` 这种），
+再加上上游工程自己 `xmake.lua` 里 require 的包（`extra_deps`），只保留**属于我们自己
+插件的包**（`plugins.project_packages`），按 owner 配方的版本列表解析出真正会用的版本；
+如果账本里还没有该版本的产物，就把 **owner 插件自己的 job 排到前面去**（同一个版本只排
+一次，多个依赖方共用），依赖方放进第二阶段。
+
+工作流因此是 `build` → `build-dependents` → `finalize`：前者产出 SDK 产物，第二阶段的 job
+把前者的 `build-result-*.json`（workflow artifact）下载下来，用
+`manifest.write_results` 合成一份 manifest 仓库交给 xmake —— job 之间看不到彼此的
+文件，但能看到彼此发布的产物。
+
+拿不准的一律**不排**（例如 `~`/`^` 这种我们不复刻的约束、解析不出 owner 版本的、动态加的
+依赖）：依赖方留在第一阶段，按老办法把没发布的那部分自己编掉并作为依赖记录发布。方向是
+安全的——任何情况下都往前走，不存在"等一个永远对不上的 hash"。
 
 ## 9. CI
 
 `.github/workflows/build.yml`：`discover → build(矩阵) → finalize(串行)`。
-需要的 secret 只有一个 `PACKAGE_REPO_TOKEN`（写第二个仓库用）。定时触发默认关掉
-（`schedule` 被注释），一轮很贵、由人手动 `gh workflow run` 发起。
+需要的 secret 只有一个 `PACKAGE_REPO_TOKEN`（写第二个仓库用）。定时触发每 4 小时一轮
+（`schedule`），改 `config.json` 也会触发一轮；一轮很贵，只想编某个版本时用
+`gh workflow run build.yml -f version=<版本>`。
 一轮的验收就是 `finalize` 里的 `verify`：索引里每个产物的 url/sha256 与线上 release
 逐一比对，对不上会把条目重新排队（见 §8）。
 
@@ -233,7 +262,7 @@ python scripts/selftest.py --component levilamina --toolchain clang-cl
 * **commit**：`gitops` 给每个提交加 `-c user.name/-c user.email`，用的就是上面两行。
 * **release / issue / API**：归属由**用的 token**决定。用默认的 `secrets.GITHUB_TOKEN`
   时，release 会显示为 `github-actions[bot]`；不要设置 `BUILDCACHE_BOT_TOKEN` 就保持这个效果。
-* 只有**推送第二个仓库**（`zimuya4153/xmake-repo`）必须用 PAT（`PACKAGE_REPO_TOKEN`），
+* 只有**推送第二个仓库**（`MiracleForest/xmake-repo`）必须用 PAT（`PACKAGE_REPO_TOKEN`），
   那次推送会归属到该 PAT 的持有者——想让它也显示成 bot，就用一个 bot 账号的 PAT，
   并把 `BUILDCACHE_BOT_TOKEN` 指向它（`util.subprocess_env` 会把它设成 `GH_TOKEN`）。
 

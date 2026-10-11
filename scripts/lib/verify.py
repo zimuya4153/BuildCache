@@ -99,8 +99,9 @@ def adopt_published_digests(config: dict, index_root: Path) -> list[dict]:
     One dependency can be built by more than one job: the server and the client
     entry of the same version share their whole dependency closure, i.e. the same
     build hash and therefore the same asset name. The archives are not byte
-    identical (an archive carries timestamps, and so do the object files inside
-    it), the upload clobbers, and whichever job finished last wins.
+    identical -- packing writes no timestamps, but the object files inside carry
+    their own build metadata -- so the upload clobbers and whichever job finished
+    last wins.
 
     The loser's digest is what its build result records, so an index built from
     those results would describe a file that no longer exists -- and because

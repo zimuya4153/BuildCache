@@ -33,6 +33,9 @@ on:
         description: ignore what is already published
         type: boolean
         default: false
+      finalize_only:
+        description: only run finalize, against the results of this earlier run id (no build)
+        default: ""
 
 permissions:
   contents: write
@@ -48,6 +51,7 @@ jobs:
     runs-on: windows-latest
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
+      dependents: ${{ steps.discover.outputs.dependents }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -122,9 +126,56 @@ jobs:
           path: results/build-result-*.json
           if-no-files-found: ignore
 
+  # The second stage: the jobs whose SDK dependency is being built by the stage
+  # above (see lib/plan.py). It waits for that stage so the artifacts exist, and
+  # turns its build results into the manifests xmake reads -- a job cannot see
+  # another job's files, but it can read what it published.
+  build-dependents:
+    needs: [discover, build]
+    if: always() && needs.build.result != 'cancelled' && needs.discover.outputs.dependents != '[]'
+    runs-on: ${{ matrix.image || 'windows-latest' }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJson(needs.discover.outputs.dependents) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Setup LLVM
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: build-result-*
+          merge-multiple: true
+          path: dependency-results
+      - name: Build ${{ matrix.package }} ${{ matrix.version }}
+        timeout-minutes: 180
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/build.py --plugin "${{ matrix.plugin }}" `
+            --version "${{ matrix.version }}" `
+            --entry "${{ matrix.entry }}" `
+            --commit "${{ matrix.commit }}" `
+            --dependency-results dependency-results `
+            ${{ matrix.vs_toolset && format('--vs-toolset={0}', matrix.vs_toolset) || '' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          # A different prefix: this matrix has its own indexes, and finalize
+          # collects everything that starts with "build-result-".
+          name: build-result-dep-${{ matrix.plugin }}-${{ strategy.job-index }}
+          path: results/build-result-*.json
+          if-no-files-found: ignore
+
   finalize:
-    needs: build
-    if: always() && needs.build.result != 'skipped'
+    needs: [build, build-dependents]
+    if: always() && (needs.build.result != 'skipped' || needs.build-dependents.result != 'skipped' || inputs.finalize_only != '')
     runs-on: windows-latest
     concurrency:
       group: buildcache-finalize
@@ -135,10 +186,24 @@ jobs:
         with:
           python-version: "3.14"
       - uses: actions/download-artifact@v4
+        if: inputs.finalize_only == ''
         with:
           pattern: build-result-*
           merge-multiple: true
           path: results
+      # Nothing was built here: take the results of the round given as input, so
+      # the last step can be re-run (a credential fix, say) without recompiling.
+      - name: Take the results of that round
+        if: inputs.finalize_only != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run download "${{ inputs.finalize_only }}" --repo "${{ github.repository }}" `
+            --pattern "build-result-*" --dir downloaded
+          New-Item -ItemType Directory -Force -Path results | Out-Null
+          Get-ChildItem -Path downloaded -Recurse -Filter "build-result-*.json" |
+            Move-Item -Destination results
       - name: Configure git
         run: |
           # The scripts also pass -c user.name/-c user.email from config.json;

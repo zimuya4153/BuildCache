@@ -2,7 +2,7 @@
 
 The sequence — mirror the repository, check it out at the era's cutoff, overlay
 our fixups, let the plugin repair project-specific problems, refresh the
-generic repairs — used to be written out three times (build, vendoring, the
+generic repairs — used to be written out in more than one place (the build and the
 consumer self-test). Any change to the order had to be made in all of them,
 which is exactly the kind of drift that produces "works in one path, not the
 other" bugs. It lives here now.
@@ -42,7 +42,7 @@ def prepare(
     the sources were taken at.
     """
     env = env or util.subprocess_env(config, proxy=getattr(ctx, "proxy", None))
-    root = util.absolute(config.get("_vendor_root", ".vendor"))
+    root = util.absolute(config.get("_snapshot_root", ".snapshots"))
     mode = str(config.get("recipes", {}).get("snapshotMode", "version"))
     prepared: dict[str, tuple[Path, str]] = {}
 

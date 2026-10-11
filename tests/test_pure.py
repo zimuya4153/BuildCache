@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import build  # noqa: E402
+import cache  # noqa: E402
 import discover  # noqa: E402
 import finalize  # noqa: E402
 from lib import (  # noqa: E402
@@ -21,6 +22,7 @@ from lib import (  # noqa: E402
     hashprobe,
     index_store,
     manifest,
+    plan,
     plugins,
     recipefix,
     reports,
@@ -81,8 +83,96 @@ def test_manifest_round_trip(tmp_path: Path):
     entries = {
         "windows-x64-vc-abc": {"toolset": "14.44", "urls": "https://x/a.7z", "sha256": "ff" * 32}
     }
-    manifest.write_all(tmp_path, "mifcache_fmt", "11.2.0", entries)
-    assert manifest.read(tmp_path, "mifcache_fmt", "11.2.0") == entries
+    manifest.write_all(tmp_path, "fmt", "11.2.0", entries)
+    assert manifest.read(tmp_path, "fmt", "11.2.0") == entries
+
+
+def test_manifests_are_generated_from_the_ledger(tmp_path: Path):
+    """The repo a build hands xmake and the one a consumer reads are one generator."""
+    index_root = tmp_path / "index"
+    repo = tmp_path / "binary-repo"
+    artifact = {
+        "package": "levilamina",
+        "version": "26.51.6",
+        "buildhash": "ee1902dd",
+        "key": "windows-x64-vc-ee1902dd",
+        "toolset": "14.44.35207",
+        "url": "https://example.invalid/levilamina.7z",
+        "sha256": "ab" * 32,
+        "aliases": [
+            {
+                "id": "clang-cl",
+                "buildhash": "df51e1a2",
+                "key": "windows-x64-vc-df51e1a2",
+                "toolset": "14.44.35207",
+            }
+        ],
+    }
+    index_store.write_entry(
+        index_root, "levilamina", "26.51.6", "server", {"revision": 1, "artifacts": [artifact]}
+    )
+
+    written = manifest.write_repo(index_root, repo)
+
+    assert written == {"levilamina": {"26.51.6"}}
+    entries = manifest.read(repo, "levilamina", "26.51.6")
+    assert set(entries) == {"windows-x64-vc-ee1902dd", "windows-x64-vc-df51e1a2"}
+    # one archive, two addresses: the alias points at the same bytes
+    assert entries["windows-x64-vc-df51e1a2"] == entries["windows-x64-vc-ee1902dd"]
+
+
+def test_the_build_offers_the_published_manifests_to_xmake(tmp_path: Path, monkeypatch):
+    """A dependency installs from the cache instead of being compiled again.
+
+    xmake looks a manifest up in every repository it loaded, so the sandbox gets a
+    repository generated from the ledger; without it LeviLamina is rebuilt once
+    per plugin, every round.
+    """
+    config = dict(util.load_config())
+    sandbox_root = tmp_path / "sandbox"
+    index_root = tmp_path / "index"
+    config["paths"] = {"sandboxRoot": str(sandbox_root)}
+    config["_index_dir"] = str(index_root)
+    revision = int(config["revision"])
+    index_store.write_entry(
+        index_root,
+        "levilamina",
+        "26.51.6",
+        "server",
+        {
+            "revision": revision,
+            "artifacts": [
+                {
+                    "package": "levilamina",
+                    "version": "26.51.6",
+                    "buildhash": "ee1902dd",
+                    "key": "windows-x64-vc-ee1902dd",
+                    "toolset": "14.44.35207",
+                    "url": "https://example.invalid/levilamina.7z",
+                    "sha256": "ab" * 32,
+                }
+            ],
+        },
+    )
+    context = plugins.Context(config)
+    monkeypatch.setattr(plugins.Context, "ensure_index", lambda self, create=False: self.index_root)
+
+    repo = build.published_manifests(config, context)
+
+    assert repo == sandbox_root / "binary-repo"
+    assert manifest.read(repo, "levilamina", "26.51.6")
+    # a bumped revision says the earlier build is stale: the build is not offered
+    # the artifact it would otherwise silently keep reusing
+    stale = dict(config)
+    stale["revision"] = revision + 1
+    assert manifest.read(build.published_manifests(stale, context), "levilamina", "26.51.6") == {}
+    # a ledger that cannot be read leaves an empty repository behind, i.e. the
+    # behaviour this had before: everything is compiled
+    monkeypatch.setattr(
+        plugins.Context, "ensure_index", lambda self, create=False: (_ for _ in ()).throw(OSError())
+    )
+    assert build.published_manifests(config, context) == repo
+    assert manifest.read(repo, "levilamina", "26.51.6") == {}
 
 
 def test_build_id_matches_xmake_contract():
@@ -95,41 +185,267 @@ def test_build_id_matches_xmake_contract():
 # ------------------------------------------------------------------ index/store
 def test_revision_gates_rebuilds(tmp_path: Path):
     index_store.write_entry(
-        tmp_path, "mifcache_fmt", "11.2.0", "server", {"revision": 1, "artifacts": []}
+        tmp_path, "fmt", "11.2.0", "server", {"revision": 1, "artifacts": []}
     )
-    assert index_store.built_entries_at_revision(tmp_path, "mifcache_fmt", "11.2.0", 1) == {"server"}
+    assert index_store.built_entries_at_revision(tmp_path, "fmt", "11.2.0", 1) == {"server"}
     # a fix bumps the config revision -> the entry counts as stale again
-    assert index_store.built_entries_at_revision(tmp_path, "mifcache_fmt", "11.2.0", 2) == set()
+    assert index_store.built_entries_at_revision(tmp_path, "fmt", "11.2.0", 2) == set()
 
 
-def test_legacy_variant_documents_still_read(tmp_path: Path):
+def test_a_document_written_before_entries_were_named_still_reads(tmp_path: Path):
+    """Documents used `variants` before the entry dimension got its name."""
     util.write_json(
-        tmp_path / "mifcache_fmt" / "versions" / "11.2.0.json",
-        {"package": "mifcache_fmt", "version": "11.2.0", "artifacts": [{"key": "k"}]},
+        tmp_path / "fmt" / "versions" / "11.2.0.json",
+        {"package": "fmt", "version": "11.2.0", "variants": {"default": {"artifacts": []}}},
     )
-    meta = index_store.version_meta(tmp_path, "mifcache_fmt", "11.2.0")
+    meta = index_store.version_meta(tmp_path, "fmt", "11.2.0")
     assert "default" in index_store.entries(meta)
+
+
+def test_a_document_without_any_entry_is_empty_not_invented(tmp_path: Path):
+    """Nothing generic may guess what a package's entries were called.
+
+    A record that only carries top-level artifacts predates the entry dimension,
+    and inventing one there would have to name a *project's* concept (LeviLamina's
+    ``target_type``) for every package in the ledger.
+    """
+    util.write_json(
+        tmp_path / "fmt" / "versions" / "11.2.0.json",
+        {"package": "fmt", "version": "11.2.0", "artifacts": [{"key": "k"}]},
+    )
+    meta = index_store.version_meta(tmp_path, "fmt", "11.2.0")
+    assert index_store.entries(meta) == {}
+    assert index_store.all_artifacts(meta) == []
 
 
 def test_entry_keeps_the_profiles_it_was_built_for(tmp_path: Path):
     """`discover` compares the declared profiles against what an entry records."""
     index_store.write_entry(
         tmp_path,
-        "mifcache_levilamina",
+        "levilamina",
         "26.51.6",
         "server",
         {"revision": 1, "alias_profiles": ["msvc", "clang-cl"], "artifacts": []},
     )
     assert index_store.built_entries_with_profiles(
-        tmp_path, "mifcache_levilamina", "26.51.6", 1, ["msvc", "clang-cl"]
+        tmp_path, "levilamina", "26.51.6", 1, ["msvc", "clang-cl"]
     ) == {"server"}
     # a plugin that starts declaring another profile queues the entry again
     assert (
         index_store.built_entries_with_profiles(
-            tmp_path, "mifcache_levilamina", "26.51.6", 1, ["msvc", "clang-cl", "gcc"]
+            tmp_path, "levilamina", "26.51.6", 1, ["msvc", "clang-cl", "gcc"]
         )
         == set()
     )
+
+
+class _FakePlugin:
+    """A plugin with the hooks a plan reads; the real ones talk to mirrors."""
+
+    def __init__(self, name, package, *, versions=(), entries=(), specs=(), extra=(),
+                 skip=(False, "")):
+        self.name = name
+        self._package = package
+        self._versions = list(versions)
+        self._entries = list(entries)
+        self._specs = list(specs)
+        self._extra = list(extra)
+        self._skip = skip
+
+    def call(self, function, *args, **kwargs):
+        if function == "metadata":
+            return {"package": self._package}
+        if function == "list_versions":
+            return [
+                {"version": item["version"], "commit": item.get("commit", "")}
+                for item in self._versions
+            ]
+        if function == "extra_deps":
+            return [{"name": name, "version": version} for name, version in self._extra]
+        if function == "dependency_specs":
+            return list(self._specs)
+        if function == "should_skip":
+            return self._skip
+        if function == "recipe_dir":
+            return None
+        if function == "toolchain_plan":
+            return {}
+        return None
+
+    def entries(self, ctx, version, commit):
+        return list(self._entries)
+
+
+def _levilamina_plugin():
+    return _FakePlugin(
+        "ll",
+        "levilamina",
+        versions=[{"version": "1.9.9", "commit": "aaa"}],
+        entries=[{"id": "server", "configs": {}}, {"id": "client", "configs": {}}],
+    )
+
+
+def _dependent(name, version, commit):
+    return _FakePlugin(
+        name,
+        name,
+        versions=[{"version": version, "commit": commit}],
+        entries=[{"id": "default", "configs": {}}],
+        specs=["levilamina >=1.9.2 <1.10.0"],
+    )
+
+
+def test_a_constraint_is_read_the_way_the_recipes_write_it():
+    assert plan.satisfies("1.9.9", ">=1.9.2 <1.10.0")
+    assert not plan.satisfies("1.8.0-rc.2", ">=1.9.2 <1.10.0")
+    assert plan.satisfies("0.13.0", "0.13.*")
+    assert not plan.satisfies("0.14.1", "0.13.*")
+    assert plan.satisfies("26.40.3", ">=26.40 <27")
+    assert plan.satisfies("1.4.4", "")
+    assert plan.satisfies("1.4.4", "*")
+    # `~`/`^` are not guessed: a wrong answer would plan the wrong SDK version
+    import pytest
+
+    with pytest.raises(ValueError):
+        plan.satisfies("1.9.9", "~1.9")
+    assert plan.pick(["1.9.2", "1.9.9", "1.8.0"], ">=1.9.2 <1.10.0") == "1.9.9"
+    assert plan.pick(["1.9.2"], "~1.9") is None
+
+
+def test_the_era_dependency_table_is_read(tmp_path: Path):
+    """LeviLamina's plugins declare their SDK dependency per version range.
+
+    `more-dimensions` has no `add_deps` at all: the dependency that makes it need
+    LeviLamina 1.9.9 lives in the table keyed by `0.13.*`.
+    """
+    recipe = tmp_path / "packages" / "m" / "more-dimensions"
+    recipe.mkdir(parents=True)
+    (recipe / "xmake.lua").write_text(
+        'package("more-dimensions")\n'
+        "    local dependencies = {\n"
+        '        ["0.13.*"] = {"levilamina >=1.9.2 <1.10.0"},\n'
+        '        ["0.14.*"] = {"levilamina 26.20.*"},\n'
+        "    }\n",
+        encoding="utf-8",
+    )
+    assert plan.recipe_specs(recipe, "0.13.0") == ["levilamina >=1.9.2 <1.10.0"]
+    assert plan.recipe_specs(recipe, "0.14.1") == ["levilamina 26.20.*"]
+    assert plan.recipe_specs(recipe, "0.12.2") == []
+
+
+def test_an_sdk_the_ledger_lacks_is_built_ahead_of_its_plugins():
+    """A plugin would otherwise compile the whole SDK itself, every round."""
+    ll = _levilamina_plugin()
+    md = _dependent("moredimensions", "0.13.0", "bbb")
+    jobs = [plan.job({}, None, md, "0.13.0", "bbb", {"id": "default"})]
+
+    first, waiting, notes = plan.split({}, None, [ll, md], jobs, lambda package, version: False)
+
+    assert notes == []
+    assert [(item["plugin"], item["version"], item["entry"]) for item in first] == [
+        ("ll", "1.9.9", "server"),
+        ("ll", "1.9.9", "client"),
+    ]
+    assert [item["plugin"] for item in waiting] == ["moredimensions"]
+    assert waiting[0]["waits_for"] == ["levilamina@1.9.9"]
+
+
+def test_a_published_sdk_is_reused_and_nothing_waits():
+    ll = _levilamina_plugin()
+    md = _dependent("moredimensions", "0.13.0", "bbb")
+    jobs = [plan.job({}, None, md, "0.13.0", "bbb", {"id": "default"})]
+
+    first, waiting, notes = plan.split(
+        {}, None, [ll, md], jobs, lambda package, version: package == "levilamina"
+    )
+
+    assert notes == []
+    assert waiting == []
+    assert [(item["plugin"], item["version"]) for item in first] == [("moredimensions", "0.13.0")]
+
+
+def test_two_dependents_share_one_sdk_build():
+    ll = _levilamina_plugin()
+    one = _dependent("bsci", "26.40.0", "ccc")
+    two = _dependent("moredimensions", "0.13.0", "ddd")
+    jobs = [
+        plan.job({}, None, one, "26.40.0", "ccc", {"id": "default"}),
+        plan.job({}, None, two, "0.13.0", "ddd", {"id": "default"}),
+    ]
+
+    first, waiting, _notes = plan.split({}, None, [ll, one, two], jobs, lambda p, v: False)
+
+    assert [(item["plugin"], item["version"]) for item in first] == [
+        ("ll", "1.9.9"),
+        ("ll", "1.9.9"),
+    ]
+    assert len(waiting) == 2
+
+
+def test_a_dependency_that_cannot_be_resolved_does_not_block_anything():
+    """Nothing waits for something nobody can name: it builds as it always did."""
+    ll = _levilamina_plugin()
+    md = _FakePlugin(
+        "moredimensions",
+        "more-dimensions",
+        versions=[{"version": "0.13.0", "commit": "bbb"}],
+        entries=[{"id": "default", "configs": {}}],
+        specs=["levilamina ~1.9"],
+    )
+    jobs = [plan.job({}, None, md, "0.13.0", "bbb", {"id": "default"})]
+
+    first, waiting, notes = plan.split({}, None, [ll, md], jobs, lambda package, version: False)
+
+    assert waiting == []
+    assert [item["plugin"] for item in first] == ["moredimensions"]
+    assert notes and "cannot resolve" in notes[0]
+
+
+def test_the_revision_gate_decides_whether_a_dependency_can_be_reused(tmp_path: Path):
+    index_root = tmp_path / "index"
+    index_store.write_entry(
+        index_root, "levilamina", "1.9.9", "server", {"revision": 4, "artifacts": [{"key": "k"}]}
+    )
+    assert index_store.has_artifacts(index_root, "levilamina", "1.9.9", 4)
+    # built by an older revision: a build is not offered it, so it cannot reuse it
+    assert not index_store.has_artifacts(index_root, "levilamina", "1.9.9", 5)
+    assert not index_store.has_artifacts(index_root, "levilamina", "1.9.8", 4)
+
+
+def test_a_job_reuses_what_the_round_just_published(tmp_path: Path):
+    """The SDK stage's results become manifests for the stage that depends on them."""
+    repo = tmp_path / "binary-repo"
+    manifest.write_all(
+        repo,
+        "levilamina",
+        "1.9.9",
+        {"windows-x64-vc-old": {"urls": "https://x/old.7z", "sha256": "ff" * 32}},
+    )
+    fresh = {
+        "package": "levilamina",
+        "version": "1.9.9",
+        "entry": "server",
+        "artifacts": [
+            {
+                "package": "levilamina",
+                "version": "1.9.9",
+                "buildhash": "new",
+                "key": "windows-x64-vc-new",
+                "url": "https://x/new.7z",
+                "sha256": "ab" * 32,
+                "toolset": "14.51.36231",
+                "aliases": [{"key": "windows-x64-vc-new-alias", "toolchain": "clang-cl"}],
+            }
+        ],
+    }
+
+    written = manifest.write_results([fresh], repo)
+
+    assert written == {"levilamina": {"1.9.9"}}
+    entries = manifest.read(repo, "levilamina", "1.9.9")
+    # merged: the address the ledger had is still there
+    assert set(entries) == {"windows-x64-vc-old", "windows-x64-vc-new", "windows-x64-vc-new-alias"}
+    assert entries["windows-x64-vc-new-alias"] == entries["windows-x64-vc-new"]
 
 
 # ------------------------------------------------------------------------ config
@@ -140,11 +456,14 @@ def test_shipped_config_is_valid():
     assert config.bot.email.endswith("users.noreply.github.com")
 
 
-def test_config_typo_is_rejected():
+def test_a_config_that_misses_a_repository_is_rejected():
+    import pydantic
     import pytest
 
-    with pytest.raises(Exception):
-        schemas.validate(schemas.Config, {"prefix": "x", "repos": {"package": {}, "cache": {}}})
+    with pytest.raises(pydantic.ValidationError):
+        schemas.validate(
+            schemas.Config, {"repos": {"cache": {"owner": "o", "repo": "r"}}}
+        )
 
 
 # ---------------------------------------------------------------------- aliases
@@ -185,8 +504,7 @@ def test_finalize_publishes_aliases_into_the_manifest(tmp_path: Path):
     index_root = tmp_path / "index"
     package_repo = tmp_path / "xmake-repo"
     artifact = {
-        "package": "mifcache_fmt",
-        "upstream_package": "fmt",
+        "package": "fmt",
         "version": "11.2.0",
         "buildhash": "ee1902dd",
         "key": "windows-x64-vc-ee1902dd",
@@ -204,7 +522,7 @@ def test_finalize_publishes_aliases_into_the_manifest(tmp_path: Path):
         ],
     }
     index_store.write_entry(
-        index_root, "mifcache_fmt", "11.2.0", "server", {"revision": 1, "artifacts": [artifact]}
+        index_root, "fmt", "11.2.0", "server", {"revision": 1, "artifacts": [artifact]}
     )
     config = util.load_config()
     finalize.regenerate_manifests(
@@ -213,7 +531,7 @@ def test_finalize_publishes_aliases_into_the_manifest(tmp_path: Path):
         index_root=index_root,
         package_repo=package_repo,
     )
-    entries = manifest.read(package_repo, "mifcache_fmt", "11.2.0")
+    entries = manifest.read(package_repo, "fmt", "11.2.0")
     assert set(entries) == {"windows-x64-vc-ee1902dd", "windows-x64-vc-df51e1a2"}
     # one archive, two addresses
     assert entries["windows-x64-vc-df51e1a2"] == entries["windows-x64-vc-ee1902dd"]
@@ -393,12 +711,11 @@ def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
     repo = tmp_path / "repo"
 
     meta = {
-        "package": "mifcache_fmt",
+        "package": "fmt",
         "version": "11.2.0",
-        "prefix": "mifcache_",
         "artifacts": [
             {
-                "package": "mifcache_fmt",
+                "package": "fmt",
                 "version": "11.2.0",
                 "buildhash": "ee1902dd7cff4195a287949f80dbce70",
                 "key": "windows-x64-vc-ee1902dd7cff4195a287949f80dbce70",
@@ -409,28 +726,49 @@ def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
             }
         ],
     }
-    index_store.write_entry(ctx.index_root, "mifcache_fmt", "11.2.0", "default", meta)
+    index_store.write_entry(ctx.index_root, "fmt", "11.2.0", "default", meta)
     # a package the cache no longer holds, and the recipe that must survive it
-    stale = repo / "packages" / "m" / "mifcache_entt"
+    stale = repo / "packages" / "e" / "entt"
     (stale / "v3.13.1").mkdir(parents=True)
     (stale / "v3.13.1" / "manifest.txt").write_text("{}", encoding="utf-8")
-    (stale / "xmake.lua").write_text('package("mifcache_entt")\n', encoding="utf-8")
+    (stale / "xmake.lua").write_text('package("entt")\n', encoding="utf-8")
     (stale / "versions").mkdir()
     (stale / "versions" / "versions.txt").write_text("v3.13.1 abc\n", encoding="utf-8")
-    # the project is published under its upstream name too, and after a wipe the
-    # index cannot say that name is ours -- the plugin can. That directory holds
-    # manifests only; the recipe lives under the prefixed name.
+    # a package the cache no longer holds: nothing in the repository says that
+    # name is ours, but the directory holds nothing but a manifest, which is what
+    # makes it ours to remove.
     upstream = repo / "packages" / "l" / "levilamina"
     (upstream / "0.8.3").mkdir(parents=True)
     (upstream / "0.8.3" / "manifest.txt").write_text("{}", encoding="utf-8")
 
     finalize.regenerate_manifests(config, ctx, ctx.index_root, repo)
 
-    assert (repo / "packages" / "m" / "mifcache_fmt" / "11.2.0" / "manifest.txt").is_file()
+    assert (repo / "packages" / "f" / "fmt" / "11.2.0" / "manifest.txt").is_file()
     assert (stale / "v3.13.1").exists() is False
     assert (stale / "xmake.lua").is_file() and (stale / "versions" / "versions.txt").is_file()
     assert (upstream / "0.8.3").exists() is False
     assert upstream.exists() is False
+
+
+def test_removing_one_entry_leaves_the_other_in_the_document(tmp_path: Path):
+    """`cache.py remove` rewrites the entry map under the key readers use.
+
+    A generated document that keeps both the current and the legacy key would be
+    read from whichever copy a reader happens to prefer, so the removal
+    normalises it: the entry it dropped is gone, the other one is untouched.
+    """
+    index_root = tmp_path / "index"
+    for entry_id in ("server", "client"):
+        index_store.write_entry(
+            index_root, "levilamina", "26.51.6", entry_id, {"revision": 1, "artifacts": []}
+        )
+    context = plugins.Context({**util.load_config(), "_index_dir": str(index_root)})
+
+    cache._drop_from_index(context, [("levilamina", "26.51.6", "client", [])])
+
+    document = util.read_json(index_root / "levilamina" / "versions" / "26.51.6.json", None)
+    assert set(index_store.entries(document)) == {"server"}
+    assert "variants" not in document
 
 
 def test_a_failed_upload_is_retried(tmp_path: Path, monkeypatch):
@@ -440,8 +778,6 @@ def test_a_failed_upload_is_retried(tmp_path: Path, monkeypatch):
     one of them is still creating it ("HTTP 404" on the upload endpoint). The
     archive is re-attached after re-resolving the release.
     """
-    from lib import gh
-
     class Result:
         returncode = 1
         stdout = ""
@@ -479,13 +815,12 @@ def test_an_artifact_already_published_is_not_packed_again(tmp_path: Path):
     config["revision"] = 7
     ctx = plugins.Context(config)
     record = {
-        "package": "mifcache_fmt",
+        "package": "fmt",
         "version": "11.2.0",
         "revision": 7,
         "artifacts": [
             {
-                "package": "mifcache_fmt",
-                "upstream_package": "fmt",
+                "package": "fmt",
                 "version": "11.2.0",
                 "buildhash": "ee1902dd7cff4195a287949f80dbce70",
                 "key": "windows-x64-vc-ee1902dd7cff4195a287949f80dbce70",
@@ -494,18 +829,18 @@ def test_an_artifact_already_published_is_not_packed_again(tmp_path: Path):
             }
         ],
     }
-    index_store.write_entry(ctx.index_root, "mifcache_fmt", "11.2.0", "default", record)
+    index_store.write_entry(ctx.index_root, "fmt", "11.2.0", "default", record)
 
     found = build.cached_artifact(
-        ctx, "mifcache_fmt", "11.2.0", "ee1902dd7cff4195a287949f80dbce70", 7
+        ctx, "fmt", "11.2.0", "ee1902dd7cff4195a287949f80dbce70", 7
     )
     assert found and found["sha256"] == "ab" * 32
     # a different build, or one from an older revision, is packed instead
-    assert build.cached_artifact(ctx, "mifcache_fmt", "11.2.0", "deadbeef", 7) is None
+    assert build.cached_artifact(ctx, "fmt", "11.2.0", "deadbeef", 7) is None
     assert build.cached_artifact(
-        ctx, "mifcache_fmt", "11.2.0", "ee1902dd7cff4195a287949f80dbce70", 8
+        ctx, "fmt", "11.2.0", "ee1902dd7cff4195a287949f80dbce70", 8
     ) is None
-    assert build.cached_artifact(ctx, "mifcache_fmt", "10.2.1", "ee1902dd", 7) is None
+    assert build.cached_artifact(ctx, "fmt", "10.2.1", "ee1902dd", 7) is None
 
 
 def test_packing_is_reproducible(tmp_path: Path, monkeypatch):
@@ -648,6 +983,65 @@ def test_dependencies_come_from_today_and_the_project_from_its_era(tmp_path: Pat
     ) == "new\n"
     # a source that does not carry that package is simply skipped
     assert sources._overlay_from_cutoff(repo, "2025-01-01", "packages/x/nothing") == ""
+
+
+def test_the_generated_checkouts_carry_the_push_credential(tmp_path: Path, monkeypatch):
+    """Every checkout we make ends in a push, so its remote has to carry a token.
+
+    A remote without one makes git fall back to the environment's credential --
+    in CI the workflow's own token, which cannot write the *second* repository,
+    and the push then comes back as "denied to github-actions[bot]".
+    """
+    from lib import gitops
+
+    monkeypatch.setenv("BUILDCACHE_PUSH_TOKEN", "pat")
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+    cloned: list[list[str]] = []
+
+    def fake_run(args, **kwargs):
+        cloned.append([str(item) for item in args])
+        return None
+
+    monkeypatch.setattr(gitops.util, "run", fake_run)
+    gitops.ensure_checkout(
+        {"_index_dir": str(tmp_path / "index")},
+        "https://github.com/o/r.git",
+        tmp_path / "checkout",
+    )
+    assert cloned and cloned[0][:2] == ["git", "clone"]
+    assert cloned[0][2] == "https://x-access-token:pat@github.com/o/r.git"
+
+
+def test_push_url_uses_the_workflow_token_when_there_is_no_push_token(monkeypatch):
+    """A job that only touches its own repository pushes with the workflow token.
+
+    The push token exists for the *second* repository; the branch that release tags
+    are created on lives in our own, so the workflow's own token is the right
+    credential there. Without any embedded token git asks for one, and a runner
+    answers ``failed to execute prompt script``.
+    """
+    from lib import gitops
+
+    url = "https://github.com/o/r.git"
+    for name in ("BUILDCACHE_PUSH_TOKEN", "GH_TOKEN", "GITHUB_TOKEN"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+    assert gitops.push_url(url) == url
+
+    monkeypatch.setenv("GH_TOKEN", "workflow")
+    assert gitops.push_url(url) == "https://x-access-token:workflow@github.com/o/r.git"
+
+    # where both are available the push token wins for a *foreign* repository
+    monkeypatch.setenv("BUILDCACHE_PUSH_TOKEN", "pat")
+    assert gitops.push_url(url) == "https://x-access-token:pat@github.com/o/r.git"
+
+    # ... and the workflow token wins for the repository the workflow runs in,
+    # because a token of another account has no write access there
+    monkeypatch.setenv("GITHUB_REPOSITORY", "o/r")
+    assert gitops.push_url(url) == "https://x-access-token:workflow@github.com/o/r.git"
+
+    # and a foreign host is never rewritten
+    assert gitops.push_url("https://example.invalid/o/r.git") == "https://example.invalid/o/r.git"
 
 
 def test_every_release_line_gets_a_build_before_any_gets_two():
@@ -878,11 +1272,44 @@ def test_repaired_versions_are_renamed_where_the_resolver_reads_them(tmp_path: P
     )
 
 
+def test_a_declared_recipe_edit_repairs_what_xmake_cannot_import(tmp_path: Path):
+    """`more-dimensions` asks to import `package.tools.*make`, which never resolves.
+
+    A module name is a *path* in xmake's importer (the dots become separators and
+    that file is looked up), so a wildcard is not a pattern there in any version:
+    the install dies with "cannot import module: ... not found!" before a single
+    file is compiled. The repair is project knowledge and therefore declared in
+    the project's own settings; it only ever touches our snapshot.
+    """
+    config = util.load_config()
+    plugin = next(
+        item for item in plugins.load_all(config) if item.name == "moredimensions"
+    )
+    snapshot = tmp_path / "levimc-repo@test"
+    recipe = snapshot / "packages" / "m" / "more-dimensions" / "xmake.lua"
+    recipe.parent.mkdir(parents=True)
+    recipe.write_text(
+        'package("more-dimensions")\n'
+        "    on_install(function (package)\n"
+        '        import("package.tools.*make").install(package)\n'
+        "    end)\n",
+        encoding="utf-8",
+    )
+
+    notes = plugin.module.repair_recipes(config, "levimc-repo", snapshot)
+    assert len(notes) == 1, notes
+    assert 'import("package.tools.xmake")' in util.read_text(recipe)
+    # a source that does not carry this project's recipe is left alone, and the
+    # repair is idempotent: a second pass has nothing left to replace
+    assert plugin.module.repair_recipes(config, "xmake-repo", snapshot) == []
+    assert plugin.module.repair_recipes(config, "levimc-repo", snapshot) == []
+
+
 def test_upstream_pins_are_rewritten_while_the_project_builds(tmp_path: Path):
     """The era's *project* file pins its data package, so both sides must agree.
 
     LeviLamina 0.8.3's own xmake.lua says ``add_requires("bdslibrary 1.20.61.01")``,
-    a four-component version the vendored recipe cannot offer any more (it was
+    a four-component version the repaired recipe cannot offer any more (it was
     renamed). The recipe therefore rewrites the project file while it installs --
     and that era spells the anchor ``on_install(function (package)``, with a space.
     """
@@ -933,7 +1360,6 @@ def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     def artifact(package: str, buildhash: str, entry: str) -> dict:
         return {
             "package": package,
-            "upstream_package": package,
             "version": "11.2.0" if package == "fmt" else "26.51.6",
             "buildhash": buildhash,
             "key": f"windows-x64-vc-{buildhash}",

@@ -25,6 +25,7 @@ class Plugin:
         "git_cutoff",
         "extra_deps",
         "dependency_specs",
+        "recipe_dir",
         "asset_name",
         "register_release_columns",
         "should_skip",
@@ -120,7 +121,6 @@ class Context:
         self.mirrors: dict = mirrors if mirrors is not None else {}
         self.index_root = util.absolute(config.get("_index_dir", ".work/index"))
         self.package_repo = util.ROOT / config.get("_package_repo_dir", ".work/xmake-repo")
-        self.vendor_root = util.ROOT / config.get("_vendor_root", ".vendor")
 
     def ensure_index(self, create: bool = False) -> Path:
         """Materialise the index branch (read-only unless ``create``)."""
@@ -142,14 +142,11 @@ class Context:
                 "artifact's url/sha256/toolset/buildhash). `revision` is what makes\n"
                 "a fix re-publish old versions: bumping it in `config.json` marks\n"
                 "older records as stale and `discover` queues them again.\n\n"
-                "The record is keyed by the *published* package and only holds its\n"
+                "A record is keyed by the package's own name and only holds its\n"
                 "own artifacts. A build entry dimension (LeviLamina's server/client)\n"
                 "belongs to the project that has one: its own package is recorded\n"
                 "per entry, while every dependency is recorded once, under `default`,\n"
-                "because it is the same artifact whichever entry pulled it in. The\n"
-                "same records are also written under the upstream name, which is\n"
-                "what publishes `<letter>/<name>/<version>/manifest.txt` for projects\n"
-                "that require the upstream package from their own repository.\n\n"
+                "because it is the same artifact whichever entry pulled it in.\n\n"
                 "`alias_profiles` names the extra consumer toolchains an entry was\n"
                 "published for. Each artifact may then carry `aliases`: manifest\n"
                 "entries that address the very same archive with a build hash\n"

@@ -68,7 +68,6 @@ class XmakeSettings(_Base):
     heartbeatSeconds: int = 30
     silentTimeoutSeconds: int = 1800
     timeoutSeconds: int = 5400
-    cacheDir: str = ".cache/xmake"
 
 
 class BotSettings(_Base):
@@ -113,7 +112,6 @@ class Artifact(_Base):
     sha256: str
     size: int = 0
     toolset: str | None = None
-    upstream_package: str | None = None
     container: str | None = None
 
 
@@ -125,7 +123,6 @@ class BuildResult(_Base):
     revision: int = 0
     configs: dict[str, Any] = Field(default_factory=dict)
     upstream_commit: str = ""
-    upstream_date: str = ""
     xmake_version: str = ""
     toolchain: str = ""
     upstream_toolchain: str = ""

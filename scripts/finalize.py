@@ -102,10 +102,10 @@ def main() -> int:
     util.log(index_store.summary(ctx.index_root))
     refresh_release_notes(config, ctx)
     if args.push:
-        gitops.commit_and_push(
-            package_repo,
-            f"recipes+manifests: {', '.join(sorted({r['package'] for r in results}))}",
-        )
+        # Our own ledger first: it is the work this round produced, and pushing it
+        # cannot be blocked by anything about the consumer-facing repository. (If
+        # that one fails -- a token without access, say -- the index is still
+        # there for the next round to build on.)
         index_branch = (config.get("repos", {}).get("index") or {}).get("branch", "index")
         gitops.commit_and_push(
             ctx.index_root,
@@ -113,6 +113,10 @@ def main() -> int:
             push=True,
         )
         util.log(f"index pushed to branch '{index_branch}'")
+        gitops.commit_and_push(
+            package_repo,
+            f"recipes+manifests: {', '.join(sorted({r['package'] for r in results}))}",
+        )
         _remove_legacy_index(config)
     return 0
 
@@ -299,32 +303,13 @@ def regenerate_manifests(config: dict, ctx, index_root: Path, package_repo: Path
     at a released asset, so one left behind would send a consumer to a file that
     is gone. The recipe stays, and that is enough -- a package without a manifest
     simply builds from source.
+
+    The manifests themselves come from :func:`lib.manifest.write_repo`, the same
+    generator a build uses for the repository it hands to xmake, so the artifacts
+    a consumer can install and the ones a build reuses cannot drift apart.
     """
     index_root = Path(index_root)
-    if not index_root.is_dir():
-        return
-    indexed: dict[str, set[str]] = {}
-    for directory in sorted(index_root.iterdir()):
-        if not directory.is_dir():
-            continue
-        package = directory.name
-        for meta in index_store.all_version_meta(index_root, package):
-            version = str(meta.get("version"))
-            entries = {}
-            for artifact in index_store.all_artifacts(meta):
-                entries[artifact["key"]] = manifest_lib.entry(
-                    artifact["url"], artifact["sha256"], artifact.get("toolset")
-                )
-                # A derived alias is the same archive under another consumer
-                # toolchain: same url, same checksum, different build id.
-                for alias in artifact.get("aliases") or []:
-                    entries[alias["key"]] = manifest_lib.entry(
-                        artifact["url"],
-                        artifact["sha256"],
-                        alias.get("toolset") or artifact.get("toolset"),
-                    )
-            manifest_lib.write_all(package_repo, package, version, entries)
-            indexed.setdefault(package, set()).add(version)
+    indexed = manifest_lib.write_repo(index_root, package_repo)
     _drop_stale_manifests(package_repo, indexed)
 
 

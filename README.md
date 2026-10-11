@@ -70,9 +70,24 @@ discover ──► build (per SDK version)                   ──► finalize
    * An artifact whose exact build is already published is reused instead of
      packed again: the build hash *is* the identity of a build. Bump `revision`
      in `config.json` to say "everything built before me is stale".
-   * Packing writes no timestamps, so the same package always packs to the same
-     bytes -- two rounds that share a dependency cannot leave the manifest
-     pointing at the other upload's checksum.
+   * The sandbox is handed the manifests of everything already published, as its
+     *binary* repository, so a dependency installs from the cache instead of being
+     compiled all over again. xmake looks a manifest up in every repository it has
+     loaded, and without one it compiles: LeviLamina is the dependency each plugin
+     shares, so each plugin's round would otherwise rebuild the whole SDK.
+   * A dependency that one of *our* plugins publishes -- LeviLamina, for each of
+     its plugins -- is planned as its own job, *ahead* of the dependent, when the
+     ledger has no artifact for the version that dependent resolves (the version
+     is read from the recipes, era table included). A round therefore runs in two
+     stages: the SDKs first, then the plugins, which turn the first stage's build
+     results into manifests of their own. A job cannot see another job's files,
+     and this is what makes the SDK build happen once per round instead of once
+     per plugin.
+   * Packing writes no timestamps, so packing the *same* install directory twice
+     gives the same bytes. Two jobs that each compiled the same dependency can
+     still end up with different archives (the objects carry their own build
+     metadata); the upload clobbers and the index adopts whatever the release
+     ended up serving, so no manifest ever points at bytes that are gone.
 4. Derive the aliases of every artifact (the same archive, build hash recomputed
    for the other consumer toolchains) and record them next to it.
 5. `finalize` writes the index branch, regenerates every manifest from the index
@@ -121,8 +136,10 @@ The workflow runs a round **every four hours**, and on every change to
 far is stale"). A round is incremental: `discover` queues only what is missing or
 was built by an older revision, so a run with nothing to do costs a couple of
 minutes of discovery and no build jobs at all -- which is what makes a frequent
-schedule affordable, and what drains a backlog steadily. Four versions per run
-(the `batch` input, default 4), one round at a time (`concurrency`).
+schedule affordable, and what drains a backlog steadily. Two versions per plugin
+per run (the `batch` input, default 2; running `scripts/discover.py` by hand
+falls back to `batch.defaultSize` in `config.json`), one round at a time
+(`concurrency`).
 
 ## Managing the cache
 
@@ -166,7 +183,7 @@ Everything owner-specific is configuration:
 3. The consumer repository has to exist (empty is fine): its branches, release
    shards and contents are created by the code.
 4. Places that spell the repositories out in prose or fixtures: `README.md`,
-   `docs/tutorial.md`, `tests/consumer/xmake.lua`.
+   `docs/tutorial.md`, `tests/consumer/xmake.lua`, `tests/consumer/README.md`.
 5. Nothing else is owner-specific. Artifact URLs come from the index and the
    manifests, which are generated from `config.json`, and the releases are
    addressed by `release`/`asset` names that carry no owner.

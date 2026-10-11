@@ -1,6 +1,6 @@
 # Local build workspace (never committed)
 .work/
-.vendor/
+.snapshots/
 .sandbox/
 .cache/
 __pycache__/

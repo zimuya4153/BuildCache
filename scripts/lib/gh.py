@@ -15,8 +15,14 @@ def gh(args: list, check: bool = True, config: dict | None = None) -> str:
     return (result.stdout or "").strip()
 
 
-def api(path: str, config: dict | None = None, cache: bool = True, refresh: bool = False):
-    """Call the GitHub REST API and parse the JSON response (cached on disk)."""
+def api(path: str, config: dict | None = None, cache: bool = False, refresh: bool = False):
+    """Call the GitHub REST API and parse the JSON response.
+
+    ``cache`` stores the response under ``.cache/gh`` and is off by default: what
+    this framework asks for (a release's assets, its digests) is exactly the state
+    a round has to see fresh, and a cached listing would quietly describe the
+    earlier one.
+    """
     config = config or util.load_config()
     cache_file = None
     if cache:
@@ -46,28 +52,6 @@ def api_or_none(path: str, config: dict | None = None):
         return None
     text = (result.stdout or "").strip()
     return json.loads(text) if text else None
-
-
-def file_content(repo: str, path: str, ref: str, config: dict | None = None) -> str | None:
-    """Read a text file from a repository, returning None when absent."""
-    config = config or util.load_config()
-    cache_dir = util.cache_dir(config, "ghfile")
-    safe = "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in f"{repo}_{path}_{ref}")[:150]
-    cache_file = cache_dir / f"{safe}.txt"
-    if cache_file.is_file():
-        text = cache_file.read_text(encoding="utf-8")
-        return None if text == "\0" else text
-    result = util.run(
-        ["gh", "api", f"repos/{repo}/contents/{path}?ref={ref}",
-         "-H", "Accept: application/vnd.github.raw"],
-        capture=True,
-        check=False,
-        env=util.subprocess_env(config),
-        quiet=True,
-    )
-    text = result.stdout if result.returncode == 0 else None
-    util.write_text(cache_file, text if text is not None else "\0")
-    return text
 
 
 def release_assets(owner: str, repo: str, tag: str, config: dict | None = None) -> dict | None:

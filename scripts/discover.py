@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import index_store, plugins, semver, util  # noqa: E402
+from lib import index_store, plan, plugins, semver, util  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,8 +62,9 @@ def main() -> int:
     ctx.ensure_index()
     batch = args.batch if args.batch is not None else int(config.get("batch", {}).get("defaultSize", 20))
 
+    available = plugins.load_all(config)
     matrix: list[dict] = []
-    for plugin in plugins.load_all(config):
+    for plugin in available:
         if args.plugin and plugin.name != args.plugin:
             continue
         metadata = plugin.call("metadata")
@@ -114,32 +115,38 @@ def main() -> int:
             for entry in plugin.entries(ctx, version, item["commit"]):
                 if entry["id"] in done:
                     continue
-                plan = plugin.call("toolchain_plan", ctx, version, item["commit"]) or {}
-                matrix.append(
-                    {
-                        "plugin": plugin.name,
-                        "package": package,
-                        "recipe_package": metadata["package"],
-                        "version": version,
-                        "entry": entry["id"],
-                        "image": plan.get("image") or "windows-latest",
-                        "vs_toolset": plan.get("vs_toolset") or "",
-                        "commit": item["commit"],
-                    }
-                )
+                matrix.append(plan.job(config, ctx, plugin, version, item["commit"], entry))
 
     limit = int(config.get("batch", {}).get("maxMatrix", 200))
     matrix = matrix[:limit]
-    payload = json.dumps(matrix)
-    util.log(f"discover: {len(matrix)} job(s)")
-    for item in matrix:
+    # A plugin's own SDK dependency (LeviLamina, for each of its plugins) is built
+    # ahead of it when the ledger has no artifact for the version it resolves: see
+    # lib/plan.py. Everything that cannot be resolved that way stays in one stage.
+    revision = int(config.get("revision", 1))
+    first, waiting, notes = plan.split(
+        config, ctx, available, matrix,
+        lambda package, version: index_store.has_artifacts(
+            ctx.index_root, package, version, revision
+        ),
+    )
+    for note in notes:
+        util.log(f"plan: {note}")
+
+    payload = json.dumps(first)
+    dependents = json.dumps(waiting)
+    util.log(f"discover: {len(first)} job(s), {len(waiting)} waiting for them")
+    for item in first + waiting:
         util.log(f"  {item['package']}@{item['version']}")
     output = os.environ.get("GITHUB_OUTPUT")
     if output:
         with open(output, "a", encoding="utf-8") as handle:
             handle.write(f"matrix={payload}\n")
+            handle.write(f"dependents={dependents}\n")
     if args.out:
-        util.write_text(Path(args.out), payload + "\n")
+        # The local runner walks this in order, so the stage that produces the
+        # dependencies comes first and the results directory is ready for the ones
+        # that come after it.
+        util.write_text(Path(args.out), json.dumps(first + waiting) + "\n")
     if not output and not args.out:
         util.log(payload)
     return 0

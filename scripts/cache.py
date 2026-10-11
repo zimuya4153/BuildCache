@@ -3,9 +3,9 @@
 Examples:
 
     python scripts/cache.py list
-    python scripts/cache.py list --package mifcahce_levilamina
-    python scripts/cache.py remove mifcahce_levilamina@26.51.6 --dry-run
-    python scripts/cache.py remove mifcahce_levilamina --include-dependents --yes
+    python scripts/cache.py list --package levilamina
+    python scripts/cache.py remove levilamina@26.51.6 --dry-run
+    python scripts/cache.py remove levilamina --include-dependents --yes
     python scripts/cache.py remove '*' --all --yes
     python scripts/cache.py trigger --plugin ll --first-only --local
     python scripts/cache.py trigger --plugin ll --workflow --batch 5
@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import argparse
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -298,6 +297,11 @@ def cmd_remove(config: dict, ctx, args) -> int:
     import finalize  # regenerates manifests from the index
 
     finalize.regenerate_manifests(config, ctx, index_root=ctx.index_root, package_repo=Path(ctx.package_repo))
+    # A release body lists what its shard currently holds, so the artifacts that
+    # were just removed have to disappear from it here: a body that keeps naming a
+    # deleted asset is the first thing a reader would try to download, and only a
+    # round of `finalize` would ever rewrite it.
+    finalize.refresh_release_notes(config, ctx)
     if not args.no_push:
         gitops.commit_and_push(Path(ctx.package_repo), f"manifests: drop {len(plan)} version(s)")
         gitops.commit_and_push(ctx.index_root, f"index: drop {len(plan)} version(s)")
@@ -317,14 +321,18 @@ def _drop_from_index(ctx, plan) -> None:
             if not doc:
                 continue
             version = str(doc.get("version"))
-            variants = index_store.entries(doc)
-            drop = {variant for item_version, variant in wanted if item_version == version}
-            for variant in drop:
-                variants.pop(variant, None)
-            if not variants:
+            entries = index_store.entries(doc)
+            drop = {entry for item_version, entry in wanted if item_version == version}
+            for entry in drop:
+                entries.pop(entry, None)
+            if not entries:
                 path.unlink()
                 continue
-            doc["variants"] = variants
+            # Written back under the key the readers use, and the legacy key is
+            # dropped: leaving both would put two copies of the same map into a
+            # generated document, which is how the two end up disagreeing.
+            doc["entries"] = entries
+            doc.pop("variants", None)
             path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
         index_path = ctx.index_root / package / "index.json"
         remaining = sorted(item.stem.replace(".json", "") for item in (ctx.index_root / package / "versions").glob("*.json"))
@@ -381,12 +389,21 @@ def cmd_trigger(config: dict, ctx, args) -> int:
         return 0
     if args.dry_run:
         for item in matrix:
-            util.log(f"would build {item['package']}@{item['version']} [{item.get('variant')}]")
+            waiting = item.get("waits_for") or []
+            util.log(
+                f"would build {item['package']}@{item['version']} [{item.get('entry')}]"
+                + (f" after {', '.join(waiting)}" if waiting else "")
+            )
         return 0
+    # Local rounds run the stages the way the workflow does: the SDKs first, then
+    # the jobs that reuse them, which read the results the stage before wrote.
+    results_dir = util.ROOT / "results"
+    util.rmtree(results_dir)
     for item in matrix:
         util.run(
             [sys.executable, str(scripts / "build.py"), "--plugin", item["plugin"],
-             "--version", item["version"], "--entry", item.get("entry", "")],
+             "--version", item["version"], "--entry", item.get("entry", ""),
+             "--results", str(results_dir), "--dependency-results", str(results_dir)],
             env=util.subprocess_env(config, proxy=ctx.proxy),
         )
     finalize = [sys.executable, str(scripts / "finalize.py")]

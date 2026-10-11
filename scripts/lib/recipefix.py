@@ -101,11 +101,9 @@ def _report_unparseable_versions(recipe: Path, text: str) -> list[str]:
         for match in _ADD_VERSIONS.finditer(text)
         if not _semver_ok(match.group(2))
     ]
-    listing = None
     for match in _ADD_VERSIONFILES.finditer(text):
         candidate = recipe.parent / match.group(1)
         if candidate.is_file():
-            listing = candidate
             bad += [
                 line.split()[0]
                 for line in util.read_text(candidate).splitlines()

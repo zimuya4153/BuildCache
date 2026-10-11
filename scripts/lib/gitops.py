@@ -8,11 +8,28 @@ from . import util
 
 
 def push_url(url: str) -> str:
-    """Embed ``BUILDCACHE_PUSH_TOKEN`` so CI can push to a second repository."""
+    """Embed a token so ``git push`` never has to ask for credentials.
+
+    Which token depends on *which* repository. The workflow's own token can only
+    write the repository the workflow runs in, and that is exactly the right
+    credential for that one -- the ``index`` branch lives there. Anything else,
+    the consumer-facing repository in particular, needs the push token (a PAT in
+    CI). Each falls back to the other, so a missing token still means a push
+    rather than a prompt: a runner has no terminal to prompt with.
+    """
     import os
 
-    token = os.environ.get("BUILDCACHE_PUSH_TOKEN", "").strip()
-    if token and url.startswith("https://github.com/"):
+    if not url.startswith("https://github.com/"):
+        return url
+    slug = url[len("https://github.com/"):].removesuffix(".git").strip("/").lower()
+    own = os.environ.get("GITHUB_REPOSITORY", "").strip().lower()
+    workflow = ("GH_TOKEN", "GITHUB_TOKEN")
+    push = ("BUILDCACHE_PUSH_TOKEN",)
+    order = workflow + push if own and slug == own else push + workflow
+    for name in order:
+        token = os.environ.get(name, "").strip()
+        if not token:
+            continue
         return url.replace("https://github.com/", f"https://x-access-token:{token}@github.com/")
     return url
 
@@ -88,7 +105,14 @@ def ensure_checkout(
     branch: str | None = None,
     reset: bool = False,
 ) -> Path:
-    """Clone (or refresh) a working checkout used for generated output."""
+    """Clone (or refresh) a working checkout used for generated output.
+
+    The clone keeps the push credential in its remote: everything this checkout
+    exists for ends in a commit that has to be pushed back. A remote without a
+    token makes git fall back to whatever the environment offers -- in CI that is
+    the workflow's own token, which cannot write a *second* repository, so the
+    push comes back as "denied to github-actions[bot]".
+    """
     directory = Path(directory)
     env = util.subprocess_env(config)
     if not (directory / ".git").is_dir():
@@ -96,7 +120,7 @@ def ensure_checkout(
             # A generated-only directory from an earlier run: safe to recreate.
             util.rmtree(directory)
         util.ensure_dir(directory.parent)
-        args = ["git", "clone", url, str(directory)]
+        args = ["git", "clone", push_url(url), str(directory)]
         if branch:
             args += ["--branch", branch]
         util.run(args, env=env)
@@ -132,7 +156,7 @@ def sync_branch(repo: Path, remote: str = "origin") -> None:
     developer's machine), so a checkout is routinely behind -- and a plain push
     then fails with "non-fast-forward", which is how a local finalize ends up
     doing half its work. Rebasing instead of resetting keeps whatever this
-    checkout produced (a vendored recipe, say) and still fast-forwards.
+    checkout produced (a repaired recipe, say) and still fast-forwards.
     """
     repo = Path(repo)
     if not (repo / ".git").is_dir():
