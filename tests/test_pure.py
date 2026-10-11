@@ -432,6 +432,33 @@ def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
     assert upstream.exists() is False
 
 
+def test_packing_is_reproducible(tmp_path: Path, monkeypatch):
+    """The same package built again must pack to the same bytes.
+
+    An artifact is re-packed by every round that shares it and uploaded under the
+    same name, so two archives that differ only by the build's file timestamps
+    would leave the published checksum pointing at whichever upload was last --
+    a consumer then reports "unmatched checksum" and falls back to a source build.
+    """
+    from lib import packer
+
+    source = tmp_path / "install"
+    (source / "include").mkdir(parents=True)
+    (source / "include" / "fmt.h").write_text("//\n", encoding="utf-8")
+    calls: list[list[str]] = []
+
+    def fake_run(args, **kwargs):
+        calls.append(list(args))
+        Path(args[-2]).write_bytes(b"archive")
+        return None
+
+    monkeypatch.setattr(packer.util, "run", fake_run)
+    packer._pack_7z(source, tmp_path / "fmt.7z", "f/fmt/11.2.0/deadbeef")
+    assert calls and calls[0][:4] == ["7z", "a", "-t7z", "-mx=9"]
+    # modification, creation and access times are all left out of the archive
+    assert {"-mtm=off", "-mtc=off", "-mta=off"} <= set(calls[0])
+
+
 def test_only_served_packages_get_a_prefixed_recipe(tmp_path: Path):
     """A prefixed recipe exists only where something is precompiled behind it.
 

@@ -86,8 +86,16 @@ def _pack_7z(src: Path, dest: Path, store_as: str) -> None:
         staged = Path(tmp) / store_as
         util.ensure_dir(staged.parent)
         _copy_tree(src, staged)
+        # No timestamps: the same package built again (another round, another
+        # machine) has to produce the same bytes. It is published under the same
+        # name, so an archive that differs byte for byte would leave the manifest's
+        # checksum pointing at the upload that happened to be last -- which is how
+        # a consumer ends up with "unmatched checksum".
         util.run(
-            ["7z", "a", "-t7z", "-mx=9", "-bso0", "-bsp0", str(dest), store_as],
+            [
+                "7z", "a", "-t7z", "-mx=9", "-mtm=off", "-mtc=off", "-mta=off",
+                "-bso0", "-bsp0", str(dest), store_as,
+            ],
             cwd=Path(tmp),
             quiet=True,
         )
