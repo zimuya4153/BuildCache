@@ -2,6 +2,7 @@
   "package": "mifcache_mimalloc",
   "latest": "v2.1.7",
   "versions": [
-    "v2.1.7"
+    "v2.1.7",
+    "2.1.2"
   ]
 }

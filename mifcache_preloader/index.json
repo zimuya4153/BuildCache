@@ -2,6 +2,7 @@
   "package": "mifcache_preloader",
   "latest": "v1.15.3",
   "versions": [
-    "v1.15.3"
+    "v1.15.3",
+    "v1.5.0"
   ]
 }

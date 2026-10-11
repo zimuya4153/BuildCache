@@ -1,0 +1,70 @@
+{
+  "package": "mifcache_snappy",
+  "version": "1.1.10",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T10:03:37Z",
+  "xmake_version": "2.8.6",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 3,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@0.8.3",
+  "entries": {
+    "default": {
+      "package": "mifcache_snappy",
+      "version": "1.1.10",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:03:37Z",
+      "xmake_version": "2.8.6",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 3,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@0.8.3",
+      "artifacts": [
+        {
+          "package": "mifcache_snappy",
+          "upstream_package": "snappy",
+          "version": "1.1.10",
+          "buildhash": "ce2eea8d5eb6433781586827e06057c2",
+          "key": "windows-x64-vc-ce2eea8d5eb6433781586827e06057c2",
+          "toolset": "14.44.35207",
+          "release": "snappy_0",
+          "asset": "snappy-ce2eea8d5eb6433781586827e06057c2.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/snappy_0/snappy-ce2eea8d5eb6433781586827e06057c2.7z",
+          "sha256": "57914659b1fce08ca194a25f55f48f41a7723ef7cf3281ba8d0a8085148a09b0",
+          "size": 35485,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "b5921d223cb44c8d85162c39c21fbd4e",
+              "key": "windows-x64-vc-b5921d223cb44c8d85162c39c21fbd4e",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "4f974279e6e44c0faef70be8401aeb22",
+              "key": "windows-x64-vc-4f974279e6e44c0faef70be8401aeb22",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

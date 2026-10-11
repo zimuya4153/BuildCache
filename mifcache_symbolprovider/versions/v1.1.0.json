@@ -1,0 +1,70 @@
+{
+  "package": "mifcache_symbolprovider",
+  "version": "v1.1.0",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T10:03:37Z",
+  "xmake_version": "2.8.6",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 3,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@0.8.3",
+  "entries": {
+    "default": {
+      "package": "mifcache_symbolprovider",
+      "version": "v1.1.0",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:03:37Z",
+      "xmake_version": "2.8.6",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 3,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@0.8.3",
+      "artifacts": [
+        {
+          "package": "mifcache_symbolprovider",
+          "upstream_package": "symbolprovider",
+          "version": "v1.1.0",
+          "buildhash": "355ae41e03ab4536a9e1f6767963f2f4",
+          "key": "windows-x64-vc-355ae41e03ab4536a9e1f6767963f2f4",
+          "toolset": "14.44.35207",
+          "release": "symbolprovider_0",
+          "asset": "symbolprovider-355ae41e03ab4536a9e1f6767963f2f4.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/symbolprovider_0/symbolprovider-355ae41e03ab4536a9e1f6767963f2f4.7z",
+          "sha256": "36014c692f4402341225021e1c1e6aa759111ac9b4bab636bab51b454e183f61",
+          "size": 5412,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "6cd334542dc942b5bac40ff806ca46bb",
+              "key": "windows-x64-vc-6cd334542dc942b5bac40ff806ca46bb",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "ff921fdab291446284a695cc101ecc95",
+              "key": "windows-x64-vc-ff921fdab291446284a695cc101ecc95",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
