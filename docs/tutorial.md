@@ -35,7 +35,7 @@ packages/<首字母>/<包名>/<版本>/manifest.txt
 | `index` 分支 | 生成物：`<包名>/index.json`、`<包名>/versions/<版本>.json` |
 | `assets` 分支 | 空分支，只作为 release tag 的落点，避免污染 main 的 tag |
 | GitHub Releases | 产物本体，按 `<包名>_<序号>` 分片（每片 ≤800 asset）；asset 名形如 `<原库名>-<buildhash>.7z`，release body 里是**直接下载直链** |
-| `zimuya4153/xmake-repo` | 消费端仓库：前缀化配方 + `manifest.txt`（没有 manifest 的包＝消费端自行编源码，配方始终保留） |
+| `zimuya4153/xmake-repo` | 消费端仓库：前缀化配方 + `manifest.txt`。manifest **同时以原包名发布一份**（xmake 按「正在解析的包名」在**所有**仓库里找 manifest，配方可以来自官方仓库、产物来自我们这边），所以写成 `levilamina 1.4.4` / `fmt 11.2.0` 也直接命中预编译产物；没有 manifest 的包＝消费端自行编源码，配方始终保留 |
 
 所有发布出去的包都是 `mifcache_<原名>`，**不覆写上游包名**；官方仓库继续提供其它依赖。
 

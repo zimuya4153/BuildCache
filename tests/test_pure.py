@@ -736,6 +736,18 @@ def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     # were the one at 41aab920, the version of the entt it needs)
     assert dependency["default"]["version"] == "11.2.0"
     assert dependency["default"]["produced_for"] == "levilamina@26.51.6"
+    # ... and it is addressable under its own (upstream) name too, so a project
+    # that requires plain `fmt` gets this very archive instead of building it
+    plain = index_store.entries(
+        index_store.version_meta(ctx.index_root, "fmt", "11.2.0")
+    )
+    assert set(plain) == {"default"}, plain
+    assert plain["default"]["artifacts"][0]["key"] == shared["key"]
+    # the project's own artifact is not duplicated as a dependency record
+    assert (ctx.index_root / "levilamina" / "versions" / "26.51.6.json").is_file()
+    assert "default" not in index_store.entries(
+        index_store.version_meta(ctx.index_root, "levilamina", "26.51.6")
+    )
 
 
 def test_dependency_addresses_follow_the_windows_abi():

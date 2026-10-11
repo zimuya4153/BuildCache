@@ -186,14 +186,26 @@ def write_ledger(config: dict, ctx, results: list[dict], dry_run: bool = False) 
                     ctx.index_root, result["package"], version, variant, record
                 )
             for artifact in result.get("artifacts", []):
-                record = components.setdefault(
-                    (artifact["package"], artifact["version"]),
-                    _component_record(result, artifact["package"], artifact["version"]),
-                )
-                # The same dependency comes out of every entry of the project;
-                # it is one artifact, so it is listed once.
-                if artifact["key"] not in {item["key"] for item in record["artifacts"]}:
-                    record["artifacts"].append(artifact)
+                # A dependency is published under the name its own project asks
+                # for as well as under our prefix. xmake resolves a manifest by
+                # the name it is resolving, searching *every* repository
+                # (``repository.artifacts_manifest``), so the recipe can come from
+                # the official repository while the archive comes from ours: a
+                # project that never heard of the prefix gets the same prebuilt
+                # package and compiles nothing.
+                names = [artifact["package"]]
+                upstream = artifact.get("upstream_package") or artifact["package"]
+                if upstream != artifact["package"] and artifact["package"] != published:
+                    names.append(upstream)
+                for name in names:
+                    record = components.setdefault(
+                        (name, artifact["version"]),
+                        _component_record(result, name, artifact["version"]),
+                    )
+                    # The same dependency comes out of every entry of the project;
+                    # it is one artifact, so it is listed once.
+                    if artifact["key"] not in {item["key"] for item in record["artifacts"]}:
+                        record["artifacts"].append(artifact)
         entries += len(result.get("artifacts", []))
         util.log(
             f"{result['package']}@{version} [{variant}]: "
