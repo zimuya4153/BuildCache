@@ -670,13 +670,35 @@ def toolchain_plan(ctx, version: str, commit: str) -> dict:
                 "image": runner,
                 "imageos": imageos,
                 "vs_toolset": toolset,
+                "llvm": needs_llvm22(version),
             }
     return {
         "era_xmake": era,
         "image": "windows-2022",
         "imageos": "win22",
         "vs_toolset": None,
+        "llvm": needs_llvm22(version),
     }
+
+
+#: LeviLamina's own build moved to LLVM 22 in August 2026 ("chore(ci): use LLVM
+#: 22", first released with 26.32.0), so that toolchain is part of what those eras
+#: *are* and the image the matrix names has to provide it. Older eras are built by
+#: the compiler of their own time, which the image already carries: nothing is
+#: downloaded for them, and nothing is compiled with a compiler their code never
+#: saw.
+LLVM_22_FROM = "26.32.0"
+
+
+def needs_llvm22(version: str) -> bool:
+    """Does this version build with LLVM 22 (anything that is not a version: yes)."""
+    from lib import semver
+
+    try:
+        return semver.ge(str(version), LLVM_22_FROM)
+    except ValueError:
+        # A branch or alias ("main", "old"): assume the newest answers apply.
+        return True
 
 
 def _patch_upstream_sources(snapshot, renames: dict[str, dict[str, str]]) -> list[str]:

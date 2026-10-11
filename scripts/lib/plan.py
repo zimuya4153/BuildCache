@@ -245,6 +245,10 @@ def job(config: dict, ctx, plugin, version: str, commit: str, entry: dict) -> di
         "entry": entry["id"],
         "image": toolchain_plan.get("image") or "windows-latest",
         "vs_toolset": toolchain_plan.get("vs_toolset") or "",
+        # A plugin that knows better says so (the era's own compiler, and whether
+        # the image needs LLVM 22 installed on top of it); the safe answer for
+        # anything else is to install it, which is what the rounds always did.
+        "llvm": bool(toolchain_plan.get("llvm", True)),
         "commit": commit,
     }
 

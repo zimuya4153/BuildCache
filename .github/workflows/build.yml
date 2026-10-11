@@ -88,7 +88,9 @@ jobs:
           python-version: "3.14"
       # Newer LeviLamina tags want clang-cl of the same generation; the
       # image's own LLVM is older than that.
+      # Only the eras that build with it: see plugins/ll/plugin.py::needs_llvm22
       - name: Setup LLVM
+        if: matrix.llvm
         uses: ZhongRuoyu/setup-llvm@v0
         with:
           llvm-version: 22
@@ -145,7 +147,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+      # Only the eras that build with it: see plugins/ll/plugin.py::needs_llvm22
       - name: Setup LLVM
+        if: matrix.llvm
         uses: ZhongRuoyu/setup-llvm@v0
         with:
           llvm-version: 22
@@ -184,7 +188,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+      # Only the eras that build with it: see plugins/ll/plugin.py::needs_llvm22
       - name: Setup LLVM
+        if: matrix.llvm
         uses: ZhongRuoyu/setup-llvm@v0
         with:
           llvm-version: 22

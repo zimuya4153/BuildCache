@@ -479,6 +479,29 @@ def test_a_dependency_that_cannot_be_resolved_does_not_block_anything():
     assert notes and "cannot resolve" in notes[0]
 
 
+def test_only_the_eras_that_build_with_llvm_22_download_it():
+    """LeviLamina moved to LLVM 22 in August 2026, first released with 26.32.0.
+
+    The compiler of an era is part of what the era *is*: 26.32.0 and later need
+    LLVM 22 installed on top of the image, everything before them is built by the
+    compiler the image already carries. A plugin that does not say gets the safe
+    answer (install it), which is what every round did before this existed.
+    """
+    ll = next(item for item in plugins.load_all(util.load_config()) if item.name == "ll")
+    assert ll.module.needs_llvm22("26.51.6")
+    assert ll.module.needs_llvm22("26.32.0")
+    assert not ll.module.needs_llvm22("26.20.7")
+    assert not ll.module.needs_llvm22("1.9.9")
+    # a branch is not a version: the newest rules apply
+    assert ll.module.needs_llvm22("main")
+
+    silent = _FakePlugin(
+        "x", "x", versions=[{"version": "1.0.0", "commit": "a"}],
+        entries=[{"id": "default", "configs": {}}],
+    )
+    assert plan.job({}, None, silent, "1.0.0", "a", {"id": "default"})["llvm"] is True
+
+
 def test_the_git_shim_retries_a_ref_upstream_spells_another_way():
     """A recipe may name `0.4.0` where upstream tags it `v0.4.0`.
 
