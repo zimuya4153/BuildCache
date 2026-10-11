@@ -1,0 +1,55 @@
+{
+  "package": "mifcache_expected-lite",
+  "version": "v0.6.3",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T07:57:00Z",
+  "xmake_version": "2.8.6",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 2,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@v0.6.3",
+  "entries": {
+    "default": {
+      "package": "mifcache_expected-lite",
+      "version": "v0.6.3",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T07:57:00Z",
+      "xmake_version": "2.8.6",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 2,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@v0.6.3",
+      "artifacts": [
+        {
+          "package": "mifcache_expected-lite",
+          "upstream_package": "expected-lite",
+          "version": "v0.6.3",
+          "buildhash": "dcc02bd4ed7c4da8a8dde5f4c36e03d1",
+          "key": "windows-x64-vc-dcc02bd4ed7c4da8a8dde5f4c36e03d1",
+          "toolset": "14.44.35207",
+          "release": "expected-lite_0",
+          "asset": "expected-lite-dcc02bd4ed7c4da8a8dde5f4c36e03d1.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/expected-lite_0/expected-lite-dcc02bd4ed7c4da8a8dde5f4c36e03d1.7z",
+          "sha256": "acffe61c2075cf27baefd7cdfbc9c50a58ae8070ba1efdced789cc52dbef7589",
+          "size": 9780,
+          "container": "7z",
+          "aliases": []
+        }
+      ]
+    }
+  }
+}

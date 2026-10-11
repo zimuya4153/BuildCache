@@ -2,8 +2,8 @@
   "package": "mifcache_gsl",
   "version": "v4.0.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T07:16:47Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-11T07:57:00Z",
+  "xmake_version": "2.8.6",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 2,
@@ -20,8 +20,8 @@
       "package": "mifcache_gsl",
       "version": "v4.0.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T07:16:47Z",
-      "xmake_version": "2.9.7",
+      "built_at": "2026-10-11T07:57:00Z",
+      "xmake_version": "2.8.6",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 2,
@@ -38,16 +38,31 @@
           "package": "mifcache_gsl",
           "upstream_package": "gsl",
           "version": "v4.0.0",
-          "buildhash": "cc4533ab1d88423b98d8fbee7dce0557",
-          "key": "windows-x64-vc-cc4533ab1d88423b98d8fbee7dce0557",
+          "buildhash": "d827b849ba7b4981a0dd19e7b3d83179",
+          "key": "windows-x64-vc-d827b849ba7b4981a0dd19e7b3d83179",
           "toolset": "14.44.35207",
           "release": "gsl_0",
-          "asset": "gsl-cc4533ab1d88423b98d8fbee7dce0557.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/gsl_0/gsl-cc4533ab1d88423b98d8fbee7dce0557.7z",
-          "sha256": "ff26b463d31906d556a2392788965f5f0821b7eb790f701f3c2fbc1b45ce0549",
-          "size": 15793,
+          "asset": "gsl-d827b849ba7b4981a0dd19e7b3d83179.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/gsl_0/gsl-d827b849ba7b4981a0dd19e7b3d83179.7z",
+          "sha256": "7dea6f60a59342b7b1a046ba9b2153a54cc6497e50a4cf3b2f872d4d4f42c714",
+          "size": 15730,
           "container": "7z",
-          "aliases": []
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "3dab028e0a584d6783983e13efa1d53a",
+              "key": "windows-x64-vc-3dab028e0a584d6783983e13efa1d53a",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "f0428a2ff4144959ae9cd2f54eea9bc7",
+              "key": "windows-x64-vc-f0428a2ff4144959ae9cd2f54eea9bc7",
+              "toolset": "14.44.35207"
+            }
+          ]
         }
       ]
     }

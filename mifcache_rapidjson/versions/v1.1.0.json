@@ -2,8 +2,8 @@
   "package": "mifcache_rapidjson",
   "version": "v1.1.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T07:16:47Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-11T07:57:00Z",
+  "xmake_version": "2.8.6",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 2,
@@ -20,8 +20,8 @@
       "package": "mifcache_rapidjson",
       "version": "v1.1.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T07:16:47Z",
-      "xmake_version": "2.9.7",
+      "built_at": "2026-10-11T07:57:00Z",
+      "xmake_version": "2.8.6",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 2,
@@ -38,16 +38,31 @@
           "package": "mifcache_rapidjson",
           "upstream_package": "rapidjson",
           "version": "v1.1.0",
-          "buildhash": "0f134bb496e5466f91a92e689450b200",
-          "key": "windows-x64-vc-0f134bb496e5466f91a92e689450b200",
+          "buildhash": "d77ef886f1564da79362114528b6d272",
+          "key": "windows-x64-vc-d77ef886f1564da79362114528b6d272",
           "toolset": "14.44.35207",
           "release": "rapidjson_0",
-          "asset": "rapidjson-0f134bb496e5466f91a92e689450b200.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/rapidjson_0/rapidjson-0f134bb496e5466f91a92e689450b200.7z",
-          "sha256": "d51bc8f88e31c0bc34873e75006b669eeedd96766f0540b09f7cd48ba17b712f",
-          "size": 86439,
+          "asset": "rapidjson-d77ef886f1564da79362114528b6d272.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/rapidjson_0/rapidjson-d77ef886f1564da79362114528b6d272.7z",
+          "sha256": "fb7f25ef86c5b9477ad2d1832168a17204f22e6acb0b2e783d122009ed2d9c98",
+          "size": 86387,
           "container": "7z",
-          "aliases": []
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "e54e9e846304450f846b2948842ca9c7",
+              "key": "windows-x64-vc-e54e9e846304450f846b2948842ca9c7",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "72552aeed12c46e8975af07dfbc8d61e",
+              "key": "windows-x64-vc-72552aeed12c46e8975af07dfbc8d61e",
+              "toolset": "14.44.35207"
+            }
+          ]
         }
       ]
     }
