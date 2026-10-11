@@ -479,6 +479,28 @@ def test_a_dependency_that_cannot_be_resolved_does_not_block_anything():
     assert notes and "cannot resolve" in notes[0]
 
 
+def test_the_git_shim_retries_a_ref_upstream_spells_another_way():
+    """A recipe may name `0.4.0` where upstream tags it `v0.4.0`.
+
+    xmake then asks git for a ref that does not exist and the clone dies before
+    anything is built -- the era plan meets this, because the recipe as it was on
+    that date had not pinned the commit yet, and nothing in the log says so. The
+    shim tries the "v", and then clones without a ref at all, which its own pin()
+    rewinds to the cutoff.
+    """
+    from lib import git_shim_impl as shim
+
+    argv = ["clone", "https://x/y.git", "-b", "0.4.0", "--depth", "1", "dir"]
+    assert shim.with_v(argv) == ["clone", "https://x/y.git", "-b", "v0.4.0", "--depth", "1", "dir"]
+    assert shim.without_ref(argv) == ["clone", "https://x/y.git", "--depth", "1", "dir"]
+    # a long form, and a clone that names no ref at all
+    assert shim.with_v(["clone", "--branch=1.2.3", "u"]) == ["clone", "--branch=v1.2.3", "u"]
+    plain = ["clone", "https://x/y.git", "dir"]
+    assert shim.with_v(plain) == plain
+    assert shim.without_ref(plain) == plain
+    assert shim.clone_target(["u.git", "dir"]) == "dir"
+
+
 def test_a_dependency_without_a_version_takes_the_one_of_its_era(monkeypatch, tmp_path: Path):
     """`bsci` 0.4.0 says `add_requires("levilamina")` -- no version at all.
 

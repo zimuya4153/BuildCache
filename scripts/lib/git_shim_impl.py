@@ -14,6 +14,7 @@ Behaviour:
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -103,15 +104,74 @@ def clone_target(argv: list[str]) -> str | None:
     return target
 
 
+def _ref_position(argv: list[str]) -> tuple[int, bool] | None:
+    """Where the ref of a clone is: ``(index, inline)``, or ``None``.
+
+    ``-b X`` puts it after the flag (``(i + 1, False)``); ``--branch=X`` puts it
+    inside the argument (``(i, True)``).
+    """
+    for index, arg in enumerate(argv):
+        if arg in ("-b", "--branch"):
+            return (index + 1, False) if index + 1 < len(argv) else None
+        if arg.startswith("--branch="):
+            return index, True
+    return None
+
+
+def with_v(argv: list[str]) -> list[str]:
+    """``-b 0.4.0`` -> ``-b v0.4.0``: the same release, spelled as upstream tags it."""
+    found = _ref_position(argv)
+    if found is None:
+        return argv
+    index, inline = found
+    if inline:
+        head, _, ref = argv[index].partition("=")
+        return list(argv[:index]) + [f"{head}=v{ref}"] + list(argv[index + 1:])
+    return list(argv[:index]) + [f"v{argv[index]}"] + list(argv[index + 1:])
+
+
+def without_ref(argv: list[str]) -> list[str]:
+    """Drop ``-b <ref>``: clone the default branch and let ``pin()`` rewind it."""
+    found = _ref_position(argv)
+    if found is None:
+        return argv
+    index, inline = found
+    start = index if inline else index - 1
+    return list(argv[:start]) + list(argv[index + 1:])
+
+
 def main(argv: list[str]) -> int:
     git = real_git()
     if not argv or argv[0] != "clone":
         return subprocess.call([git] + argv)
 
-    result = subprocess.call([git] + argv)
+    target = clone_target(argv[1:])
+    destination = Path.cwd() / target if target else None
+    # A recipe may name a version that upstream tags with a "v" -- `0.4.0` against
+    # `v0.4.0` -- and then xmake asks git for a ref that does not exist and the
+    # clone dies before anything can be built. It is the *era* plan that meets
+    # this, because the recipe as it was on that date had not pinned the commit
+    # yet, and the failure looks nothing like its cause. So the "v" is tried, and
+    # failing that the clone is repeated without a ref: the shim's own pin() then
+    # checks the tree out at the newest commit before the cutoff.
+    attempts = [argv]
+    if _ref_position(argv[1:]) is not None:
+        attempts.append(with_v(argv))
+        attempts.append(without_ref(argv))
+    result = 0
+    for index, attempt in enumerate(attempts):
+        result = subprocess.call([git] + attempt)
+        if result == 0:
+            if index:
+                note(f"clone retried without a ref that does not exist: {' '.join(attempt)}")
+            break
+        # A failed clone leaves a directory behind, and the next attempt refuses
+        # to clone into it.
+        if index + 1 < len(attempts) and destination is not None:
+            note(f"clone failed, retrying ({index + 1}): {' '.join(attempt)}")
+            shutil.rmtree(destination, ignore_errors=True)
     if result != 0:
         return result
-    target = clone_target(argv[1:])
     if target:
         pin(Path.cwd() / target)
     return result
