@@ -404,6 +404,33 @@ def test_old_era_sources_get_the_include_they_forgot(tmp_path: Path):
     assert ll.module._repair_era_sources(snapshot) == []
 
 
+def test_old_era_sources_stop_reaching_into_the_stl(tmp_path: Path):
+    """optional_ref::transform used std::_Construct_from_invoke_result_tag.
+
+    That is an MSVC STL internal, and the private constructor it fed is no longer
+    reachable (C2248), so the era's own source has to be spelled the supported way.
+    """
+    recipe = tmp_path / "levimc-repo@test" / "packages" / "l" / "levilamina"
+    recipe.mkdir(parents=True)
+    (recipe / "xmake.lua").write_text(
+        'package("levilamina")\n'
+        "    on_install(function (package)\n"
+        '        import("package.tools.xmake").install(package)\n'
+        "    end)\n",
+        encoding="utf-8",
+    )
+    ll = next(
+        item for item in plugins.load_all(util.load_config()) if item.name == "ll"
+    )
+    notes = ll.module._repair_era_sources(tmp_path / "levimc-repo@test")
+    assert notes
+    text = (recipe / "xmake.lua").read_text(encoding="utf-8")
+    assert 'io.replace("src/mc/common/wrapper/optional_ref.h"' in text
+    assert "std::_Construct_from_invoke_result_tag{}," in text
+    assert "std::invoke(std::forward<Fn>(fn), static_cast<T&>(*mPtr))" in text
+    assert "{plain = true})" in text
+
+
 def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     """Only the project's own package has an entry dimension."""
     config = dict(util.load_config())

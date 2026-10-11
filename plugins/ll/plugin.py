@@ -350,12 +350,32 @@ _ERA_INCLUDES = {
     ],
 }
 
+#: The old era also reached *into* the STL: ``optional_ref::transform`` built its
+#: result with ``std::_Construct_from_invoke_result_tag``, an MSVC internal that
+#: newer STLs no longer expose (``C2248``, the private constructor). Constructing
+#: the optional directly is the supported spelling of exactly that operation.
+_ERA_EDITS = {
+    "levilamina": [
+        (
+            "src/mc/common/wrapper/optional_ref.h",
+            "std::optional<UnwrapT>{\n"
+            "                    std::_Construct_from_invoke_result_tag{},\n"
+            "                    std::forward<Fn>(fn),\n"
+            "                    static_cast<T&>(*mPtr)\n"
+            "                }",
+            "std::optional<UnwrapT>{\n"
+            "                    std::invoke(std::forward<Fn>(fn), static_cast<T&>(*mPtr))\n"
+            "                }",
+        ),
+    ],
+}
+
 
 def _repair_era_sources(snapshot) -> list[str]:
-    """Inject the standard includes an old-era dependency forgot to write."""
+    """Repair the era's sources: missing includes and STL internals it reached into."""
     snapshot = Path(snapshot)
     notes: list[str] = []
-    for package, fixes in _ERA_INCLUDES.items():
+    for package in {**_ERA_INCLUDES, **_ERA_EDITS}:
         recipe = snapshot / "packages" / package[0] / package / "xmake.lua"
         if not recipe.is_file():
             continue
@@ -363,7 +383,7 @@ def _repair_era_sources(snapshot) -> list[str]:
         if "BuildCache: era includes" in text:
             continue
         lines = []
-        for header, include, symbol in fixes:
+        for header, include, symbol in _ERA_INCLUDES.get(package, []):
             lines.append(
                 f'        do\n'
                 f'            local file = "{header}"\n'
@@ -374,6 +394,12 @@ def _repair_era_sources(snapshot) -> list[str]:
                 f'            end\n'
                 f'        end'
             )
+        for path, old, new in _ERA_EDITS.get(package, []):
+            lines.append(
+                f'        io.replace("{path}",\n'
+                f"            [==[{old}]==],\n"
+                f"            [==[{new}]==], {{plain = true}})"
+            )
         match = re.search(r"^(\s*)on_install\(function", text, re.M)
         if not match:
             continue
@@ -382,7 +408,10 @@ def _repair_era_sources(snapshot) -> list[str]:
         # arguments continue on that line.
         line_end = text.index("\n", match.end())
         util.write_text(recipe, text[: line_end + 1] + injection + text[line_end + 1 :])
-        notes.append(f"{snapshot.name}/{package}: era includes injected ({len(fixes)})")
+        notes.append(
+            f"{snapshot.name}/{package}: era source repairs injected "
+            f"({len(lines)} fix(es))"
+        )
     return notes
 
 
