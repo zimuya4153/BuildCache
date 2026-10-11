@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 from . import util
@@ -105,12 +106,40 @@ def ensure_release(
 
 
 def upload_asset(owner: str, repo: str, tag: str, path: Path, config: dict | None = None) -> None:
-    util.run(
-        ["gh", "release", "upload", tag, str(path), "--repo", f"{owner}/{repo}", "--clobber"],
-        env=util.subprocess_env(config or util.load_config()),
-        capture=True,
-        quiet=True,
-    )
+    """Attach an archive to its shard, retrying what a hiccup deserves.
+
+    A round shares its dependencies with the rounds around it, so an upload can
+    meet a shard that another job is creating at that very moment ("HTTP 404" on
+    the upload endpoint) or a flaky connection. Re-resolve the release and try
+    again instead of failing a build that has already compiled everything.
+    """
+    config = config or util.load_config()
+    env = util.subprocess_env(config)
+    attempts = 3
+    result = None
+    for attempt in range(1, attempts + 1):
+        result = util.run(
+            ["gh", "release", "upload", tag, str(path), "--repo", f"{owner}/{repo}", "--clobber"],
+            env=env,
+            capture=True,
+            check=False,
+            quiet=True,
+        )
+        if result.returncode == 0:
+            return
+        util.warn(
+            f"{tag}: upload of {path.name} failed (attempt {attempt}/{attempts}): "
+            + (result.stderr or result.stdout or "").strip().splitlines()[-1][:160]
+        )
+        if attempt < attempts:
+            # The shard may simply have been (re)created by another job.
+            ensure_release(owner, repo, tag, target=target_of(config), config=config)
+            time.sleep(3 * attempt)
+    raise RuntimeError(f"{tag}: could not upload {path.name}: {result.stderr or result.stdout}")
+
+
+def target_of(config: dict) -> str | None:
+    return (config.get("release") or {}).get("targetBranch")
 
 
 def asset_url(owner: str, repo: str, tag: str, name: str) -> str:

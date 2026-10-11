@@ -432,6 +432,38 @@ def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
     assert upstream.exists() is False
 
 
+def test_a_failed_upload_is_retried(tmp_path: Path, monkeypatch):
+    """A build must not fail because a shard was being created at that moment.
+
+    Rounds share their dependencies, so two jobs can meet the same release while
+    one of them is still creating it ("HTTP 404" on the upload endpoint). The
+    archive is re-attached after re-resolving the release.
+    """
+    from lib import gh
+
+    class Result:
+        returncode = 1
+        stdout = ""
+        stderr = "HTTP 404: Not Found"
+
+    calls = {"n": 0}
+
+    def fake_run(args, **kwargs):
+        calls["n"] += 1
+        result = Result()
+        result.returncode = 0 if calls["n"] >= 3 else 1
+        return result
+
+    monkeypatch.setattr(gh.util, "run", fake_run)
+    monkeypatch.setattr(gh.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(gh, "ensure_release", lambda *args, **kwargs: None)
+    asset = tmp_path / "fmt.7z"
+    asset.write_bytes(b"archive")
+
+    gh.upload_asset("owner", "repo", "fmt_0", asset, config=util.load_config())
+    assert calls["n"] == 3
+
+
 def test_an_artifact_already_published_is_not_packed_again(tmp_path: Path):
     """The build hash is the identity of a build, so a published one is reused.
 
