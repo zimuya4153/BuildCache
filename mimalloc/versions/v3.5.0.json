@@ -1,38 +1,39 @@
 {
   "package": "mimalloc",
   "version": "v3.5.0",
-  "built_at": "2026-10-11T10:06:11Z",
+  "built_at": "2026-10-11T10:27:54Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
   "revision": 3,
   "configs": {
-    "target_type": "server"
+    "target_type": "client"
   },
   "alias_profiles": [
     "msvc",
     "clang-cl"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@26.51.5",
+  "produced_for": "levilamina@26.51.6",
   "entries": {
     "default": {
       "package": "mimalloc",
       "version": "v3.5.0",
-      "built_at": "2026-10-11T10:06:11Z",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:27:54Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
       "revision": 3,
       "configs": {
-        "target_type": "server"
+        "target_type": "client"
       },
       "alias_profiles": [
         "msvc",
         "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.5",
+      "produced_for": "levilamina@26.51.6",
       "artifacts": [
         {
           "package": "mifcache_mimalloc",
@@ -44,8 +45,8 @@
           "release": "mimalloc_0",
           "asset": "mimalloc-1dbbc847966349438c4f66166623a12b.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/mimalloc_0/mimalloc-1dbbc847966349438c4f66166623a12b.7z",
-          "sha256": "4b9ab222dad5da327e103e27333deec8ca9c083bda3d4ec16c0c0579603800ba",
-          "size": 214109,
+          "sha256": "6e647dcf404672857962f5dd41122f9a7491f259a6c4c480448aa99264175ac7",
+          "size": 214035,
           "container": "7z",
           "aliases": [
             {
@@ -66,5 +67,6 @@
         }
       ]
     }
-  }
+  },
+  "prefix": "mifcache_"
 }

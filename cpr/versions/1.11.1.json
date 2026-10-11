@@ -1,38 +1,39 @@
 {
   "package": "cpr",
   "version": "1.11.1",
-  "built_at": "2026-10-11T10:06:11Z",
+  "built_at": "2026-10-11T10:27:54Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
   "revision": 3,
   "configs": {
-    "target_type": "server"
+    "target_type": "client"
   },
   "alias_profiles": [
     "msvc",
     "clang-cl"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@26.51.5",
+  "produced_for": "levilamina@26.51.6",
   "entries": {
     "default": {
       "package": "cpr",
       "version": "1.11.1",
-      "built_at": "2026-10-11T10:06:11Z",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:27:54Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
       "revision": 3,
       "configs": {
-        "target_type": "server"
+        "target_type": "client"
       },
       "alias_profiles": [
         "msvc",
         "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.5",
+      "produced_for": "levilamina@26.51.6",
       "artifacts": [
         {
           "package": "mifcache_cpr",
@@ -44,8 +45,8 @@
           "release": "cpr_0",
           "asset": "cpr-1c9ad4a4e04341219556b734b3fdce5d.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/cpr_0/cpr-1c9ad4a4e04341219556b734b3fdce5d.7z",
-          "sha256": "24227cfaa4dd686ca153a1ea10121cf2603b2bf6fef5b1f20aa142efaf45c668",
-          "size": 523477,
+          "sha256": "16c87263dc1f0a60b8e4be6647d27878d2dcd435c909a3cc9884a442e0b65894",
+          "size": 521878,
           "container": "7z",
           "aliases": [
             {
@@ -66,5 +67,6 @@
         }
       ]
     }
-  }
+  },
+  "prefix": "mifcache_"
 }

@@ -1,0 +1,72 @@
+{
+  "package": "mifcache_prelink",
+  "version": "v0.8.6",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T10:27:54Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.51.36231",
+  "revision": 3,
+  "configs": {
+    "target_type": "client"
+  },
+  "alias_profiles": [
+    "msvc",
+    "clang-cl"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@26.51.6",
+  "entries": {
+    "default": {
+      "package": "mifcache_prelink",
+      "version": "v0.8.6",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:27:54Z",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "revision": 3,
+      "configs": {
+        "target_type": "client"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@26.51.6",
+      "artifacts": [
+        {
+          "package": "mifcache_prelink",
+          "upstream_package": "prelink",
+          "version": "v0.8.6",
+          "buildhash": "2af432b8e9844196a88c103051e332ec",
+          "key": "windows-x64-vc-2af432b8e9844196a88c103051e332ec",
+          "toolset": "14.51.36231",
+          "release": "prelink_0",
+          "asset": "prelink-2af432b8e9844196a88c103051e332ec.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/prelink_0/prelink-2af432b8e9844196a88c103051e332ec.7z",
+          "sha256": "050428e9a5848e53125fbd7ae35f259f03f3f58440aa311369d97394baa545a5",
+          "size": 4283195,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "ddf78d8eb1a64bf0afe44563505f6eb4",
+              "key": "windows-x64-vc-ddf78d8eb1a64bf0afe44563505f6eb4",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "07f1e481201c4384b51f02afee994e4d",
+              "key": "windows-x64-vc-07f1e481201c4384b51f02afee994e4d",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,36 +1,39 @@
 {
   "package": "leveldb",
   "version": "1.23",
-  "built_at": "2026-10-11T10:22:33Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-11T10:27:54Z",
+  "xmake_version": "3.1.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.44.35207",
+  "vs_toolset": "14.51.36231",
   "revision": 3,
   "configs": {
-    "target_type": "server"
+    "target_type": "client"
   },
   "alias_profiles": [
-    "msvc"
+    "msvc",
+    "clang-cl"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@0.13.5",
+  "produced_for": "levilamina@26.51.6",
   "entries": {
     "default": {
       "package": "leveldb",
       "version": "1.23",
-      "built_at": "2026-10-11T10:22:33Z",
-      "xmake_version": "2.9.7",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:27:54Z",
+      "xmake_version": "3.1.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.44.35207",
+      "vs_toolset": "14.51.36231",
       "revision": 3,
       "configs": {
-        "target_type": "server"
+        "target_type": "client"
       },
       "alias_profiles": [
-        "msvc"
+        "msvc",
+        "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@0.13.5",
+      "produced_for": "levilamina@26.51.6",
       "artifacts": [
         {
           "package": "mifcache_leveldb",
@@ -42,8 +45,8 @@
           "release": "leveldb_0",
           "asset": "leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/leveldb_0/leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
-          "sha256": "f084b65213943548ed8d4299448f02740bb24428997c7c94975e8bca4ab21575",
-          "size": 285637,
+          "sha256": "269ce24f000621815beac71a596ebf48970c8bbf565c22426246d6a51075c1b5",
+          "size": 445271,
           "container": "7z",
           "aliases": [
             {
@@ -64,5 +67,6 @@
         }
       ]
     }
-  }
+  },
+  "prefix": "mifcache_"
 }

@@ -1,0 +1,72 @@
+{
+  "package": "mifcache_libhat",
+  "version": "0.4.0",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T10:27:54Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.51.36231",
+  "revision": 3,
+  "configs": {
+    "target_type": "client"
+  },
+  "alias_profiles": [
+    "msvc",
+    "clang-cl"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@26.51.6",
+  "entries": {
+    "default": {
+      "package": "mifcache_libhat",
+      "version": "0.4.0",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:27:54Z",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "revision": 3,
+      "configs": {
+        "target_type": "client"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@26.51.6",
+      "artifacts": [
+        {
+          "package": "mifcache_libhat",
+          "upstream_package": "libhat",
+          "version": "0.4.0",
+          "buildhash": "c50fc038e66740e58945ea5327f5be6a",
+          "key": "windows-x64-vc-c50fc038e66740e58945ea5327f5be6a",
+          "toolset": "14.51.36231",
+          "release": "libhat_0",
+          "asset": "libhat-c50fc038e66740e58945ea5327f5be6a.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/libhat_0/libhat-c50fc038e66740e58945ea5327f5be6a.7z",
+          "sha256": "43140189af5fcc1c550550c80175237c61cf9dcd491467a57c1e2b0c022ace21",
+          "size": 87031,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "5bc196abc3ce43048a872ea3801c8b3d",
+              "key": "windows-x64-vc-5bc196abc3ce43048a872ea3801c8b3d",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "b08e7160ae9441f09e3d0b1ddcb2deea",
+              "key": "windows-x64-vc-b08e7160ae9441f09e3d0b1ddcb2deea",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

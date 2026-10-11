@@ -1,38 +1,39 @@
 {
   "package": "libhat",
   "version": "0.4.0",
-  "built_at": "2026-10-11T10:06:11Z",
+  "built_at": "2026-10-11T10:27:54Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
   "revision": 3,
   "configs": {
-    "target_type": "server"
+    "target_type": "client"
   },
   "alias_profiles": [
     "msvc",
     "clang-cl"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@26.51.5",
+  "produced_for": "levilamina@26.51.6",
   "entries": {
     "default": {
       "package": "libhat",
       "version": "0.4.0",
-      "built_at": "2026-10-11T10:06:11Z",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:27:54Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
       "revision": 3,
       "configs": {
-        "target_type": "server"
+        "target_type": "client"
       },
       "alias_profiles": [
         "msvc",
         "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.5",
+      "produced_for": "levilamina@26.51.6",
       "artifacts": [
         {
           "package": "mifcache_libhat",
@@ -44,8 +45,8 @@
           "release": "libhat_0",
           "asset": "libhat-c50fc038e66740e58945ea5327f5be6a.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/libhat_0/libhat-c50fc038e66740e58945ea5327f5be6a.7z",
-          "sha256": "41385c367ebd5727308901ba36b84a66aaea1d87f04a0fef7fe1eeac2672d926",
-          "size": 87068,
+          "sha256": "43140189af5fcc1c550550c80175237c61cf9dcd491467a57c1e2b0c022ace21",
+          "size": 87031,
           "container": "7z",
           "aliases": [
             {
@@ -66,5 +67,6 @@
         }
       ]
     }
-  }
+  },
+  "prefix": "mifcache_"
 }

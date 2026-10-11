@@ -1,0 +1,72 @@
+{
+  "package": "mifcache_cpr",
+  "version": "1.11.1",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T10:27:54Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.51.36231",
+  "revision": 3,
+  "configs": {
+    "target_type": "client"
+  },
+  "alias_profiles": [
+    "msvc",
+    "clang-cl"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@26.51.6",
+  "entries": {
+    "default": {
+      "package": "mifcache_cpr",
+      "version": "1.11.1",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:27:54Z",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "revision": 3,
+      "configs": {
+        "target_type": "client"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@26.51.6",
+      "artifacts": [
+        {
+          "package": "mifcache_cpr",
+          "upstream_package": "cpr",
+          "version": "1.11.1",
+          "buildhash": "1c9ad4a4e04341219556b734b3fdce5d",
+          "key": "windows-x64-vc-1c9ad4a4e04341219556b734b3fdce5d",
+          "toolset": "14.51.36231",
+          "release": "cpr_0",
+          "asset": "cpr-1c9ad4a4e04341219556b734b3fdce5d.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/cpr_0/cpr-1c9ad4a4e04341219556b734b3fdce5d.7z",
+          "sha256": "16c87263dc1f0a60b8e4be6647d27878d2dcd435c909a3cc9884a442e0b65894",
+          "size": 521878,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "3a95096e5c70467fbd5a5d8585343423",
+              "key": "windows-x64-vc-3a95096e5c70467fbd5a5d8585343423",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "595dddd1bb5443de92a1c339a160d7b8",
+              "key": "windows-x64-vc-595dddd1bb5443de92a1c339a160d7b8",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

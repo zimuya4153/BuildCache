@@ -1,38 +1,39 @@
 {
   "package": "libcurl",
   "version": "8.21.0",
-  "built_at": "2026-10-11T10:06:11Z",
+  "built_at": "2026-10-11T10:27:54Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
   "revision": 3,
   "configs": {
-    "target_type": "server"
+    "target_type": "client"
   },
   "alias_profiles": [
     "msvc",
     "clang-cl"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@26.51.5",
+  "produced_for": "levilamina@26.51.6",
   "entries": {
     "default": {
       "package": "libcurl",
       "version": "8.21.0",
-      "built_at": "2026-10-11T10:06:11Z",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:27:54Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
       "revision": 3,
       "configs": {
-        "target_type": "server"
+        "target_type": "client"
       },
       "alias_profiles": [
         "msvc",
         "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.5",
+      "produced_for": "levilamina@26.51.6",
       "artifacts": [
         {
           "package": "mifcache_libcurl",
@@ -44,8 +45,8 @@
           "release": "libcurl_0",
           "asset": "libcurl-917c16ddbf2942d1ae0e099942006c5b.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/libcurl_0/libcurl-917c16ddbf2942d1ae0e099942006c5b.7z",
-          "sha256": "4e81a070c114781bf8303a27f4f6bbda3116db4ca9b68d5567199e39d7e6f97b",
-          "size": 1413617,
+          "sha256": "ca95dd2e6abe7b61cdceeba0da8aaa4380547a24b2ea7c27ac0375ab21e125c9",
+          "size": 1412580,
           "container": "7z",
           "aliases": [
             {
@@ -66,5 +67,6 @@
         }
       ]
     }
-  }
+  },
+  "prefix": "mifcache_"
 }
