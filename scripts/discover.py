@@ -39,7 +39,7 @@ def main() -> int:
         if args.plugin and plugin.name != args.plugin:
             continue
         metadata = plugin.call("metadata")
-        package = ctx.package_name(metadata["package"])
+        package = metadata["package"]
         entries = plugin.call("list_versions", ctx) or []
         if not entries:
             util.warn(f"[{plugin.name}] no versions discovered")

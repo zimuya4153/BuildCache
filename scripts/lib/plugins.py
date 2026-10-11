@@ -102,14 +102,12 @@ def load_all(config: dict) -> list[Plugin]:
 
 
 def project_packages(config: dict, ctx) -> set[str]:
-    """Published names of the packages that *are* one of the configured projects.
+    """Names of the packages that *are* one of the configured projects.
 
     Those are the only ones with a build-entry dimension of their own: everything
     else a build pulls in is just a dependency.
     """
-    return {
-        ctx.package_name(plugin.call("metadata")["package"]) for plugin in load_all(config)
-    }
+    return {plugin.call("metadata")["package"] for plugin in load_all(config)}
 
 
 class Context:
@@ -173,13 +171,6 @@ class Context:
         if name not in self.mirrors:
             self.mirrors[name] = repos.mirror(self.config, name, url, proxy=self.proxy)
         return self.mirrors[name]
-
-    @property
-    def prefix(self) -> str:
-        return str(self.config.get("prefix", ""))
-
-    def package_name(self, upstream: str) -> str:
-        return f"{self.prefix}{upstream}"
 
     def recipe_source(self, name: str) -> Path | None:
         for source in self.config.get("recipes", {}).get("sources", []):

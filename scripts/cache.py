@@ -153,24 +153,38 @@ def _inventory(ctx, package_filter: str = ""):
 
 
 # -------------------------------------------------------------------------- graph
-def _read_deps(package_repo: Path, prefix: str = '') -> dict[str, set[str]]:
-    """Dependency edges between our prefixed packages, from the vendored recipes."""
+def _recipe_sources(ctx) -> list[Path]:
+    """The recipe mirrors the projects are built from (cloned on demand)."""
+    return [
+        ctx.mirror(source["name"], source["url"])
+        for source in ctx.config.get("recipes", {}).get("sources", [])
+    ]
+
+
+def _read_deps(roots: list[Path]) -> dict[str, set[str]]:
+    """Dependency edges between packages, from the recipe sources.
+
+    The repository we publish holds manifests only, so the edges come from the
+    recipes the projects are built with (the mirrors); every package is named as
+    the upstream repository names it, which is also how it appears in the ledger.
+    """
     graph: dict[str, set[str]] = {}
-    for recipe in sorted(Path(package_repo).glob("packages/*/*/xmake.lua")):
-        package = recipe.parent.name
-        edges: set[str] = set()
-        files = sorted((recipe.parent / "versions").glob("*.lua")) + [recipe]
-        for path in files:
-            for match in _SPEC.finditer(util.read_text(path)):
-                name = match.group(1)
-                if (not prefix or name.startswith(prefix)) and name != package:
-                    edges.add(name)
-        graph[package] = edges
-    return {name: edges for name, edges in graph.items() if edges or name in graph}
+    for root in sorted(Path(directory) for directory in roots):
+        for recipe in sorted(root.glob("packages/*/*/xmake.lua")):
+            package = recipe.parent.name
+            edges: set[str] = set()
+            files = sorted((recipe.parent / "versions").glob("*.lua")) + [recipe]
+            for path in files:
+                for match in _SPEC.finditer(util.read_text(path)):
+                    name = match.group(1)
+                    if name != package:
+                        edges.add(name)
+            graph[package] = edges
+    return graph
 
 
 def cmd_graph(ctx, args) -> int:
-    graph = _read_deps(Path(ctx.package_repo), ctx.prefix)
+    graph = _read_deps(_recipe_sources(ctx))
     if args.package:
         focus = args.package
         util.log(f"{focus} depends on: {', '.join(sorted(graph.get(focus, []))) or '-'}")
@@ -201,7 +215,7 @@ def _closure(roots: set[str], graph: dict[str, set[str]], reverse: bool, recursi
 # ------------------------------------------------------------------------- remove
 def cmd_remove(config: dict, ctx, args) -> int:
     ctx.ensure_index()
-    graph = _read_deps(Path(ctx.package_repo), ctx.prefix)
+    graph = _read_deps(_recipe_sources(ctx))
     cached = {package for package, _, _, _ in _inventory(ctx)}
 
     if args.all or "*" in args.targets:

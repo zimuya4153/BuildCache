@@ -1,5 +1,4 @@
 {
-  "prefix": "mifcache_",
   "revision": 3,
   "platform": {
     "plat": "windows",
@@ -28,7 +27,7 @@
   "artifacts": {
     "container": "7z",
     "containers": {
-      "mifcache_levilamina": "7z"
+    "levilamina": "7z"
     }
   },
   "bot": {

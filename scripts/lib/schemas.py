@@ -90,7 +90,6 @@ class PluginSpec(_Base):
 
 
 class Config(_Base):
-    prefix: str
     revision: int = 1
     platform: Platform = Field(default_factory=Platform)
     repos: Repos
@@ -132,7 +131,6 @@ class BuildResult(_Base):
     upstream_toolchain: str = ""
     vs_toolset: str | None = None
     recipe_commits: dict[str, str] = Field(default_factory=dict)
-    prefix: str = ""
     platform: dict[str, Any] = Field(default_factory=dict)
     built_at: str = ""
     artifacts: list[Artifact] = Field(default_factory=list)

@@ -1,8 +1,8 @@
 """LeviLamina SDK plugin.
 
 The framework knows nothing about LeviLamina: this module answers *which*
-versions exist, *how* each one must be built and *which* recipes have to be
-vendored under our own package prefix.
+versions exist, *how* each one must be built, and how its sources have to be
+repaired to build at all.
 """
 
 from __future__ import annotations
@@ -43,7 +43,6 @@ def metadata() -> dict:
         "id": "ll",
         "display": "LeviLamina",
         "package": RECIPE_PACKAGE,
-        "prefix_package": True,
         "upstream": UPSTREAM_REPO,
         "extra_packages": EXTRA_PACKAGES,
     }

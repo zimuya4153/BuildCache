@@ -152,7 +152,7 @@ def release_title(tag: str) -> str:
     return library or tag
 
 
-def release_notes(tag: str, rows: list[dict] | None = None, table=None, prefix: str = "") -> str:
+def release_notes(tag: str, rows: list[dict] | None = None, table=None) -> str:
     """Release bodies carry the metadata that no longer lives in asset names.
 
     The columns come from :mod:`lib.reports`: the framework supplies the mandatory
@@ -173,8 +173,6 @@ def release_notes(tag: str, rows: list[dict] | None = None, table=None, prefix: 
         f"- Package: `{release_title(tag)}`",
         f"- Index id: `{tag}`",
     ]
-    if prefix:
-        lines.append(f"- Package prefix: `{prefix}`")
     if rows:
         table = table or reports.Table()
         lines += table.render(rows, title="Cached builds")

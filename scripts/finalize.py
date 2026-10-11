@@ -127,7 +127,6 @@ def _component_record(result: dict, package: str, version: str) -> dict:
     return {
         "package": package,
         "version": version,
-        "prefix": result.get("prefix"),
         "built_at": result.get("built_at"),
         "xmake_version": result.get("xmake_version"),
         "toolchain": result.get("toolchain"),
@@ -158,7 +157,7 @@ def write_ledger(config: dict, ctx, results: list[dict], dry_run: bool = False) 
     for result in results:
         version = result["version"]
         variant = result.get("entry", "default")
-        published = ctx.package_name(result["package"])
+        package = result["package"]
         if not dry_run:
             # What compiled the sources, which is not the toolchain the package
             # was resolved with: LeviLamina's own xmake.lua forces clang-cl while
@@ -171,41 +170,25 @@ def write_ledger(config: dict, ctx, results: list[dict], dry_run: bool = False) 
             own = [
                 artifact
                 for artifact in result.get("artifacts", [])
-                if artifact.get("package") == published
+                if artifact.get("package") == package
             ]
             record = dict(result, artifacts=own)
-            # The ledger is keyed by the published name, because that is what
-            # `discover`, `verify` and the release notes read. The same build is
-            # also recorded under the upstream name, which is what makes
-            # `packages/l/levilamina/<version>/manifest.txt` appear in the
-            # consumer repository: a project that requires the upstream package
-            # from its own repository can then be served by our artifacts too.
-            index_store.write_entry(ctx.index_root, published, version, variant, record)
-            if result["package"] != published:
-                index_store.write_entry(
-                    ctx.index_root, result["package"], version, variant, record
-                )
+            # The ledger is keyed by the package's own name, because that is what
+            # `discover`, `verify` and the release notes read -- and what a
+            # consumer resolves. Our repository carries the manifest only, so a
+            # project requiring the upstream package is served by our archive
+            # without a copy of the recipe ever being involved.
+            index_store.write_entry(ctx.index_root, package, version, variant, record)
             for artifact in result.get("artifacts", []):
-                # A dependency is published under the name its own project asks
-                # for as well as under our prefix. xmake resolves a manifest by
-                # the name it is resolving, searching *every* repository
-                # (``repository.artifacts_manifest``), so the recipe can come from
-                # the official repository while the archive comes from ours: a
-                # project that never heard of the prefix gets the same prebuilt
-                # package and compiles nothing.
-                names = [artifact["package"]]
-                upstream = artifact.get("upstream_package") or artifact["package"]
-                if upstream != artifact["package"] and artifact["package"] != published:
-                    names.append(upstream)
-                for name in names:
-                    record = components.setdefault(
-                        (name, artifact["version"]),
-                        _component_record(result, name, artifact["version"]),
-                    )
-                    # The same dependency comes out of every entry of the project;
-                    # it is one artifact, so it is listed once.
-                    if artifact["key"] not in {item["key"] for item in record["artifacts"]}:
-                        record["artifacts"].append(artifact)
+                name = artifact["package"]
+                record = components.setdefault(
+                    (name, artifact["version"]),
+                    _component_record(result, name, artifact["version"]),
+                )
+                # The same dependency comes out of every entry of the project;
+                # it is one artifact, so it is listed once.
+                if artifact["key"] not in {item["key"] for item in record["artifacts"]}:
+                    record["artifacts"].append(artifact)
         entries += len(result.get("artifacts", []))
         util.log(
             f"{result['package']}@{version} [{variant}]: "
@@ -242,7 +225,7 @@ def refresh_release_notes(config: dict, ctx) -> None:
     # The core columns come from the framework, the rest from the project's own
     # plugin; a column that is empty in every row of a shard is not rendered.
     table = reports.for_plugins(config, ctx, plugins.load_all(config))
-    shards, prefix = release_rows(config, ctx)
+    shards = release_rows(config, ctx)
     for shard, rows in sorted(shards.items()):
         gh.update_release_notes(
             owner,
@@ -252,7 +235,6 @@ def refresh_release_notes(config: dict, ctx) -> None:
                 shard,
                 rows,
                 table=table,
-                prefix=prefix,
             ),
             config=config,
         )
@@ -260,13 +242,12 @@ def refresh_release_notes(config: dict, ctx) -> None:
         util.log(f"refreshed release notes for {len(shards)} shard(s)")
 
 
-def release_rows(config: dict, ctx) -> tuple[dict[str, list[dict]], str]:
-    """The table rows of every release shard, and the package prefix."""
+def release_rows(config: dict, ctx) -> dict[str, list[dict]]:
+    """The table rows of every release shard."""
     from lib import index_store
 
     own = plugins.project_packages(config, ctx)
     shards: dict[str, dict[str, dict]] = {}
-    prefix = ""
     for directory in sorted(Path(ctx.index_root).iterdir()):
         if not directory.is_dir() or directory.name.startswith("."):
             continue
@@ -283,13 +264,11 @@ def release_rows(config: dict, ctx) -> tuple[dict[str, list[dict]], str]:
                         own=directory.name in own,
                     )
                     shards.setdefault(artifact["release"], {})[row["asset"]] = row
-                    prefix = prefix or str(meta.get("prefix") or "")
     return (
         {
             shard: reports.newest_first(list(rows.values()))
             for shard, rows in shards.items()
         },
-        prefix,
     )
 
 
@@ -348,43 +327,30 @@ def regenerate_manifests(config: dict, ctx, index_root: Path, package_repo: Path
                     )
             manifest_lib.write_all(package_repo, package, version, entries)
             indexed.setdefault(package, set()).add(version)
-    # A project is published under two names: the prefixed one and the upstream
-    # one (so a project requiring the upstream package is served as well), and
-    # only the plugin knows the second -- after a full wipe the index is empty.
-    upstream = {name.removeprefix(ctx.prefix) for name in plugins.project_packages(config, ctx)}
-    _drop_stale_manifests(package_repo, indexed, ctx.prefix, upstream)
+    _drop_stale_manifests(package_repo, indexed)
 
 
 def _drop_stale_manifests(
     package_repo: Path,
     indexed: dict[str, set[str]],
-    prefix: str,
-    upstream_names: set[str],
 ) -> None:
     """Delete the manifest directories of packages the cache no longer holds.
 
-    The scan looks for manifest directories, not for recipes: a project is also
-    published under its upstream name, and that directory (``packages/l/levilamina``)
-    holds manifests only -- the recipe lives under the prefixed name.
+    The repository holds manifests and nothing else, so a directory that carries
+    one is ours to remove -- the recipes come from the official repositories, and
+    a package without a manifest simply builds from source there.
     """
     root = Path(package_repo) / "packages"
     if not root.is_dir():
         return
-
-    def ours(package: str) -> bool:
-        return (
-            package.startswith(prefix) or package in upstream_names or package in indexed
-        )
 
     dropped: list[str] = []
     for version_dir in sorted(root.glob("*/*/*")):
         if not version_dir.is_dir():
             continue
         package = version_dir.parent.name
-        if not ours(package):
-            continue
         # Only a directory that holds nothing but a manifest is ours: a recipe
-        # keeps its own files (xmake.lua, versions/versions.txt) where they are.
+        # would keep its own files (xmake.lua, versions/versions.txt) there.
         if {item.name for item in version_dir.iterdir()} != {"manifest.txt"}:
             continue
         if version_dir.name in indexed.get(package, set()):
@@ -393,7 +359,7 @@ def _drop_stale_manifests(
         dropped.append(f"{package} {version_dir.name}")
     # A package that had nothing but manifests disappears with its last one.
     for package_dir in sorted(root.glob("*/*")):
-        if package_dir.is_dir() and ours(package_dir.name) and not any(package_dir.iterdir()):
+        if package_dir.is_dir() and not any(package_dir.iterdir()):
             package_dir.rmdir()
     if dropped:
         util.log(

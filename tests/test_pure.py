@@ -26,7 +26,6 @@ from lib import (  # noqa: E402
     schemas,
     semver,
     util,
-    vendoring,
 )
 
 
@@ -534,66 +533,6 @@ def test_packing_is_reproducible(tmp_path: Path, monkeypatch):
     assert {"-mtm=off", "-mtc=off", "-mta=off"} <= set(calls[0])
 
 
-def test_only_served_packages_get_a_prefixed_recipe(tmp_path: Path):
-    """A prefixed recipe exists only where something is precompiled behind it.
-
-    Everything else keeps its upstream name and is resolved from the official
-    repositories -- with one exception: a version our repair invented (``1.21.0-r03``
-    out of ``1.21.0.03``) exists nowhere else, so that dependency keeps travelling
-    with us even when we serve no artifact for it.
-    """
-    config = dict(util.load_config())
-    config["_index_dir"] = str(tmp_path / "index")
-    ctx = plugins.Context(config)
-    for name in ("mifcache_fmt", "fmt"):  # the ledger records both spellings
-        index_store.write_entry(
-            ctx.index_root,
-            name,
-            "11.2.0",
-            "default",
-            {
-                "package": name,
-                "version": "11.2.0",
-                "artifacts": [
-                    {
-                        "package": name,
-                        "version": "11.2.0",
-                        "key": "windows-x64-vc-ee1902dd",
-                        "buildhash": "ee1902dd",
-                        "url": "https://example.invalid/fmt.7z",
-                        "sha256": "ab" * 32,
-                    }
-                ],
-            },
-        )
-    sources = tmp_path / "levimc-repo"
-    target = sources / "packages" / "l" / "levilamina"
-    (target / "versions").mkdir(parents=True)
-    (target / "xmake.lua").write_text(
-        'package("levilamina")\n    add_versionfiles("versions/versions.txt")\n',
-        encoding="utf-8",
-    )
-    (target / "versions" / "1_4_4.lua").write_text(
-        'local deps = { "fmt 11.2.0", "entt v3.14.0", "bdslibrary 1.21.0-r03" }\n',
-        encoding="utf-8",
-    )
-    for name, version in {
-        "fmt": "11.2.0",
-        "entt": "v3.14.0",
-        "bdslibrary": "1.21.0-r03",
-    }.items():
-        recipe = sources / "packages" / name[0] / name
-        recipe.mkdir(parents=True)
-        (recipe / "xmake.lua").write_text(
-            f'package("{name}")\n    add_versions("{version}", "{"ab" * 32}")\n',
-            encoding="utf-8",
-        )
-
-    ll = next(item for item in plugins.load_all(util.load_config()) if item.name == "ll")
-    owned = vendoring._collect_owned(config, ctx, ll, {"levimc-repo": sources}, "levilamina")
-    assert owned == {"levilamina", "fmt", "bdslibrary"}, owned
-    assert vendoring._served_packages(ctx) == {"fmt"}
-
 
 def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):
     """Deps that only the project's own xmake.lua names are part of the closure.
@@ -853,8 +792,8 @@ def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     def artifact(package: str, buildhash: str, entry: str) -> dict:
         return {
             "package": package,
-            "upstream_package": package.replace("mifcache_", ""),
-            "version": "11.2.0" if package == "mifcache_fmt" else "26.51.6",
+            "upstream_package": package,
+            "version": "11.2.0" if package == "fmt" else "26.51.6",
             "buildhash": buildhash,
             "key": f"windows-x64-vc-{buildhash}",
             "toolset": "14.44.35207",
@@ -863,7 +802,7 @@ def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
             "aliases": [],
         }
 
-    shared = artifact("mifcache_fmt", "ee1902dd", "server")
+    shared = artifact("fmt", "ee1902dd", "server")
     results = [
         {
             "package": "levilamina",
@@ -873,25 +812,23 @@ def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
             "toolchain": "msvc",
             "upstream_toolchain": "clang-cl",
             "alias_profiles": ["msvc", "clang-cl"],
-            "artifacts": [artifact("mifcache_levilamina", f"ll{entry}", entry), shared],
+            "artifacts": [artifact("levilamina", f"ll{entry}", entry), shared],
         }
         for entry in ("server", "client")
     ]
     finalize.write_ledger(config, ctx, results)
 
     owned = index_store.entries(
-        index_store.version_meta(ctx.index_root, "mifcache_levilamina", "26.51.6")
+        index_store.version_meta(ctx.index_root, "levilamina", "26.51.6")
     )
     assert set(owned) == {"server", "client"}, owned
     assert owned["server"]["compiled_with"] == "clang-cl"
     assert owned["server"]["revision"] == 1
     # the project's record holds its own artifact, not the whole closure
-    assert [item["package"] for item in owned["server"]["artifacts"]] == [
-        "mifcache_levilamina"
-    ]
+    assert [item["package"] for item in owned["server"]["artifacts"]] == ["levilamina"]
 
     dependency = index_store.entries(
-        index_store.version_meta(ctx.index_root, "mifcache_fmt", "11.2.0")
+        index_store.version_meta(ctx.index_root, "fmt", "11.2.0")
     )
     assert set(dependency) == {"default"}, dependency
     assert len(dependency["default"]["artifacts"]) == 1
@@ -900,15 +837,9 @@ def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     # were the one at 41aab920, the version of the entt it needs)
     assert dependency["default"]["version"] == "11.2.0"
     assert dependency["default"]["produced_for"] == "levilamina@26.51.6"
-    # ... and it is addressable under its own (upstream) name too, so a project
-    # that requires plain `fmt` gets this very archive instead of building it
-    plain = index_store.entries(
-        index_store.version_meta(ctx.index_root, "fmt", "11.2.0")
-    )
-    assert set(plain) == {"default"}, plain
-    assert plain["default"]["artifacts"][0]["key"] == shared["key"]
-    # the project's own artifact is not duplicated as a dependency record
-    assert (ctx.index_root / "levilamina" / "versions" / "26.51.6.json").is_file()
+    # the dependency keeps its own name, which is what a consumer resolves -- our
+    # repository carries the manifest only, so nothing is renamed on the way out
+    assert dependency["default"]["artifacts"][0]["key"] == shared["key"]
     assert "default" not in index_store.entries(
         index_store.version_meta(ctx.index_root, "levilamina", "26.51.6")
     )

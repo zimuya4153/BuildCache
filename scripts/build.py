@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,7 +26,6 @@ from lib import (  # noqa: E402
     repos,
     sources,
     util,
-    vendoring,
     xmake_env,
 )
 
@@ -41,7 +41,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--vs-toolset", default="", help="pin the MSVC toolset used for the build")
     parser.add_argument("--xmake-version", default="", help="override the xmake version")
     parser.add_argument("--dry-run", action="store_true", help="do everything except upload/push")
-    parser.add_argument("--no-vendor", action="store_true", help="reuse the recipes already vendored")
     parser.add_argument("--keep-sandbox", action="store_true")
     parser.add_argument("--proxy", default=None)
     parser.add_argument("--results", default="results", help="directory for build-result JSON files")
@@ -69,9 +68,6 @@ def main() -> int:
     commit = args.commit or entry["commit"]
 
     util.log_step(f"{plugin.name} {args.version} ({commit[:12]})")
-    if not args.no_vendor:
-        marker = vendoring.vendor(config, ctx, plugin)
-        util.log(f"recipes vendored (sources: {marker['sources']})")
 
     platform_cfg = config["platform"]
     plat, arch = platform_cfg["plat"], platform_cfg["arch"]
@@ -239,9 +235,11 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
             if name in skip:
                 util.log(f"skip configured tool package: {name}")
                 continue
-            # The export carries the era's original names; publishing renames
-            # them to our prefix so upstream packages are never overwritten.
-            published_name = ctx.package_name(name)
+            # Packages keep their own names: the repository we publish holds
+            # manifests only, so a consumer resolving the upstream package finds
+            # our archive (xmake looks the manifest up by the resolved name, in
+            # every repository) without carrying a copy of the recipe.
+            published_name = name
             for version_dir in sorted(package_dir.iterdir()):
                 if not version_dir.is_dir():
                     continue
@@ -251,7 +249,7 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
                         continue
                     artifact = _publish_one(
                         config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
-                        name, published_name, version, hash_dir, plat, arch,
+                        name, version, hash_dir, plat, arch,
                         toolset_for_key(vs_toolset, name),
                         repo_order=repo_order or [], commit=commit, toolchain=toolchain,
                         root_package=package_name,
@@ -275,7 +273,6 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
         "alias_profiles": alias_profiles or [],
         "vs_toolset": vs_toolset,
         "recipe_commits": recipe_commits,
-        "prefix": ctx.prefix,
         "platform": {"plat": plat, "arch": arch, "mode": config["platform"]["mode"]},
         "built_at": now(),
         "artifacts": artifacts,
@@ -290,29 +287,76 @@ def toolset_for_key(vs_toolset: str | None, package: str) -> str | None:
 def extra_requires(ctx, repos, extra: list[dict]) -> list[str]:
     """``add_requires`` lines for the dependencies only the project file names.
 
-    A consumer resolves them -- the recipe we publish declares them -- so this
-    build has to produce them as well: otherwise every consumer compiles them
-    from source, which is the one thing a prebuilt cache exists to prevent. They
-    are asked for at the top level (not as a dependency of the project) because
-    that is what makes ``require --export`` export them.
+    A consumer resolving the project gets them (they are named by the project's
+    own xmake.lua), so this build has to produce them as well: otherwise every
+    consumer compiles them from source, which is the one thing a prebuilt cache
+    exists to prevent. They are asked for at the top level (not as a dependency of
+    the project) because that is what makes ``require --export`` export them.
 
-    ``repos`` is in xmake's search order, the same one the recipe lookup uses, and
-    the version is resolved exactly as vendoring resolves it for the recipe
-    consumers get, so both sides end up asking for the same package.
+    ``repos`` is in xmake's search order, the same one the recipe lookup uses.
     """
-    from lib import vendoring
-
     if not extra:
         return []
     sources = {name: Path(directory) for name, directory in repos}
     lines = []
     for item in extra:
-        version = vendoring.resolve_extra_version(
-            ctx, sources, item["name"], item.get("version", "")
-        )
+        version = _declared_version(sources, item["name"], item.get("version", ""))
         spec = f'{item["name"]} {version}'.strip()
         lines.append(f'add_requires("{spec}")')
     return lines
+
+
+def _declared_version(sources: dict[str, Path], name: str, wanted: str) -> str:
+    """The version to ask for, or "" to let xmake pick the newest.
+
+    A version the recipe spells with a leading ``v`` is asked for that way, and a
+    range (``~1.6.2``) is left to xmake. A version the recipe no longer declares is
+    not asked for at all: xmake resolves the newest one instead.
+    """
+    if not wanted:
+        return ""
+    if any(char in wanted for char in "~^><*|"):
+        return wanted
+    available = _recipe_versions(_find_recipe_dir(sources, name))
+    if wanted in available:
+        return wanted
+    if f"v{wanted}" in available:
+        return f"v{wanted}"
+    util.warn(f"recipe for '{name}' has no version {wanted}; using the newest available")
+    return ""
+
+
+def _find_recipe_dir(sources: dict[str, Path], name: str) -> Path | None:
+    for directory in sources.values():
+        candidate = Path(directory) / "packages" / name[0].lower() / name.lower()
+        if (candidate / "xmake.lua").is_file():
+            return candidate
+    return None
+
+
+def _recipe_versions(recipe_dir: Path | None) -> set[str]:
+    if recipe_dir is None:
+        return set()
+    versions: set[str] = set()
+    text = util.read_text(Path(recipe_dir) / "xmake.lua")
+    for match in re.finditer(r'add_versions\(\s*"([^"]+)"', text):
+        versions.add(_strip_url_alias(match.group(1)))
+    for match in re.finditer(r'add_versionfiles\(\s*"([^"]+)"', text):
+        listing = Path(recipe_dir) / match.group(1)
+        if listing.is_file():
+            for line in util.read_text(listing).splitlines():
+                parts = line.split()
+                if parts:
+                    versions.add(_strip_url_alias(parts[0]))
+    return versions
+
+
+def _strip_url_alias(version: str) -> str:
+    """``release:v1.15.5`` / ``git:v1.6.3`` pick a URL alias, not a version."""
+    _prefix, sep, rest = version.partition(":")
+    if sep and rest and "//" not in version:
+        return rest
+    return version
 
 
 def container_for(config: dict, package: str) -> str:
@@ -408,7 +452,7 @@ def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
 
 
 def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
-                 name, published_name, version, hash_dir, plat, arch, toolset,
+                 name, version, hash_dir, plat, arch, toolset,
                  repo_order=None, commit="", toolchain="msvc", root_package="",
                  target_branch=None, dry_run=False) -> dict | None:
     from lib import manifest as manifest_lib
@@ -420,7 +464,7 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         return None
     if not dry_run:
         reused = cached_artifact(
-            ctx, published_name, version, hash_dir.name, int(config.get("revision", 1))
+            ctx, name, version, hash_dir.name, int(config.get("revision", 1))
         )
         if reused:
             util.log(f"reuse {name} {version} ({hash_dir.name}): already published")
@@ -428,8 +472,8 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
     container = container_for(config, name)
     suffix = "tar.zst" if container == "tar.zst" else "7z"
     # The build hash already encodes plat/arch/toolchain/configs and the source
-    # revision, and shards are per package, so the asset name only needs the
-    # upstream name plus the hash. The prefix stays out of it on purpose.
+    # revision, and shards are per package, so the asset name only needs the name
+    # plus the hash.
     asset = None
     if plugin is not None:
         asset = plugin.call(
@@ -437,7 +481,7 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         )
     asset = asset or f"{name}-{hash_dir.name}.{suffix}"
     archive = dist / asset
-    util.log(f"pack {name} -> {published_name} {version} ({hash_dir.name})")
+    util.log(f"pack {name} {version} ({hash_dir.name})")
     # xmake strips one level while extracting precompiled artifacts, so the
     # archive mirrors the package cache layout including the first-letter dir.
     store_as = f"{name[0].lower()}/{name}/{version}/{hash_dir.name}"
@@ -470,7 +514,7 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         gh.upload_asset(owner, repo, release, archive, config=config)
         url = gh.asset_url(owner, repo, release, asset)
     return {
-        "package": published_name,
+        "package": name,
         "upstream_package": name,
         "version": version,
         "buildhash": hash_dir.name,
