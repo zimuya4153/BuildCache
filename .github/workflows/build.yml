@@ -8,7 +8,7 @@ on:
   # *per plugin*, and every entry of a version is its own job, so the number of
   # jobs a run queues is roughly batch x plugins x entries.
   schedule:
-    - cron: "0 */4 * * *"
+    - cron: "0 */2 * * *"
   # A `revision` bump (or a new plugin) in config.json is the signal "everything
   # published so far is stale": the backlog then drains a few versions per run.
   push:

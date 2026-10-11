@@ -232,7 +232,7 @@ SDK"。所以 `discover` 在排队列时会先**把依赖版本提取出来**：
 ## 9. CI
 
 `.github/workflows/build.yml`：`discover → build(矩阵) → finalize(串行)`。
-需要的 secret 只有一个 `PACKAGE_REPO_TOKEN`（写第二个仓库用）。定时触发每 4 小时一轮
+需要的 secret 只有一个 `PACKAGE_REPO_TOKEN`（写第二个仓库用）。定时触发每 2 小时一轮
 （`schedule`），改 `config.json` 也会触发一轮；一轮很贵，只想编某个版本时用
 `gh workflow run build.yml -f version=<版本>`。
 一轮的验收就是 `finalize` 里的 `verify`：索引里每个产物的 url/sha256 与线上 release

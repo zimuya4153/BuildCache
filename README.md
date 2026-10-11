@@ -131,7 +131,7 @@ python scripts/discover.py --first-only                            # what still 
 python scripts/status.py --versions
 ```
 
-The workflow runs a round **every four hours**, and on every change to
+The workflow runs a round **every two hours**, and on every change to
 `config.json` (a `revision` bump is exactly the signal "everything published so
 far is stale"). A round is incremental: `discover` queues only what is missing or
 was built by an older revision, so a run with nothing to do costs a couple of
