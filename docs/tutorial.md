@@ -35,21 +35,18 @@ packages/<首字母>/<包名>/<版本>/manifest.txt
 | `index` 分支 | 生成物：`<包名>/index.json`、`<包名>/versions/<版本>.json` |
 | `assets` 分支 | 空分支，只作为 release tag 的落点，避免污染 main 的 tag |
 | GitHub Releases | 产物本体，按 `<包名>_<序号>` 分片（每片 ≤800 asset）；asset 名形如 `<原库名>-<buildhash>.7z`，release body 里是**直接下载直链** |
-| `zimuya4153/xmake-repo` | 消费端仓库：前缀化配方 + `manifest.txt`。manifest **同时以原包名发布一份**（xmake 按「正在解析的包名」在**所有**仓库里找 manifest，配方可以来自官方仓库、产物来自我们这边），所以写成 `levilamina 1.4.4` / `fmt 11.2.0` 也直接命中预编译产物；没有 manifest 的包＝消费端自行编源码，配方始终保留 |
-
-所有发布出去的包都是 `mifcache_<原名>`，**不覆写上游包名**；官方仓库继续提供其它依赖。
+| `zimuya4153/xmake-repo` | **只有 manifest**，没有配方。<br>xmake 找 manifest 用的是 `repository.artifacts_manifest(name, version)`：按**正在解析的包名**在**所有**仓库里找 `packages/<包名>/<版本>/manifest.txt`，所以配方来自官方仓库、产物来自我们这边 —— 消费端写 `add_requires("levilamina 1.4.4")` 就直接命中预编译产物，包名与依赖都不需要改。没有 manifest 的包＝消费端按官方配方自行编源码 |
 
 ## 4. 快速开始（本机）
 
 ```bash
 # 依赖：Python 3.14+、已登录的 gh CLI；第三方包（semver）首次运行会自动 pip 安装
-python scripts/vendor.py                     # 生成前缀化配方
 python scripts/cache.py trigger --plugin ll --first-only --local   # 编一个版本并发布
 python scripts/cache.py verify               # 校验「索引 ↔ 线上 asset」一致
 cd tests/consumer && xmake f -y -p windows -a x64 -m release      # 消费端验证
 ```
 
-看到 `install mifcache_levilamina 26.51.6 (precompiled) .. ok` 才算真正走通了预编译；
+看到 `install levilamina 26.51.6 (precompiled) .. ok` 才算真正走通了预编译；
 没有 `(precompiled)` 就是在编源码，去 `cache.py verify` 找原因。
 
 代理只在显式给出时启用：`BUILDCACHE_PROXY=http://127.0.0.1:2080`。
@@ -62,11 +59,11 @@ add_repositories("llsdk https://github.com/zimuya4153/xmake-repo.git")
 
 set_toolchains("msvc")     -- 写在工程文件里才会命中缓存（原因见下表）
 set_runtimes("MD")
-add_requires("mifcache_levilamina 26.51.6", {configs = {target_type = "server"}})
+add_requires("levilamina 26.51.6", {configs = {target_type = "server"}})
 
 target("my-plugin")
     set_kind("shared")
-    add_packages("mifcache_levilamina")
+    add_packages("levilamina")
 ```
 
 工程「怎么声明工具链」会被写进包的 buildhash，所以它决定命中哪条 manifest：
@@ -78,7 +75,7 @@ target("my-plugin")
 | `set_toolchains("clang-cl")` | `toolchains=clang-cl` | `clang-cl` 别名 |
 | `xmake f --toolchain=clang-cl` | 同 clang-cl | **不命中**，见下 |
 
-前三种都实测打印 `install mifcache_fmt 11.2.0 (precompiled) .. ok`，用的还是同一份
+前三种都实测打印 `install fmt 11.2.0 (precompiled) .. ok`，用的还是同一份
 压缩包。最后一种是 xmake 自身的限制：命令行给的 toolchain 不会让 xmake 去 check 一个
 msvc 工具链，而它的预编译选择逻辑要求「存在已 check、带 vcvars 的 msvc」，于是整条
 通道被跳过，只能回源码编译。所以**把 `set_toolchains(...)` 写在 xmake.lua 里**。
@@ -121,14 +118,10 @@ msvc 工具链，而它的预编译选择逻辑要求「存在已 check、带 vc
 }
 ```
 
-新增配方源只要往 `recipes.sources` 加一条（例如 `oeotyan-repo`），配方本身由
-`vendor.py` 从上游拉取、改名、修好历史遗留问题（坏补丁、四段版本号）。
-
-**只给我们真能提供产物的包加前缀**：`vendor.py` 以账本（索引）为准，凡是缓存里
-没有产物的包都不再进消费端仓库，消费端按原包名从官方仓库解析（产物以原包名发布的
-manifest 仍然能被命中）。唯一例外是「工程把依赖钉在我们修过的版本号上」——例如
-`1.21.0.03` 被修成 `1.21.0-r03`，这种版本号只有我们那份配方有，所以配方照留（没有
-产物，只是配方）。反过来，重跑 `vendor.py` 会把不再需要的旧前缀包删掉。
+新增配方源只要往 `recipes.sources` 加一条（例如 `oeotyan-repo`）。构建时框架会把这些
+源**快照回该版本发布前后的状态**（保证用那个年代的配方与依赖版本编出那个年代的产物），
+顺手修历史遗留问题（坏补丁、xmake 解析不了的四段版本号）—— 修的是**我们沙箱里**的快照，
+发布出去的只有 manifest，官方配方、依赖名、版本号一概不动。
 
 ### 别名（同一个产物，多个地址）
 
@@ -154,10 +147,10 @@ LL 插件就是这么做的 —— 扫它自己 `xmake.lua` 里 `target_type` �
 client；1.0–1.7 是硬编码 `is_client = false`，0.8/0.13 连选项都没有），以及
 `set_toolchains("clang-cl")` 是否出现（26.20 起才用 clang-cl 编自己）。
 
-索引里 **entry 只属于项目自己的包**：LL 的 `mifcache_levilamina` 按 server/client 记
-两条，依赖项（`mifcache_fmt` 之类）只记一条 `default` —— 不管哪个 entry 拉进来的都是
+索引里 **entry 只属于项目自己的包**：LL 的 `levilamina` 按 server/client 记
+两条，依赖项（`fmt` 之类）只记一条 `default` —— 不管哪个 entry 拉进来的都是
 同一份产物，把 entry 铺到闭包上只会让账本多算一倍，并把 `target_type` 这种项目特例的
-概念安到无关的包上。插件自己的包同理：`mifcache_levilamina` 本身也是别的插件（bsci 等）
+概念安到无关的包上。插件自己的包同理：`levilamina` 本身也是别的插件（bsci 等）
 的依赖，那时它的账仍归 LL 自己的构建。
 
 要分清两件事：**包解析用的工具链**（进 buildhash、决定命中哪条 manifest）和**真正
@@ -219,8 +212,8 @@ cache.py trigger --plugin ll --entry client --local   # 只编某个条目
 源码编译，这一步等于多编一次、又慢又容易受网络影响。它保留为本地手动工具：
 
 ```bash
-python scripts/selftest.py --component mifcache_levilamina            # 默认写法
-python scripts/selftest.py --component mifcache_levilamina --toolchain clang-cl
+python scripts/selftest.py --component levilamina                     # 默认写法
+python scripts/selftest.py --component levilamina --toolchain clang-cl
 ```
 
 ### 署名（bot 账号）

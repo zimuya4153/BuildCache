@@ -264,12 +264,10 @@ def release_rows(config: dict, ctx) -> dict[str, list[dict]]:
                         own=directory.name in own,
                     )
                     shards.setdefault(artifact["release"], {})[row["asset"]] = row
-    return (
-        {
-            shard: reports.newest_first(list(rows.values()))
-            for shard, rows in shards.items()
-        },
-    )
+    return {
+        shard: reports.newest_first(list(rows.values()))
+        for shard, rows in shards.items()
+    }
 
 
 def _remove_legacy_index(config: dict) -> None:
