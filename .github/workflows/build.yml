@@ -51,6 +51,7 @@ jobs:
     runs-on: windows-latest
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
+      dependencies: ${{ steps.discover.outputs.dependencies }}
       dependents: ${{ steps.discover.outputs.dependents }}
     steps:
       - uses: actions/checkout@v4
@@ -126,13 +127,52 @@ jobs:
           path: results/build-result-*.json
           if-no-files-found: ignore
 
-  # The second stage: the jobs whose SDK dependency is being built by the stage
-  # above (see lib/plan.py). It waits for that stage so the artifacts exist, and
-  # turns its build results into the manifests xmake reads -- a job cannot see
-  # another job's files, but it can read what it published.
+  # The builds a dependent waits for (see lib/plan.py): the SDK's own version,
+  # queued because the ledger has no artifact for it yet. It runs *beside* the
+  # job above, so the backlog does not hold a plugin up, and it is the only thing
+  # the stage below waits for.
+  build-deps:
+    needs: discover
+    if: needs.discover.outputs.dependencies != '[]'
+    runs-on: ${{ matrix.image || 'windows-latest' }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJson(needs.discover.outputs.dependencies) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Setup LLVM
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
+      - name: Build ${{ matrix.package }} ${{ matrix.version }}
+        timeout-minutes: 180
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/build.py --plugin "${{ matrix.plugin }}" `
+            --version "${{ matrix.version }}" `
+            --entry "${{ matrix.entry }}" `
+            --commit "${{ matrix.commit }}" `
+            ${{ matrix.vs_toolset && format('--vs-toolset={0}', matrix.vs_toolset) || '' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-result-deps-${{ matrix.plugin }}-${{ strategy.job-index }}
+          path: results/build-result-*.json
+          if-no-files-found: ignore
+
+  # The jobs that need those builds (see lib/plan.py). They wait for that stage
+  # only, so the artifacts exist, and turn its build results into the manifests
+  # xmake reads -- a job cannot see another job's files, but it can read what it
+  # published.
   build-dependents:
-    needs: [discover, build]
-    if: always() && needs.build.result != 'cancelled' && needs.discover.outputs.dependents != '[]'
+    needs: [discover, build-deps]
+    if: always() && needs.build-deps.result != 'cancelled' && needs.discover.outputs.dependents != '[]'
     runs-on: ${{ matrix.image || 'windows-latest' }}
     strategy:
       fail-fast: false
@@ -174,8 +214,8 @@ jobs:
           if-no-files-found: ignore
 
   finalize:
-    needs: [build, build-dependents]
-    if: always() && (needs.build.result != 'skipped' || needs.build-dependents.result != 'skipped' || inputs.finalize_only != '')
+    needs: [build, build-deps, build-dependents]
+    if: always() && (needs.build.result != 'skipped' || needs.build-deps.result != 'skipped' || needs.build-dependents.result != 'skipped' || inputs.finalize_only != '')
     runs-on: windows-latest
     concurrency:
       group: buildcache-finalize

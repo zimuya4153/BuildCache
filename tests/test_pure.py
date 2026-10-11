@@ -381,10 +381,13 @@ def test_an_sdk_the_ledger_lacks_is_built_ahead_of_its_plugins():
     md = _dependent("moredimensions", "0.13.0", "bbb")
     jobs = [plan.job({}, None, md, "0.13.0", "bbb", {"id": "default"})]
 
-    first, waiting, notes = plan.split({}, None, [ll, md], jobs, lambda package, version: False)
+    first, dependencies, waiting, notes = plan.split(
+        {}, None, [ll, md], jobs, lambda package, version: False
+    )
 
     assert notes == []
-    assert [(item["plugin"], item["version"], item["entry"]) for item in first] == [
+    assert first == []
+    assert [(item["plugin"], item["version"], item["entry"]) for item in dependencies] == [
         ("ll", "1.9.9", "server"),
         ("ll", "1.9.9", "client"),
     ]
@@ -397,11 +400,12 @@ def test_a_published_sdk_is_reused_and_nothing_waits():
     md = _dependent("moredimensions", "0.13.0", "bbb")
     jobs = [plan.job({}, None, md, "0.13.0", "bbb", {"id": "default"})]
 
-    first, waiting, notes = plan.split(
+    first, dependencies, waiting, notes = plan.split(
         {}, None, [ll, md], jobs, lambda package, version: package == "levilamina"
     )
 
     assert notes == []
+    assert dependencies == []
     assert waiting == []
     assert [(item["plugin"], item["version"]) for item in first] == [("moredimensions", "0.13.0")]
 
@@ -415,13 +419,42 @@ def test_two_dependents_share_one_sdk_build():
         plan.job({}, None, two, "0.13.0", "ddd", {"id": "default"}),
     ]
 
-    first, waiting, _notes = plan.split({}, None, [ll, one, two], jobs, lambda p, v: False)
+    first, dependencies, waiting, _notes = plan.split(
+        {}, None, [ll, one, two], jobs, lambda p, v: False
+    )
 
-    assert [(item["plugin"], item["version"]) for item in first] == [
+    assert first == []
+    assert [(item["plugin"], item["version"]) for item in dependencies] == [
         ("ll", "1.9.9"),
         ("ll", "1.9.9"),
     ]
     assert len(waiting) == 2
+
+
+def test_a_build_a_dependent_waits_for_is_not_run_beside_it():
+    """The plugin's own queue can pick the very version a dependent needs.
+
+    That build then has to move out of the free-running group: the dependents read
+    the results of the builds they wait for, so a job running *beside* them would
+    leave them without the artifact they asked for -- and they would compile it
+    themselves, which is the whole thing being avoided.
+    """
+    ll = _levilamina_plugin()
+    md = _dependent("moredimensions", "0.13.0", "bbb")
+    jobs = [
+        plan.job({}, None, ll, "1.9.9", "aaa", {"id": "server"}),
+        plan.job({}, None, md, "0.13.0", "bbb", {"id": "default"}),
+    ]
+
+    first, dependencies, waiting, _notes = plan.split(
+        {}, None, [ll, md], jobs, lambda package, version: False
+    )
+
+    assert first == []
+    assert [(item["plugin"], item["version"], item["entry"]) for item in dependencies] == [
+        ("ll", "1.9.9", "server")
+    ]
+    assert len(waiting) == 1
 
 
 def test_a_dependency_that_cannot_be_resolved_does_not_block_anything():
@@ -436,9 +469,12 @@ def test_a_dependency_that_cannot_be_resolved_does_not_block_anything():
     )
     jobs = [plan.job({}, None, md, "0.13.0", "bbb", {"id": "default"})]
 
-    first, waiting, notes = plan.split({}, None, [ll, md], jobs, lambda package, version: False)
+    first, dependencies, waiting, notes = plan.split(
+        {}, None, [ll, md], jobs, lambda package, version: False
+    )
 
     assert waiting == []
+    assert dependencies == []
     assert [item["plugin"] for item in first] == ["moredimensions"]
     assert notes and "cannot resolve" in notes[0]
 

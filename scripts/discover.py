@@ -143,7 +143,7 @@ def main() -> int:
     # ahead of it when the ledger has no artifact for the version it resolves: see
     # lib/plan.py. Everything that cannot be resolved that way stays in one stage.
     revision = int(config.get("revision", 1))
-    first, waiting, notes = plan.split(
+    first, dependencies, waiting, notes = plan.split(
         config, ctx, available, matrix,
         lambda package, version: index_store.has_artifacts(
             ctx.index_root, package, version, revision
@@ -153,20 +153,25 @@ def main() -> int:
         util.log(f"plan: {note}")
 
     payload = json.dumps(first)
+    dependency_payload = json.dumps(dependencies)
     dependents = json.dumps(waiting)
-    util.log(f"discover: {len(first)} job(s), {len(waiting)} waiting for them")
-    for item in first + waiting:
+    util.log(
+        f"discover: {len(first)} job(s), {len(dependencies)} built for the jobs that "
+        f"wait ({len(waiting)})"
+    )
+    for item in first + dependencies + waiting:
         util.log(f"  {item['package']}@{item['version']}")
     output = os.environ.get("GITHUB_OUTPUT")
     if output:
         with open(output, "a", encoding="utf-8") as handle:
             handle.write(f"matrix={payload}\n")
+            handle.write(f"dependencies={dependency_payload}\n")
             handle.write(f"dependents={dependents}\n")
     if args.out:
         # The local runner walks this in order, so the stage that produces the
         # dependencies comes first and the results directory is ready for the ones
         # that come after it.
-        util.write_text(Path(args.out), json.dumps(first + waiting) + "\n")
+        util.write_text(Path(args.out), json.dumps(first + dependencies + waiting) + "\n")
     if not output and not args.out:
         util.log(payload)
     return 0

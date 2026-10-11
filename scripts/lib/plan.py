@@ -205,13 +205,24 @@ def job(config: dict, ctx, plugin, version: str, commit: str, entry: dict) -> di
     }
 
 
-def split(config: dict, ctx, plugins_list, jobs: list[dict], built) -> tuple[list[dict], list[dict], list[str]]:
-    """``(runs first, waits for that stage, notes)`` for the queued jobs.
+def split(config: dict, ctx, plugins_list, jobs: list[dict], built):
+    """``(free to run, what a dependent waits for, the dependents, notes)``.
 
     A job that resolves an owned package -- one a plugin of ours publishes, which
     is how LeviLamina reaches its plugins -- whose artifact is *not* in the ledger
-    yet is put in the second stage, and the dependency's own build is put in the
-    first one (deduplicated: one job per plugin version, whoever asked for it).
+    yet has to wait for that package's own build, which is queued here
+    (deduplicated: one build per plugin version, whoever asked for it).
+
+    The two groups are kept apart because only the dependents need the second one:
+    the rest of the round -- the ordinary backlog -- runs at the same time as it,
+    so a plugin is not delayed by whichever versions happen to be queued next.
+    A job the round would have run anyway lands in the second group as soon as a
+    dependent needs that very version, since the dependents read the results of
+    the builds they wait for.
+
+    An added build is itself planned for nothing: a dependency of a dependency
+    would need a stage per hop, and the dependent compiles what nobody published
+    instead -- which is what it always did.
     """
     by_package = {}
     for plugin in plugins_list:
@@ -222,13 +233,13 @@ def split(config: dict, ctx, plugins_list, jobs: list[dict], built) -> tuple[lis
 
     by_name = {plugin.name: plugin for plugin in plugins_list}
     queued = {(item["plugin"], item["version"]) for item in jobs}
-    first: list[dict] = []
-    second: list[dict] = []
     added: list[dict] = []
+    needed: set[tuple[str, str]] = set()
+    waits: dict[tuple[str, str], set[str]] = {}
     notes: list[str] = []
     for item in jobs:
         plugin = by_name.get(item["plugin"])
-        waiting: set[str] = set()
+        waits_for: set[str] = set()
         if plugin is not None:
             specs = dependency_specs(
                 plugin, ctx, item["version"], item["commit"],
@@ -265,15 +276,30 @@ def split(config: dict, ctx, plugins_list, jobs: list[dict], built) -> tuple[lis
                         continue
                     queued.add((owner.name, version))
                     added += found
-                waiting.add(f"{name}@{version}")
-        if waiting:
-            second.append(dict(item, waits_for=sorted(waiting)))
-        else:
-            first.append(item)
-    # The dependency's own build goes ahead of the dependents; it is not planned
-    # for its own dependencies, because the workflow has two stages and a chain
-    # would need a third (the dependent then compiles it, as it always did).
-    return first + added, second, notes
+                needed.add((owner.name, version))
+                waits_for.add(f"{name}@{version}")
+        if waits_for:
+            waits[(item["plugin"], item["version"])] = waits_for
+    for key in sorted(waits):
+        if key in needed:
+            # Something else waits for *this* build, and a job cannot both wait
+            # for its own dependency and be one.
+            notes.append(f"{key[0]} {key[1]}: it is a dependency of another job, so it builds")
+    dependencies = [
+        item
+        for item in list(jobs) + added
+        if (item["plugin"], item["version"]) in needed
+    ]
+    waiting = [
+        dict(item, waits_for=sorted(waits[(item["plugin"], item["version"])]))
+        for item in jobs
+        if (item["plugin"], item["version"]) in waits
+        and (item["plugin"], item["version"]) not in needed
+    ]
+    first = [
+        item for item in jobs if (item["plugin"], item["version"]) not in needed | set(waits)
+    ]
+    return first, dependencies, waiting, notes
 
 
 def _owned_version(owner, ctx, spec: str) -> str | None:
