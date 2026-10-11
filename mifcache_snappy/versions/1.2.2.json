@@ -2,11 +2,11 @@
   "package": "mifcache_snappy",
   "version": "1.2.2",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T08:54:47Z",
+  "built_at": "2026-10-11T09:25:08Z",
   "xmake_version": "3.0.1",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 2,
+  "revision": 3,
   "configs": {
     "target_type": "server"
   },
@@ -20,11 +20,11 @@
       "package": "mifcache_snappy",
       "version": "1.2.2",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T08:54:47Z",
+      "built_at": "2026-10-11T09:25:08Z",
       "xmake_version": "3.0.1",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 2,
+      "revision": 3,
       "configs": {
         "target_type": "server"
       },
@@ -44,8 +44,8 @@
           "release": "snappy_0",
           "asset": "snappy-b3244272357b4994abb43dc0aa939d28.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/snappy_0/snappy-b3244272357b4994abb43dc0aa939d28.7z",
-          "sha256": "8214cb73515d6ffeb52f98cc84114ec4f3e5bc25916accca2d35f1c950406edb",
-          "size": 59561,
+          "sha256": "181ac62fedcb0de27031d383b0468da3253b0e160d82ecfada6c4128136616e8",
+          "size": 59546,
           "container": "7z",
           "aliases": [
             {

@@ -2,11 +2,11 @@
   "package": "mifcache_leveldb",
   "version": "1.23",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T08:54:47Z",
+  "built_at": "2026-10-11T09:25:08Z",
   "xmake_version": "3.0.1",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 2,
+  "revision": 3,
   "configs": {
     "target_type": "server"
   },
@@ -20,11 +20,11 @@
       "package": "mifcache_leveldb",
       "version": "1.23",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T08:54:47Z",
+      "built_at": "2026-10-11T09:25:08Z",
       "xmake_version": "3.0.1",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 2,
+      "revision": 3,
       "configs": {
         "target_type": "server"
       },
@@ -44,8 +44,8 @@
           "release": "leveldb_0",
           "asset": "leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/leveldb_0/leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
-          "sha256": "72a635a8fdc864343657702ba9f253ce0579aee490c6648c635fe6b0ea445c92",
-          "size": 507528,
+          "sha256": "bafa383897a53d9f834f2923097d489191ac05afa15225455bca4769d38363b1",
+          "size": 507319,
           "container": "7z",
           "aliases": [
             {

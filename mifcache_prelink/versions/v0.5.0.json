@@ -2,11 +2,11 @@
   "package": "mifcache_prelink",
   "version": "v0.5.0",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T08:54:47Z",
+  "built_at": "2026-10-11T09:25:08Z",
   "xmake_version": "3.0.1",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 2,
+  "revision": 3,
   "configs": {
     "target_type": "server"
   },
@@ -20,11 +20,11 @@
       "package": "mifcache_prelink",
       "version": "v0.5.0",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T08:54:47Z",
+      "built_at": "2026-10-11T09:25:08Z",
       "xmake_version": "3.0.1",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 2,
+      "revision": 3,
       "configs": {
         "target_type": "server"
       },
@@ -44,8 +44,8 @@
           "release": "prelink_0",
           "asset": "prelink-73362fce69714485a48046df1405fca5.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/prelink_0/prelink-73362fce69714485a48046df1405fca5.7z",
-          "sha256": "3f2c0e25275380c1cf0b89084ed9d68f9bebfb64632f5c01dfc01dc2286ec42c",
-          "size": 1190193,
+          "sha256": "cb260fceca3641bf70999f90c8d5d825ae42e2d017c14359675dacdbed10ea11",
+          "size": 1190186,
           "container": "7z",
           "aliases": [
             {
