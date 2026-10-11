@@ -76,12 +76,14 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
         # The project's own file may name a dependency its recipe already pins to
         # another version; asking for both would build a second SDK nobody uses.
         requires += extra_requires(
+            config,
             ctx,
             repo_order,
             plan.extra_deps(
                 plugin, ctx, args.version, commit,
                 _own_recipe_dir(prepared, own),
             ),
+            cutoff=recipe_cutoff,
         )
         suffix = "" if use_today else "-era"
         sandbox = xmake_env.create_sandbox(
@@ -512,7 +514,7 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
     }
 
 
-def extra_requires(ctx, repos, extra: list[dict]) -> list[str]:
+def extra_requires(config: dict, ctx, repos, extra: list[dict], *, cutoff: str | None = None) -> list[str]:
     """``add_requires`` lines for the dependencies only the project file names.
 
     A consumer resolving the project gets them (they are named by the project's
@@ -522,15 +524,29 @@ def extra_requires(ctx, repos, extra: list[dict]) -> list[str]:
     the project) because that is what makes ``require --export`` export them.
 
     ``repos`` is in xmake's search order, the same one the recipe lookup uses.
+
+    A dependency the project names *without* a version would resolve to today's
+    newest, which is not what a project of its age was ever built against: for the
+    packages we publish ourselves, the version is taken from the recipe as it was
+    at the version's own date instead (see ``plan.era_version``).
     """
     if not extra:
         return []
     sources = {name: Path(directory) for name, directory in repos}
+    owned = {name.lower() for name in plugins.project_packages(config, ctx)}
     lines = []
     for item in extra:
         version = _declared_version(sources, item["name"], item.get("version", ""))
         if version is None:
-            continue
+            # The recipe dropped that version: the package's own era is the only
+            # answer that is not a guess.
+            if item["name"].lower() not in owned:
+                continue
+            version = plan.era_version(config, ctx, item["name"], cutoff)
+            if version is None:
+                continue
+        elif not version and item["name"].lower() in owned:
+            version = plan.era_version(config, ctx, item["name"], cutoff) or ""
         spec = f'{item["name"]} {version}'.strip()
         lines.append(f'add_requires("{spec}")')
     return lines

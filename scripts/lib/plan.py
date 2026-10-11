@@ -25,7 +25,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from . import semver, util
+from . import repos, semver, util
 
 _ADD_DEPS = re.compile(r'add_(?:deps|requires)\(\s*"([^"]+)"')
 #: A key/value row of the era dependency table, e.g.
@@ -118,6 +118,50 @@ def pick(versions, constraint: str) -> str | None:
     except ValueError:
         return None
     return semver.sort_desc(matching)[0] if matching else None
+
+
+def era_version(config: dict, ctx, package: str, cutoff: str | None) -> str | None:
+    """The newest version of ``package`` that existed at ``cutoff``.
+
+    A dependency named *without* a version resolves to the newest one there is,
+    which is right for a project of today and wrong for one of two years ago:
+    `bsci` 0.4.0 says `add_requires("levilamina")`, and the newest SDK is one whose
+    headers its sources were never compiled against -- which is how it failed
+    ("definition of implicitly declared copy constructor": a definition that the
+    SDK of its own era declared cannot be written for a class that no longer
+    declares it).
+
+    Asking the recipe repository what it looked like at the version's own date is
+    the same rollback the recipe snapshot does, applied to that one dependency:
+    the version list of a package *is* the set of its versions at that moment.
+    """
+    if not cutoff:
+        return None
+    for source in config.get("recipes", {}).get("sources", []):
+        mirror = ctx.mirror(source["name"], source["url"])
+        commit = repos.commit_at(mirror, cutoff)
+        if not commit:
+            continue
+        directory = f"packages/{package[0].lower()}/{package}"
+        listing = repos.file_at(mirror, commit, f"{directory}/versions/versions.txt")
+        versions = [line.split()[0] for line in listing.splitlines() if line.split()]
+        if not versions:
+            recipe = repos.file_at(mirror, commit, f"{directory}/xmake.lua")
+            versions = [
+                _strip_url_alias(match.group(1))
+                for match in re.finditer(r'add_versions\(\s*"([^"]+)"', recipe)
+            ]
+        if versions:
+            return semver.sort_desc(versions)[0]
+    return None
+
+
+def _strip_url_alias(version: str) -> str:
+    """``release:v1.15.5`` / ``git:v1.6.3`` pick a URL alias, not a version."""
+    _prefix, sep, rest = version.partition(":")
+    if sep and rest and "//" not in version:
+        return rest
+    return version
 
 
 def recipe_specs(recipe_dir, version: str) -> list[str]:
@@ -245,6 +289,7 @@ def split(config: dict, ctx, plugins_list, jobs: list[dict], built):
                 plugin, ctx, item["version"], item["commit"],
                 plugin.call("recipe_dir", ctx, item["version"], item["commit"]),
             )
+            cutoff = plugin.call("recipe_cutoff", ctx, item["version"], item["commit"])
             # A dependency can be declared twice with different versions (the
             # recipe's own table, and the project file's `add_requires`), and xmake
             # settles on the newest of them -- so plan that one, and say so.
@@ -254,7 +299,7 @@ def split(config: dict, ctx, plugins_list, jobs: list[dict], built):
                 owner = by_package.get(name)
                 if owner is None or owner.name == plugin.name:
                     continue
-                version = _owned_version(owner, ctx, spec)
+                version = _owned_version(config, ctx, owner, spec, cutoff)
                 if not version:
                     notes.append(f"{name}: cannot resolve the version of {spec!r}")
                     continue
@@ -302,14 +347,29 @@ def split(config: dict, ctx, plugins_list, jobs: list[dict], built):
     return first, dependencies, waiting, notes
 
 
-def _owned_version(owner, ctx, spec: str) -> str | None:
-    """The version of ``spec`` the owner recipe would resolve to."""
-    entries = owner.call("list_versions", ctx) or []
-    available = [item["version"] for item in entries]
+def _owned_version(config: dict, ctx, owner, spec: str, cutoff: str | None) -> str | None:
+    """The version of ``spec`` the owner recipe would resolve to.
+
+    A spec that names no version is the interesting one: today's newest is not
+    what the project was built against, so the era decides (see era_version).
+    """
     constraint = spec_version(spec)
-    if not constraint:
-        return semver.sort_desc(available)[0] if available else None
-    return pick(available, constraint)
+    if constraint:
+        available = [item["version"] for item in owner.call("list_versions", ctx) or []]
+        found = pick(available, constraint)
+        if found:
+            return found
+        # Nothing today satisfies it: the package's own era may still hold the
+        # version the project was built with, which is what it means.
+        package = (owner.call("metadata") or {}).get("package") or ""
+        era = era_version(config, ctx, package, cutoff) if package else None
+        return era if era and satisfies(era, constraint) else None
+    package = (owner.call("metadata") or {}).get("package") or ""
+    era = era_version(config, ctx, package, cutoff) if package else None
+    if era:
+        return era
+    available = [item["version"] for item in owner.call("list_versions", ctx) or []]
+    return semver.sort_desc(available)[0] if available else None
 
 
 def _owner_jobs(config: dict, ctx, owner, version: str) -> list[dict]:

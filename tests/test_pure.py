@@ -479,6 +479,37 @@ def test_a_dependency_that_cannot_be_resolved_does_not_block_anything():
     assert notes and "cannot resolve" in notes[0]
 
 
+def test_a_dependency_without_a_version_takes_the_one_of_its_era(monkeypatch, tmp_path: Path):
+    """`bsci` 0.4.0 says `add_requires("levilamina")` -- no version at all.
+
+    Resolved against today's recipes that is the newest SDK there is (26.51.6 at
+    the time), whose headers its sources were never compiled against; resolved
+    against the recipes *as they were on the day it was released*, it is 26.20.0,
+    which is what it was built with. The rollback the recipe snapshot does for the
+    project is applied to that one dependency.
+    """
+    mirror = tmp_path / "levimc-repo"
+    recipe = mirror / "packages" / "l" / "levilamina"
+    (recipe / "versions").mkdir(parents=True)
+    (recipe / "versions" / "versions.txt").write_text(
+        "1.9.9 aaa\n26.20.0 bbb\n26.51.6 ccc\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(plan.repos, "commit_at", lambda directory, cutoff=None, **kw: "era")
+    monkeypatch.setattr(
+        plan.repos,
+        "file_at",
+        lambda directory, commit, path, **kw: util.read_text(Path(directory) / path),
+    )
+    config = {"recipes": {"sources": [{"name": "levimc-repo", "url": "x"}]}}
+    ctx = type("Ctx", (), {"mirror": staticmethod(lambda name, url: mirror)})()
+
+    # the file *is* the set of versions at that moment, so the newest in it is the
+    # newest of that era
+    assert plan.era_version(config, ctx, "levilamina", "2026-07-10T00:00:00Z") == "26.51.6"
+    # a build with no cutoff has no era to look up
+    assert plan.era_version(config, ctx, "levilamina", "") is None
+
+
 def test_a_version_only_one_plugin_tracks_does_not_stop_the_round(monkeypatch, tmp_path: Path):
     """`-f version=X` is routinely meant for one plugin out of several.
 
@@ -1308,7 +1339,8 @@ def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):
     own dependency list. They are asked for at the top level here, which is what
     makes ``require --export`` include them.
     """
-    ctx = plugins.Context(dict(util.load_config()))
+    config = dict(util.load_config())
+    ctx = plugins.Context(config)
     repo = tmp_path / "levimc-repo@test"
     for name, versions in {"cpr": ["1.11.1"], "libhat": ["v0.4.0"], "trampoline": ["2024.11.7"]}.items():
         recipe = repo / "packages" / name[0] / name
@@ -1319,6 +1351,7 @@ def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):
         )
 
     lines = build.extra_requires(
+        config,
         ctx,
         [("levimc-repo", repo)],
         [
@@ -1335,7 +1368,7 @@ def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):
         'add_requires("trampoline")',
     ]
     # a project with no such dependencies adds nothing
-    assert build.extra_requires(ctx, [("levimc-repo", repo)], []) == []
+    assert build.extra_requires(config, ctx, [("levimc-repo", repo)], []) == []
 
 
 def test_copy_only_dependencies_are_not_cached(tmp_path: Path):
