@@ -535,6 +535,23 @@ def test_packing_is_reproducible(tmp_path: Path, monkeypatch):
 
 
 
+def test_a_version_whose_era_is_today_skips_the_dependency_pass():
+    """A recent version resolves today's recipes in its first pass already.
+
+    The dependency pass exists to reach the recipes a consumer resolves; when the
+    version is new enough that its era *is* today, a second compile would produce
+    the same addresses from the same sources -- so it is skipped.
+    """
+    today = {"levimc-repo": "abc", "xmake-repo": "def"}
+    assert build._same_sources(today, today) is True
+    assert build._same_sources({"levimc-repo": "abc"}, {"levimc-repo": "old"}) is False
+    # one source behind is enough to make the pass worth it
+    assert build._same_sources({"levimc-repo": "abc", "xmake-repo": "old"}, today) is False
+    # no information at all never silently skips work
+    assert build._same_sources({}, today) is False
+    assert build._same_sources(today, {}) is False
+
+
 def test_the_consumer_dependency_list_is_read_from_the_upstream_recipe(monkeypatch):
     """The dependency pass has to ask for what a consumer asks for.
 

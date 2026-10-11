@@ -202,6 +202,7 @@ def main() -> int:
         config, ctx, plugin, args, plat, arch, toolchain, vs_toolset,
         commit=commit, dry_run=args.dry_run,
         specs=plugin.call("dependency_specs", ctx, args.version, commit) or [],
+        era_commits={name: sha for name, (_dir, sha) in prepared.items()},
     )
     if deps:
         results["artifacts"].extend(deps)
@@ -220,8 +221,20 @@ def main() -> int:
     return 0
 
 
+def _same_sources(era: dict[str, str], today: dict[str, str]) -> bool:
+    """Is the era build's source state the one a consumer resolves right now?
+
+    Every source has to match: the dependency pass exists to reach *today's*
+    recipes, so if the version's era already is today there is nothing to gain and
+    a second full compile to lose.
+    """
+    if not era or not today:
+        return False
+    return all(today.get(name) == sha for name, sha in era.items())
+
+
 def build_dependency_pass(config, ctx, plugin, args, plat, arch, toolchain, vs_toolset,
-                          *, commit, dry_run, specs) -> list[dict]:
+                          *, commit, dry_run, specs, era_commits=None) -> list[dict]:
     """Publish the dependencies at the addresses a *consumer* resolves.
 
     The era build uses the recipes of the version's own date. That is what the
@@ -243,6 +256,12 @@ def build_dependency_pass(config, ctx, plugin, args, plat, arch, toolchain, vs_t
             config, ctx, plugin, cutoff=None, label=f"{args.version}-deps"
         )
         repos_here = [(name, directory) for name, (directory, _sha) in prepared.items()]
+        if _same_sources(era_commits or {}, {name: sha for name, (_dir, sha) in prepared.items()}):
+            # The version is recent enough that its era *is* today: the build that
+            # just finished resolved exactly the recipes a consumer resolves, so a
+            # second pass would repeat the same work for the same addresses.
+            util.log("the era of this version is today's sources: one pass is enough")
+            return []
         main_repo = dict(repos_here).get("xmake-repo")
         local_repos = [(name, directory) for name, directory in repos_here if name != "xmake-repo"]
         newest = xmake_env.newest_xmake(config)

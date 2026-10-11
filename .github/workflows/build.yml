@@ -1,11 +1,16 @@
 name: Build SDK
 
 on:
-  # Automatic (scheduled) runs are off on purpose: a round is expensive and is
-  # started by hand. Put the cron trigger back when the cache should refill
-  # itself again:
-  #   schedule:
-  #     - cron: "0 2 * * *"
+  # A round is incremental: `discover` only queues what is missing or built by an
+  # older revision, so a scheduled run with nothing to do costs a couple of
+  # minutes of discovery and no build jobs at all.
+  schedule:
+    - cron: "0 2 * * *"
+  # A `revision` bump (or a new plugin) in config.json is the signal "everything
+  # published so far is stale": the backlog then drains a few versions per run.
+  push:
+    paths:
+      - config.json
   workflow_dispatch:
     inputs:
       plugin:
@@ -29,6 +34,12 @@ on:
 permissions:
   contents: write
 
+# One round at a time: a scheduled run, a revision bump and a manual catch-up can
+# otherwise build the same version twice and pack the same archives concurrently.
+concurrency:
+  group: buildcache-round
+  cancel-in-progress: false
+
 jobs:
   discover:
     runs-on: windows-latest
@@ -48,7 +59,7 @@ jobs:
           python scripts/discover.py `
             --plugin "${{ inputs.plugin }}" `
             --version "${{ inputs.version }}" `
-            --batch "${{ inputs.batch }}" `
+            --batch "${{ inputs.batch || '3' }}" `
             --report-skipped
 
   build:
