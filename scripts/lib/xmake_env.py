@@ -20,11 +20,12 @@ from pathlib import Path
 from . import semver, util
 
 
-#: xmake copies every installed file in verbose mode, one line each: a package
-#: with a few hundred headers then buries everything else in the log. Only the
-#: printing is filtered -- such a line still counts as activity for the
-#: heartbeat, otherwise a long copy phase would look like a stuck step.
-_COPY_NOISE = re.compile(r"^\s*>?\s*copy\b", re.IGNORECASE)
+#: xmake copies every installed file in verbose mode, one line each ("Copying:
+#: ..." / "> copy ..."): a package with a few hundred headers then buries
+#: everything else in the log. Only the printing is filtered -- such a line still
+#: counts as activity for the heartbeat, otherwise a long copy phase would look
+#: like the stuck step that guard exists for.
+_COPY_NOISE = re.compile(r"^\s*>?\s*(copy\b|copying:)", re.IGNORECASE)
 
 
 def is_copy_noise(line: str) -> bool:

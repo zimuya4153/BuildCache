@@ -365,10 +365,13 @@ def test_verbose_xmake_noise_is_filtered():
 
     assert xmake_env.is_copy_noise("> copy include/fmt/core.h to ...")
     assert xmake_env.is_copy_noise("copy build/x.lib to lib/x.lib")
+    assert xmake_env.is_copy_noise("Copying: lib/fmt.lib -> install/lib/fmt.lib")
     assert xmake_env.is_copy_noise("   > copy a b")
     # real progress and results are kept
     assert not xmake_env.is_copy_noise("=> install fmt 11.2.0 .. ok")
     assert not xmake_env.is_copy_noise("[ 50%]: ccache compile src/a.cpp")
+    # a failure that merely mentions copying must still be visible
+    assert not xmake_env.is_copy_noise("copying failed: permission denied")
 
 
 def test_old_era_sources_get_the_include_they_forgot(tmp_path: Path):
