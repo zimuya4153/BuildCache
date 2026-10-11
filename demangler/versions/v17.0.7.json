@@ -1,7 +1,7 @@
 {
   "package": "demangler",
   "version": "v17.0.7",
-  "built_at": "2026-10-11T14:54:50Z",
+  "built_at": "2026-10-11T15:37:05Z",
   "xmake_version": "3.0.8",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
@@ -18,7 +18,7 @@
     "default": {
       "package": "demangler",
       "version": "v17.0.7",
-      "built_at": "2026-10-11T14:54:50Z",
+      "built_at": "2026-10-11T15:37:05Z",
       "xmake_version": "3.0.8",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
