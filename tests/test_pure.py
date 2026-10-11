@@ -432,6 +432,49 @@ def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
     assert upstream.exists() is False
 
 
+def test_an_artifact_already_published_is_not_packed_again(tmp_path: Path):
+    """The build hash is the identity of a build, so a published one is reused.
+
+    Re-packing it would spend minutes and, when two rounds share a dependency,
+    upload a second set of bytes under an asset name the manifest already
+    describes -- the mismatch a consumer sees as "unmatched checksum". The record
+    has to come from the current revision, which is how a framework change says
+    that everything built before it is stale.
+    """
+    config = dict(util.load_config())
+    config["_index_dir"] = str(tmp_path / "index")
+    config["revision"] = 7
+    ctx = plugins.Context(config)
+    record = {
+        "package": "mifcache_fmt",
+        "version": "11.2.0",
+        "revision": 7,
+        "artifacts": [
+            {
+                "package": "mifcache_fmt",
+                "upstream_package": "fmt",
+                "version": "11.2.0",
+                "buildhash": "ee1902dd7cff4195a287949f80dbce70",
+                "key": "windows-x64-vc-ee1902dd7cff4195a287949f80dbce70",
+                "url": "https://example.invalid/fmt.7z",
+                "sha256": "ab" * 32,
+            }
+        ],
+    }
+    index_store.write_entry(ctx.index_root, "mifcache_fmt", "11.2.0", "default", record)
+
+    found = build.cached_artifact(
+        ctx, "mifcache_fmt", "11.2.0", "ee1902dd7cff4195a287949f80dbce70", 7
+    )
+    assert found and found["sha256"] == "ab" * 32
+    # a different build, or one from an older revision, is packed instead
+    assert build.cached_artifact(ctx, "mifcache_fmt", "11.2.0", "deadbeef", 7) is None
+    assert build.cached_artifact(
+        ctx, "mifcache_fmt", "11.2.0", "ee1902dd7cff4195a287949f80dbce70", 8
+    ) is None
+    assert build.cached_artifact(ctx, "mifcache_fmt", "10.2.1", "ee1902dd", 7) is None
+
+
 def test_packing_is_reproducible(tmp_path: Path, monkeypatch):
     """The same package built again must pack to the same bytes.
 

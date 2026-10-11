@@ -198,6 +198,10 @@ cache.py trigger --plugin ll --entry client --local   # 只编某个条目
    commit 的包不受影响。
 4. `xmake require --export` 导出整棵闭包，逐个打包为 `<字母>/<包名>/<版本>/<hash>/`；
    只下载/复制文件的依赖跳过（没有编译器产出就没有可省的时间），工程自己的包必打。
+   打包前先查账本：`(包, 版本, buildhash)` 已经在缓存里、且 revision 未变，就直接
+   复用已有产物，不重新打包也不重传（buildhash 就是一次构建的身份）。要强制重做就
+   把 `config.json` 的 `revision` 加一。压缩包**不写时间戳**，所以同一个包任何一次
+   重打包都是同一份字节，manifest 里的 sha256 不会指向"另一次上传"。
 5. 为每个产物离线重算其它消费工具链的 buildhash，作为 manifest 别名记进索引。
 6. 上传分片、写索引；`finalize` 从索引重生成 manifest（含别名）、刷新 release body、
    校验一致性。

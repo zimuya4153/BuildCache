@@ -220,6 +220,14 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
     skip = {name.lower() for name in config.get("recipes", {}).get("skipPackages", [])}
     dist = util.ensure_dir(sandbox.directory / "dist")
 
+    if not dry_run:
+        # Reuse needs the ledger. A ledger that cannot be read (a network hiccup)
+        # must not fail the build: packing everything again is the old behaviour.
+        try:
+            ctx.ensure_index()
+        except Exception as error:  # noqa: BLE001 - the build goes on without reuse
+            util.warn(f"cannot read the ledger, every artifact will be packed: {error}")
+
     artifacts = []
     for letter_dir in sorted(Path(sandbox.export_dir).iterdir()):
         if not letter_dir.is_dir():
@@ -344,6 +352,33 @@ def should_publish(name: str, root_package: str, hash_dir: Path) -> bool:
     return has_build_output(hash_dir)
 
 
+def cached_artifact(
+    ctx, package: str, version: str, buildhash: str, revision: int
+) -> dict | None:
+    """The published artifact for this exact build, if the ledger still holds one.
+
+    The build hash *is* the identity of a build -- same hash means the same
+    sources, configs and toolchain, so the archive is the one already published.
+    A round that shares a dependency with an earlier one therefore reuses it
+    instead of packing a second archive under the same name (which would leave
+    the published checksum pointing at whichever upload happened to be last).
+
+    The record has to come from the current ``revision``: that number is how a
+    change in this framework -- a repair, a different packing -- says "everything
+    built before me is stale".
+    """
+    from lib import index_store
+
+    meta = index_store.version_meta(ctx.index_root, package, version)
+    for entry in index_store.entries(meta).values():
+        if int(entry.get("revision") or 0) != int(revision):
+            continue
+        for artifact in entry.get("artifacts") or []:
+            if artifact.get("buildhash") == buildhash:
+                return artifact
+    return None
+
+
 def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
     """Rebuild the packages that failed, one by one, before retrying the whole step."""
     failed = xmake_env.failed_packages(sandbox)
@@ -383,6 +418,13 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         # consumer nothing, so it does not get one.
         util.log(f"skip {name} {version}: nothing was compiled, nothing to precompile")
         return None
+    if not dry_run:
+        reused = cached_artifact(
+            ctx, published_name, version, hash_dir.name, int(config.get("revision", 1))
+        )
+        if reused:
+            util.log(f"reuse {name} {version} ({hash_dir.name}): already published")
+            return reused
     container = container_for(config, name)
     suffix = "tar.zst" if container == "tar.zst" else "7z"
     # The build hash already encodes plat/arch/toolchain/configs and the source
