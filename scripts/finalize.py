@@ -336,11 +336,18 @@ def regenerate_manifests(config: dict, ctx, index_root: Path, package_repo: Path
                     )
             manifest_lib.write_all(package_repo, package, version, entries)
             indexed.setdefault(package, set()).add(version)
-    _drop_stale_manifests(package_repo, indexed, ctx.prefix)
+    # A project is published under two names: the prefixed one and the upstream
+    # one (so a project requiring the upstream package is served as well), and
+    # only the plugin knows the second -- after a full wipe the index is empty.
+    upstream = {name.removeprefix(ctx.prefix) for name in plugins.project_packages(config, ctx)}
+    _drop_stale_manifests(package_repo, indexed, ctx.prefix, upstream)
 
 
 def _drop_stale_manifests(
-    package_repo: Path, indexed: dict[str, set[str]], prefix: str
+    package_repo: Path,
+    indexed: dict[str, set[str]],
+    prefix: str,
+    upstream_names: set[str],
 ) -> None:
     """Delete the manifest directories of packages the cache no longer holds."""
     root = Path(package_repo) / "packages"
@@ -349,7 +356,9 @@ def _drop_stale_manifests(
     dropped: list[str] = []
     for recipe in sorted(root.glob("*/*/xmake.lua")):
         package = recipe.parent.name
-        if not package.startswith(prefix) and package not in indexed:
+        if not (
+            package.startswith(prefix) or package in upstream_names or package in indexed
+        ):
             continue
         for version_dir in sorted(recipe.parent.iterdir()):
             if not version_dir.is_dir():

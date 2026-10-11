@@ -415,12 +415,20 @@ def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
     (stale / "xmake.lua").write_text('package("mifcache_entt")\n', encoding="utf-8")
     (stale / "versions").mkdir()
     (stale / "versions" / "versions.txt").write_text("v3.13.1 abc\n", encoding="utf-8")
+    # the project is published under its upstream name too, and after a wipe the
+    # index cannot say that name is ours -- the plugin can
+    upstream = repo / "packages" / "l" / "levilamina"
+    (upstream / "0.8.3").mkdir(parents=True)
+    (upstream / "0.8.3" / "manifest.txt").write_text("{}", encoding="utf-8")
+    (upstream / "xmake.lua").write_text('package("levilamina")\n', encoding="utf-8")
 
     finalize.regenerate_manifests(config, ctx, ctx.index_root, repo)
 
     assert (repo / "packages" / "m" / "mifcache_fmt" / "11.2.0" / "manifest.txt").is_file()
     assert (stale / "v3.13.1").exists() is False
     assert (stale / "xmake.lua").is_file() and (stale / "versions" / "versions.txt").is_file()
+    assert (upstream / "0.8.3").exists() is False
+    assert (upstream / "xmake.lua").is_file()
 
 
 def test_copy_only_dependencies_are_not_cached(tmp_path: Path):
