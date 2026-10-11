@@ -1,0 +1,70 @@
+{
+  "package": "leveldb",
+  "version": "1.23",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T09:25:08Z",
+  "xmake_version": "3.0.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 3,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@1.4.4",
+  "entries": {
+    "default": {
+      "package": "leveldb",
+      "version": "1.23",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T09:25:08Z",
+      "xmake_version": "3.0.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 3,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@1.4.4",
+      "artifacts": [
+        {
+          "package": "mifcache_leveldb",
+          "upstream_package": "leveldb",
+          "version": "1.23",
+          "buildhash": "2532d000dc9d47cbb618c80ba0e6d806",
+          "key": "windows-x64-vc-2532d000dc9d47cbb618c80ba0e6d806",
+          "toolset": "14.44.35207",
+          "release": "leveldb_0",
+          "asset": "leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/leveldb_0/leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
+          "sha256": "bafa383897a53d9f834f2923097d489191ac05afa15225455bca4769d38363b1",
+          "size": 507319,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "562d97fa461941deaa4ae4ca06492415",
+              "key": "windows-x64-vc-562d97fa461941deaa4ae4ca06492415",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "47e59e56afbe44f79ec7388e60e8ab6e",
+              "key": "windows-x64-vc-47e59e56afbe44f79ec7388e60e8ab6e",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

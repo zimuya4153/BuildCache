@@ -1,0 +1,70 @@
+{
+  "package": "cpr",
+  "version": "1.11.1",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T09:25:08Z",
+  "xmake_version": "3.0.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 3,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@1.4.4",
+  "entries": {
+    "default": {
+      "package": "cpr",
+      "version": "1.11.1",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T09:25:08Z",
+      "xmake_version": "3.0.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 3,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@1.4.4",
+      "artifacts": [
+        {
+          "package": "mifcache_cpr",
+          "upstream_package": "cpr",
+          "version": "1.11.1",
+          "buildhash": "5cebf81912a24150a7cee397e51c88c9",
+          "key": "windows-x64-vc-5cebf81912a24150a7cee397e51c88c9",
+          "toolset": "14.44.35207",
+          "release": "cpr_0",
+          "asset": "cpr-5cebf81912a24150a7cee397e51c88c9.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/cpr_0/cpr-5cebf81912a24150a7cee397e51c88c9.7z",
+          "sha256": "c1ce91468286684a392630351f364f2eacaaae0dd00c8352e0fba7a3b193df52",
+          "size": 528505,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "d4761bd3c00548eea56571ff620a33aa",
+              "key": "windows-x64-vc-d4761bd3c00548eea56571ff620a33aa",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "e4a3ddd17af24c858bd178be62212ead",
+              "key": "windows-x64-vc-e4a3ddd17af24c858bd178be62212ead",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

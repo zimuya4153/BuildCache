@@ -1,0 +1,70 @@
+{
+  "package": "libhat",
+  "version": "0.4.0",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T09:25:08Z",
+  "xmake_version": "3.0.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 3,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@1.4.4",
+  "entries": {
+    "default": {
+      "package": "libhat",
+      "version": "0.4.0",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T09:25:08Z",
+      "xmake_version": "3.0.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 3,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@1.4.4",
+      "artifacts": [
+        {
+          "package": "mifcache_libhat",
+          "upstream_package": "libhat",
+          "version": "0.4.0",
+          "buildhash": "c50fc038e66740e58945ea5327f5be6a",
+          "key": "windows-x64-vc-c50fc038e66740e58945ea5327f5be6a",
+          "toolset": "14.44.35207",
+          "release": "libhat_0",
+          "asset": "libhat-c50fc038e66740e58945ea5327f5be6a.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/libhat_0/libhat-c50fc038e66740e58945ea5327f5be6a.7z",
+          "sha256": "93d17e3784c6a216f116e2f6ada56e1c732aa4ce3b5e918ce351fdfc17c7423c",
+          "size": 90069,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "5bc196abc3ce43048a872ea3801c8b3d",
+              "key": "windows-x64-vc-5bc196abc3ce43048a872ea3801c8b3d",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "b08e7160ae9441f09e3d0b1ddcb2deea",
+              "key": "windows-x64-vc-b08e7160ae9441f09e3d0b1ddcb2deea",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
