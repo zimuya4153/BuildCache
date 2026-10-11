@@ -148,6 +148,7 @@ def test_the_build_offers_the_published_manifests_to_xmake(tmp_path: Path, monke
                     "buildhash": "ee1902dd",
                     "key": "windows-x64-vc-ee1902dd",
                     "toolset": "14.44.35207",
+                    "asset": "levilamina-ee1902dd.7z",
                     "url": "https://example.invalid/levilamina.7z",
                     "sha256": "ab" * 32,
                 }
@@ -156,6 +157,11 @@ def test_the_build_offers_the_published_manifests_to_xmake(tmp_path: Path, monke
     )
     context = plugins.Context(config)
     monkeypatch.setattr(plugins.Context, "ensure_index", lambda self, create=False: self.index_root)
+    # what the release serves for that asset (the digests are what decides the entry)
+    monkeypatch.setattr(
+        "lib.verify.published_digests",
+        lambda config, owner, repo: {"levilamina-ee1902dd.7z": {"sha256": "ab" * 32, "size": 7}},
+    )
 
     repo = build.published_manifests(config, context)
 
@@ -420,6 +426,17 @@ def test_the_revision_gate_decides_whether_a_dependency_can_be_reused(tmp_path: 
 
 def test_a_job_reuses_what_the_round_just_published(tmp_path: Path):
     """The SDK stage's results become manifests for the stage that depends on them."""
+    def artifact(package, key, asset):
+        return {
+            "package": package,
+            "version": "11.2.0",
+            "buildhash": key,
+            "key": key,
+            "asset": asset,
+            "url": f"https://x/{asset}",
+            "sha256": "ab" * 32,
+        }
+
     repo = tmp_path / "binary-repo"
     manifest.write_all(
         repo,
@@ -452,6 +469,19 @@ def test_a_job_reuses_what_the_round_just_published(tmp_path: Path):
     # merged: the address the ledger had is still there
     assert set(entries) == {"windows-x64-vc-old", "windows-x64-vc-new", "windows-x64-vc-new-alias"}
     assert entries["windows-x64-vc-new-alias"] == entries["windows-x64-vc-new"]
+
+    # and the digest is the one the release serves, not the one the result recorded
+    lost = [dict(fresh, artifacts=[artifact("fmt", "windows-x64-vc-h", "fmt-h.7z")])]
+    written = manifest.write_results(
+        lost, repo, digests={"fmt-h.7z": {"sha256": "cd" * 32, "size": 7}}
+    )
+    assert written == {"fmt": {"11.2.0"}}
+    assert manifest.read(repo, "fmt", "11.2.0")["windows-x64-vc-h"]["sha256"] == "cd" * 32
+    # an artifact the release does not serve is left out: no entry means "build it",
+    # while an entry pointing at nothing stops xmake with "unmatched checksum"
+    missing = [dict(fresh, artifacts=[artifact("gone", "windows-x64-vc-x", "gone.7z")])]
+    assert manifest.write_results(missing, repo, digests={}) == {}
+    assert manifest.read(repo, "gone", "11.2.0") == {}
 
 
 # ------------------------------------------------------------------------ config

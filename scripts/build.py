@@ -193,13 +193,29 @@ def published_manifests(config: dict, ctx, results_dir: str = "") -> Path:
     The ledger cannot know about them yet -- ``finalize`` writes it at the end --
     and a job cannot see another job's files, but the workflow hands its build
     results over, and those carry exactly what a manifest needs.
+
+    Both are reconciled against the releases first: two jobs share their closure,
+    so an asset can be uploaded twice in one round, and a manifest that names the
+    upload that lost fails every consumer with "unmatched checksum" -- xmake does
+    not fall back to compiling when a checksum disagrees, it stops.
     """
     directory = util.sandbox_root(config) / "binary-repo"
     util.rmtree(directory)
+    digests = None
+    try:
+        from lib import verify
+
+        cache_cfg = config["repos"]["cache"]
+        digests = verify.published_digests(config, cache_cfg["owner"], cache_cfg["repo"])
+    except Exception as error:  # noqa: BLE001 - the recorded digests still work
+        util.warn(f"cannot read the published digests, using the recorded ones: {error}")
     try:
         ctx.ensure_index()
         written = manifest_lib.write_repo(
-            ctx.index_root, directory, revision=int(config.get("revision", 1))
+            ctx.index_root,
+            directory,
+            revision=int(config.get("revision", 1)),
+            digests=digests,
         )
     except Exception as error:  # noqa: BLE001 - the build goes on without reuse
         util.warn(f"cannot read the ledger, nothing precompiled will be reused: {error}")
@@ -210,7 +226,7 @@ def published_manifests(config: dict, ctx, results_dir: str = "") -> Path:
             util.read_json(path, None)
             for path in sorted(Path(results_dir).glob("build-result-*.json"))
         ]
-        fresh = manifest_lib.write_results(results, directory)
+        fresh = manifest_lib.write_results(results, directory, digests=digests)
         if fresh:
             total_fresh = sum(len(versions) for versions in fresh.values())
             util.log(

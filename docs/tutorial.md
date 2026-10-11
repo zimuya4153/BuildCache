@@ -24,7 +24,7 @@ packages/<首字母>/<包名>/<版本>/manifest.txt
 | 只对「解析时带 msvc 工具链」的包做选择 | 消费端工程要以 msvc 解析依赖 |
 | 哈希里含工具链，消费端与编译端不同就对不上 | 可以「别名」：同一个压缩包再写一条 hash 离线重算出来的 manifest 条目（见 §6 `toolchain_aliases`） |
 | 解包时会**吃掉一层目录** | 包内必须是 `<字母>/<包名>/<版本>/<buildhash>/…`，且 xmake 3.1 不认 `.tar.zst`（用 7z） |
-| 校验失败会**静默回退编源码** | 必须自己校验发布一致性（见 `finalize` 的 verify） |
+| 校验失败**不会**回退编源码 | 选中了产物但 sha 对不上，xmake 直接报 `unmatched checksum` 让这一步失败 —— 所以发布的 sha 必须与线上字节一致（`finalize` 的 adopt + verify 负责这点；`build` 给沙箱的 manifest 也会按线上 digest 校正） |
 | 依赖没编译过就不值得做产物 | header-only 库、纯数据包只是下载 + 复制文件，缓存它们省不了消费端任何时间：安装目录里没有编译器产出的依赖一律不发（`build.py::should_publish`），工程自己的包永远发 |
 
 ## 3. 仓库与分支布局

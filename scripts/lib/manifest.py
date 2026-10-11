@@ -82,8 +82,43 @@ def entries_for(artifacts: list[dict]) -> dict[str, dict]:
     return found
 
 
+def _reconciled(artifacts: list[dict], digests: dict[str, dict] | None) -> list[dict]:
+    """Artifacts whose checksum is the one the release actually serves.
+
+    Two jobs of a round share their dependency closure, so the same asset name is
+    packed twice and uploaded twice, and the second upload wins. A build result
+    then carries the digest of the upload that *lost* -- and xmake does not fall
+    back to compiling when a checksum does not match, it fails the whole configure
+    ("unmatched checksum"). So the digest comes from the release, and an artifact
+    the release does not serve is left out entirely: an entry pointing at nothing
+    fails the same way, while no entry means "build it", which always works.
+    """
+    if digests is None:
+        return artifacts
+    found = []
+    for artifact in artifacts:
+        info = digests.get(artifact.get("asset") or "")
+        if info is None:
+            # The release does not serve it at all.
+            continue
+        found.append(
+            dict(
+                artifact,
+                # Which upload won is not recorded anywhere else, and an older
+                # asset may predate the API's digest field: fall back to ours.
+                sha256=info.get("sha256") or artifact.get("sha256"),
+                size=info.get("size") or artifact.get("size"),
+            )
+        )
+    return found
+
+
 def write_repo(
-    index_root: Path, repo_root: Path, *, revision: int | None = None
+    index_root: Path,
+    repo_root: Path,
+    *,
+    revision: int | None = None,
+    digests: dict[str, dict] | None = None,
 ) -> dict[str, set[str]]:
     """Write a manifest for every artifact the ledger holds.
 
@@ -123,14 +158,14 @@ def write_repo(
             for record in index_store.entries(meta).values():
                 if revision is not None and int(record.get("revision") or 0) != int(revision):
                     continue
-                found.update(entries_for(record.get("artifacts") or []))
+                found.update(entries_for(_reconciled(record.get("artifacts") or [], digests)))
             write_all(repo_root, package, version, found)
             if found:
                 written.setdefault(package, set()).add(version)
     return written
 
 
-def write_results(results, repo_root: Path) -> dict[str, set[str]]:
+def write_results(results, repo_root: Path, digests: dict[str, dict] | None = None) -> dict[str, set[str]]:
     """Add the artifacts of a round's build results to a manifest repository.
 
     A round is built by independent jobs, so one job cannot see what another one
@@ -153,8 +188,11 @@ def write_results(results, repo_root: Path) -> dict[str, set[str]]:
             version = artifact.get("version")
             if not package or not version:
                 continue
+            fresh = entries_for(_reconciled([artifact], digests))
+            if not fresh:
+                continue
             found = read(repo_root, package, version)
-            found.update(entries_for([artifact]))
+            found.update(fresh)
             write_all(repo_root, package, version, found)
             written.setdefault(package, set()).add(version)
     return written
