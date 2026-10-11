@@ -612,9 +612,10 @@ def _patch_upstream_sources(snapshot, renames: dict[str, dict[str, str]]) -> lis
     """Rename legacy dependencies inside the upstream project's own xmake.lua.
 
     LeviLamina tags from the 0.8-0.13 era pin their data package directly in the
-    project file, so renaming it in the recipe alone leaves both sides
-    disagreeing (``version(1.20.61.01) not found``). The recipe we ship therefore
-    rewrites those strings while it builds the project.
+    project file (``add_requires("bdslibrary 1.20.61.01")``), so renaming it in
+    the recipe alone leaves both sides disagreeing (``version(1.20.61.01) not
+    found``, at configure time). The recipe we ship therefore rewrites those
+    strings while it builds the project.
     """
     recipe = Path(snapshot) / "packages" / "l" / "levilamina" / "xmake.lua"
     if not recipe.is_file():
@@ -633,13 +634,16 @@ def _patch_upstream_sources(snapshot, renames: dict[str, dict[str, str]]) -> lis
                 f'        io.replace("xmake.lua", "{package} v{old}", '
                 f'"{package} v{new}", {{plain = true}})'
             )
-    anchor = "    on_install(function(package)"
-    if not lines or anchor not in text:
+    # The era that needs this writes ``on_install(function (package)`` -- with a
+    # space -- so the anchor cannot be a literal string.
+    anchor = re.search(r"^\s*on_install\(function", text, re.M)
+    if not lines or anchor is None:
         return []
     injection = (
         "\n        -- BuildCache: upstream dependency renames\n"
         + "\n".join(lines)
         + "\n"
     )
-    util.write_text(recipe, text.replace(anchor, anchor + injection, 1))
+    line_end = text.index("\n", anchor.end())
+    util.write_text(recipe, text[: line_end + 1] + injection + text[line_end + 1 :])
     return [f"{recipe.parent.name}: upstream dependency renames injected ({len(lines)})"]

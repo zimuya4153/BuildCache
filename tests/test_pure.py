@@ -465,6 +465,50 @@ def test_repaired_versions_are_renamed_where_the_resolver_reads_them(tmp_path: P
     )
 
 
+def test_upstream_pins_are_rewritten_while_the_project_builds(tmp_path: Path):
+    """The era's *project* file pins its data package, so both sides must agree.
+
+    LeviLamina 0.8.3's own xmake.lua says ``add_requires("bdslibrary 1.20.61.01")``,
+    a four-component version the vendored recipe cannot offer any more (it was
+    renamed). The recipe therefore rewrites the project file while it installs --
+    and that era spells the anchor ``on_install(function (package)``, with a space.
+    """
+    ll = next(
+        item for item in plugins.load_all(util.load_config()) if item.name == "ll"
+    )
+    snapshot = tmp_path / "levimc-repo@test"
+    root = snapshot / "packages" / "l" / "levilamina"
+    root.mkdir(parents=True)
+    recipe = root / "xmake.lua"
+    recipe.write_text(
+        'package("levilamina")\n'
+        "    on_install(function (package)\n"
+        '        import("package.tools.xmake").install(package)\n'
+        "    end)\n",
+        encoding="utf-8",
+    )
+    renames = {"bdslibrary": {"1.20.61.01": "1.20.61-r01"}}
+
+    notes = ll.module._patch_upstream_sources(snapshot, renames)
+    assert len(notes) == 1, notes
+    injected = recipe.read_text(encoding="utf-8")
+    assert (
+        'io.replace("xmake.lua", "bdslibrary 1.20.61.01", '
+        '"bdslibrary 1.20.61-r01", {plain = true})' in injected
+    )
+    # the rewrite has to happen before the step that configures the project
+    assert injected.index("io.replace") < injected.index("package.tools.xmake")
+    # injected once, however often the recipe is prepared
+    assert ll.module._patch_upstream_sources(snapshot, renames) == []
+    assert injected.count("-- BuildCache: upstream dependency renames") == 1
+
+    # a recipe with no install step to hook has nothing to patch
+    bare = snapshot / "packages" / "l" / "levilamina-bare"
+    bare.mkdir(parents=True)
+    (bare / "xmake.lua").write_text('package("levilamina-bare")\n', encoding="utf-8")
+    assert ll.module._patch_upstream_sources(snapshot, renames) == []
+
+
 def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     """Only the project's own package has an entry dimension."""
     config = dict(util.load_config())
