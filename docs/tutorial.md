@@ -99,7 +99,7 @@ msvc 工具链，而它的预编译选择逻辑要求「存在已 check、带 vc
 | `xmake_version` / `toolchain` / `native_toolchain` | 用哪个 xmake、用哪个工具链编缓存 |
 | `toolchain_aliases(ctx, version, commit)` | 产物还能被哪些消费端工具链使用：`[{"id": "clang-cl", "toolchain": "clang-cl"}]`，命中同一份压缩包、只补 manifest 条目；只声明这个版本真的支持的那些（见下） |
 | `recipe_cutoff` / `git_cutoff` | 配方快照与「未锁版本的 git clone 回退到的日期」 |
-| `extra_deps(ctx, version, commit)` | 只在上游自身 `xmake.lua` 里出现的依赖 |
+| `extra_deps(ctx, version, commit)` | 只在上游自身 `xmake.lua` 里出现的依赖（`extra_packages` 名单内的）：既注入消费端配方，也**在构建时顶层 require**，否则只声明不编译，消费端每次都得自己编 |
 | `asset_name(...)` | 自定义 asset 文件名（默认 `<原库名>-<buildhash>.<ext>`） |
 | `should_skip` / `report_skipped` | 过滤与报表 |
 

@@ -125,6 +125,10 @@ def main() -> int:
     # built from source with the era recipes, not fetched as someone else's artifact.
     empty_repo = util.ensure_dir(util.sandbox_root(config) / "empty-repo")
 
+    requires = [f'add_requires("{require}", {{configs = {_lua_table(configs)}}})']
+    requires += extra_requires(
+        ctx, repo_order, plugin.call("extra_deps", ctx, args.version, commit) or []
+    )
     sandbox = xmake_env.create_sandbox(
         config,
         name=_slug(f"{plugin.name}-{args.version}-{entry['id']}"),
@@ -134,9 +138,7 @@ def main() -> int:
         repositories=local_repos,
         main_repo=main_repo,
         binary_repo=empty_repo,
-        extra_lua=(
-            f'add_requires("{require}", {{configs = {_lua_table(configs)}}})'
-        ),
+        extra_lua="\n".join(requires),
     )
     git_shim.install(config, sandbox.env, cutoff)
 
@@ -275,6 +277,34 @@ def publish(config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, xmake
 def toolset_for_key(vs_toolset: str | None, package: str) -> str | None:
     """The manifest toolset field is compared against a consumer's VCToolsVersion."""
     return vs_toolset
+
+
+def extra_requires(ctx, repos, extra: list[dict]) -> list[str]:
+    """``add_requires`` lines for the dependencies only the project file names.
+
+    A consumer resolves them -- the recipe we publish declares them -- so this
+    build has to produce them as well: otherwise every consumer compiles them
+    from source, which is the one thing a prebuilt cache exists to prevent. They
+    are asked for at the top level (not as a dependency of the project) because
+    that is what makes ``require --export`` export them.
+
+    ``repos`` is in xmake's search order, the same one the recipe lookup uses, and
+    the version is resolved exactly as vendoring resolves it for the recipe
+    consumers get, so both sides end up asking for the same package.
+    """
+    from lib import vendoring
+
+    if not extra:
+        return []
+    sources = {name: Path(directory) for name, directory in repos}
+    lines = []
+    for item in extra:
+        version = vendoring.resolve_extra_version(
+            ctx, sources, item["name"], item.get("version", "")
+        )
+        spec = f'{item["name"]} {version}'.strip()
+        lines.append(f'add_requires("{spec}")')
+    return lines
 
 
 def container_for(config: dict, package: str) -> str:

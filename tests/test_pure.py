@@ -431,6 +431,44 @@ def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
     assert upstream.exists() is False
 
 
+def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):
+    """Deps that only the project's own xmake.lua names are part of the closure.
+
+    A consumer resolves them (the recipe we publish declares them) and compiles
+    them from source today, because the export of a build only covered the recipe's
+    own dependency list. They are asked for at the top level here, which is what
+    makes ``require --export`` include them.
+    """
+    ctx = plugins.Context(dict(util.load_config()))
+    repo = tmp_path / "levimc-repo@test"
+    for name, versions in {"cpr": ["1.11.1"], "libhat": ["v0.4.0"], "trampoline": ["2024.11.7"]}.items():
+        recipe = repo / "packages" / name[0] / name
+        recipe.mkdir(parents=True)
+        declared = "".join(f'    add_versions("{item}", "{"ab" * 32}")\n' for item in versions)
+        (recipe / "xmake.lua").write_text(
+            f'package("{name}")\n' + declared, encoding="utf-8"
+        )
+
+    lines = build.extra_requires(
+        ctx,
+        [("levimc-repo", repo)],
+        [
+            {"name": "cpr", "version": "1.11.1"},
+            # the recipe spells it with the "v", the project file does not
+            {"name": "libhat", "version": "0.4.0"},
+            # a dependency with no version in the project file stays unpinned
+            {"name": "trampoline", "version": ""},
+        ],
+    )
+    assert lines == [
+        'add_requires("cpr 1.11.1")',
+        'add_requires("libhat v0.4.0")',
+        'add_requires("trampoline")',
+    ]
+    # a project with no such dependencies adds nothing
+    assert build.extra_requires(ctx, [("levimc-repo", repo)], []) == []
+
+
 def test_copy_only_dependencies_are_not_cached(tmp_path: Path):
     """Nothing compiled means nothing to precompile.
 

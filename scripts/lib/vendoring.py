@@ -157,14 +157,20 @@ def _extras_per_version(ctx, plugin, sources: dict[str, Path], owned: set[str]) 
             name = item["name"]
             if name not in owned or name not in desired:
                 continue
-            version = _resolve_extra_version(ctx, sources, name, item.get("version", ""))
+            version = resolve_extra_version(ctx, sources, name, item.get("version", ""))
             resolved.append({"name": name, "version": version})
         if resolved:
             result[filename] = resolved
     return result
 
 
-def _resolve_extra_version(ctx, sources: dict[str, Path], name: str, wanted: str) -> str:
+def resolve_extra_version(ctx, sources: dict[str, Path], name: str, wanted: str) -> str:
+    """The version to name for an extra dependency, or "" to let xmake pick.
+
+    Shared with the build: the recipe consumers resolve and the closure this
+    build exports have to name the same version, or the artifact would be
+    published under an address nobody asks for.
+    """
     origin = _find_recipe_dir(sources, name)
     available = _recipe_versions(origin) if origin else set()
     if not wanted:
