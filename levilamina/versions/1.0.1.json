@@ -6,7 +6,7 @@
   "configs": {
     "target_type": "server"
   },
-  "revision": 3,
+  "revision": 4,
   "upstream_commit": "4d08de07ef76fb4f101aebb8b251e2652dc4cfbd",
   "xmake_version": "2.9.7",
   "toolchain": "msvc",
@@ -25,7 +25,7 @@
     "arch": "x64",
     "mode": "release"
   },
-  "built_at": "2026-10-11T10:05:46Z",
+  "built_at": "2026-10-11T11:09:07Z",
   "compiled_with": "msvc",
   "entries": {
     "server": {
@@ -36,7 +36,7 @@
       "configs": {
         "target_type": "server"
       },
-      "revision": 3,
+      "revision": 4,
       "upstream_commit": "4d08de07ef76fb4f101aebb8b251e2652dc4cfbd",
       "xmake_version": "2.9.7",
       "toolchain": "msvc",
@@ -55,10 +55,10 @@
         "arch": "x64",
         "mode": "release"
       },
-      "built_at": "2026-10-11T10:05:46Z",
+      "built_at": "2026-10-11T11:09:07Z",
       "artifacts": [
         {
-          "package": "mifcache_levilamina",
+          "package": "levilamina",
           "upstream_package": "levilamina",
           "version": "1.0.1",
           "buildhash": "8a2ce0d166104d6c8b7c173c9537d51c",

@@ -1,11 +1,11 @@
 {
   "package": "cpr",
   "version": "1.10.5",
-  "built_at": "2026-10-11T10:05:46Z",
+  "built_at": "2026-10-11T11:09:07Z",
   "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 3,
+  "revision": 4,
   "configs": {
     "target_type": "server"
   },
@@ -18,11 +18,11 @@
     "default": {
       "package": "cpr",
       "version": "1.10.5",
-      "built_at": "2026-10-11T10:05:46Z",
+      "built_at": "2026-10-11T11:09:07Z",
       "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 3,
+      "revision": 4,
       "configs": {
         "target_type": "server"
       },
@@ -33,7 +33,7 @@
       "produced_for": "levilamina@1.0.1",
       "artifacts": [
         {
-          "package": "mifcache_cpr",
+          "package": "cpr",
           "upstream_package": "cpr",
           "version": "1.10.5",
           "buildhash": "0b80567aac994078bc55c3b4f67b040e",
