@@ -26,6 +26,7 @@ from lib import (  # noqa: E402
     schemas,
     semver,
     util,
+    vendoring,
 )
 
 
@@ -429,6 +430,67 @@ def test_manifests_of_removed_packages_are_dropped(tmp_path: Path):
     assert (stale / "xmake.lua").is_file() and (stale / "versions" / "versions.txt").is_file()
     assert (upstream / "0.8.3").exists() is False
     assert upstream.exists() is False
+
+
+def test_only_served_packages_get_a_prefixed_recipe(tmp_path: Path):
+    """A prefixed recipe exists only where something is precompiled behind it.
+
+    Everything else keeps its upstream name and is resolved from the official
+    repositories -- with one exception: a version our repair invented (``1.21.0-r03``
+    out of ``1.21.0.03``) exists nowhere else, so that dependency keeps travelling
+    with us even when we serve no artifact for it.
+    """
+    config = dict(util.load_config())
+    config["_index_dir"] = str(tmp_path / "index")
+    ctx = plugins.Context(config)
+    for name in ("mifcache_fmt", "fmt"):  # the ledger records both spellings
+        index_store.write_entry(
+            ctx.index_root,
+            name,
+            "11.2.0",
+            "default",
+            {
+                "package": name,
+                "version": "11.2.0",
+                "artifacts": [
+                    {
+                        "package": name,
+                        "version": "11.2.0",
+                        "key": "windows-x64-vc-ee1902dd",
+                        "buildhash": "ee1902dd",
+                        "url": "https://example.invalid/fmt.7z",
+                        "sha256": "ab" * 32,
+                    }
+                ],
+            },
+        )
+    sources = tmp_path / "levimc-repo"
+    target = sources / "packages" / "l" / "levilamina"
+    (target / "versions").mkdir(parents=True)
+    (target / "xmake.lua").write_text(
+        'package("levilamina")\n    add_versionfiles("versions/versions.txt")\n',
+        encoding="utf-8",
+    )
+    (target / "versions" / "1_4_4.lua").write_text(
+        'local deps = { "fmt 11.2.0", "entt v3.14.0", "bdslibrary 1.21.0-r03" }\n',
+        encoding="utf-8",
+    )
+    for name, version in {
+        "fmt": "11.2.0",
+        "entt": "v3.14.0",
+        "bdslibrary": "1.21.0-r03",
+    }.items():
+        recipe = sources / "packages" / name[0] / name
+        recipe.mkdir(parents=True)
+        (recipe / "xmake.lua").write_text(
+            f'package("{name}")\n    add_versions("{version}", "{"ab" * 32}")\n',
+            encoding="utf-8",
+        )
+
+    ll = next(item for item in plugins.load_all(util.load_config()) if item.name == "ll")
+    owned = vendoring._collect_owned(config, ctx, ll, {"levimc-repo": sources}, "levilamina")
+    assert owned == {"levilamina", "fmt", "bdslibrary"}, owned
+    assert vendoring._served_packages(ctx) == {"fmt"}
 
 
 def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):

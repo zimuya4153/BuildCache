@@ -25,6 +25,12 @@ _DEP_CALL_PATTERN = re.compile(r"\b(" + "|".join(_DEP_CALLS) + r")\s*\(([^()]*)\
 _PACKAGE_ADD_PATTERN = re.compile(r':add\(\s*"(deps|systemdeps)"\s*,\s*"([^"]+)"\s*\)')
 _PACKAGE_DECL_PATTERN = re.compile(r'\bpackage\(\s*"([^"]+)"\s*\)')
 
+#: What our legacy repair makes of a four-component version: ``1.21.0.03`` becomes
+#: ``1.21.0-r03`` (``1.21.0.3-client`` becomes ``1.21.0-r3-client``). Such a
+#: version exists nowhere but in the recipe we repaired, so a project that pins it
+#: can only be served by us.
+_REPAIRED_VERSION = re.compile(r"^\d+\.\d+\.\d+-r\d+(?:[-.].*)?$")
+
 
 def vendor(config: dict, ctx, plugin, refresh: bool = False) -> dict:
     """Regenerate the prefixed recipes inside the package repository working tree."""
@@ -61,12 +67,19 @@ def vendor(config: dict, ctx, plugin, refresh: bool = False) -> dict:
             util.warn(f"{prefix}{name}: dependency reference left unprefixed: {suspicious}")
         copied[name] = str(origin)
 
+    dropped = _drop_unowned(package_repo, prefix, owned)
+    if dropped:
+        util.log(
+            f"dropped {len(dropped)} prefixed package(s) with nothing behind them: "
+            + ", ".join(sorted(dropped))
+        )
+
     extras = _extras_per_version(ctx, plugin, sources, owned)
     version_files = _version_files(package_repo, prefix + target)
     for path in version_files:
         extra = extras.get(path.name, [])
         if extra:
-            _append_extra_deps(path, extra, prefix)
+            _append_extra_deps(path, extra, prefix, owned)
 
     marker = {
         "generated_at": util.run_out(["git", "-C", str(util.ROOT), "rev-parse", "HEAD"], check=False),
@@ -96,19 +109,97 @@ def _source_snapshots(config: dict, ctx, env: dict | None = None, refresh: bool 
 
 
 def _collect_owned(config: dict, ctx, plugin, sources: dict[str, Path], target: str) -> set[str]:
-    owned = {target}
+    """The packages that get a prefixed copy in the package repository.
+
+    Only where there is something behind the name: the ledger says which packages
+    the cache actually holds (that is what a consumer can resolve from us). A
+    package whose upstream recipe xmake cannot parse keeps our repaired copy as
+    well, because the project's versions point at the repaired spelling. Anything
+    else keeps its own name and is resolved from the official repositories.
+    """
     recipe = _find_recipe_dir(sources, target)
     if recipe is None:
         util.die(f"recipe for '{target}' not found in the configured sources")
-    for name, versioned in _dependency_names(recipe).items():
-        if _find_recipe_dir(sources, name) is not None:
-            owned.add(name)
-        elif versioned:
-            _warn_once(f"dependency '{name}' has no recipe in the configured sources")
+    candidates = dict(_dependency_names(recipe))
     for name in plugin.call("metadata").get("extra_packages", []):
-        if _find_recipe_dir(sources, name) is not None:
+        candidates.setdefault(name, False)
+
+    served = _served_packages(ctx)
+    repaired = _repaired_references(recipe)
+    owned = {target}
+    for name, versioned in sorted(candidates.items()):
+        origin = _find_recipe_dir(sources, name)
+        if origin is None:
+            if versioned:
+                _warn_once(f"dependency '{name}' has no recipe in the configured sources")
+            continue
+        if name in served or name in repaired:
             owned.add(name)
     return owned
+
+
+def _repaired_references(recipe: Path) -> set[str]:
+    """Dependency names the project pins to a version only our repair creates.
+
+    The repair runs before vendoring, so the snapshot no longer says which
+    recipes it had to rewrite -- but the references it left behind do: a spec
+    spelled ``1.21.0-r03`` cannot be resolved from the official repositories, so
+    that dependency has to keep travelling with us even without an artifact.
+    """
+    names: set[str] = set()
+    files = [Path(recipe) / "xmake.lua"]
+    files += sorted((Path(recipe) / "versions").glob("*.lua"))
+    for path in files:
+        if not path.is_file():
+            continue
+        for spec in _specs_in_file(path):
+            parts = spec.split()
+            if len(parts) < 2:
+                continue
+            if _REPAIRED_VERSION.match(parts[1].strip().lstrip("v")):
+                names.add(parts[0].split("[", 1)[0].strip())
+    return names
+
+
+def _served_packages(ctx) -> set[str]:
+    """Upstream names of the packages the cache holds an artifact for.
+
+    The ledger records every artifact under two names -- the prefixed one and the
+    upstream one -- so stripping the prefix yields the upstream names whichever
+    record is read.
+    """
+    root = Path(ctx.index_root)
+    if not root.is_dir():
+        return set()
+    names: set[str] = set()
+    for directory in sorted(root.iterdir()):
+        if not directory.is_dir() or directory.name.startswith("."):
+            continue
+        if not (directory / "versions").is_dir():
+            continue
+        names.add(directory.name.removeprefix(ctx.prefix))
+    return names
+
+
+def _drop_unowned(package_repo: Path, prefix: str, owned: set[str]) -> list[str]:
+    """Delete the prefixed copies of packages we no longer serve.
+
+    A package with nothing precompiled behind it is not published at all: the
+    consumer resolves it by its upstream name, from the official repositories.
+    """
+    root = Path(package_repo) / "packages"
+    if not root.is_dir():
+        return []
+    dropped: list[str] = []
+    for directory in sorted(root.glob(f"*/{prefix}*")):
+        if not directory.is_dir():
+            continue
+        name = directory.name[len(prefix):]
+        if name in owned:
+            continue
+        util.rmtree(directory)
+        dropped.append(name)
+    return dropped
 
 
 def _dependency_names(recipe_dir: Path) -> dict[str, bool]:
@@ -155,7 +246,7 @@ def _extras_per_version(ctx, plugin, sources: dict[str, Path], owned: set[str]) 
         resolved = []
         for item in found:
             name = item["name"]
-            if name not in owned or name not in desired:
+            if name not in desired:
                 continue
             version = resolve_extra_version(ctx, sources, name, item.get("version", ""))
             resolved.append({"name": name, "version": version})
@@ -297,14 +388,16 @@ def _version_files(package_repo: Path, package: str) -> list[Path]:
     return sorted(directory.glob("*.lua")) if directory.is_dir() else []
 
 
-def _append_extra_deps(path: Path, extra: list[dict], prefix: str) -> None:
+def _append_extra_deps(path: Path, extra: list[dict], prefix: str, owned: set[str]) -> None:
     lines = [
         "",
         "-- BuildCache: extra dependency closure (generated, do not edit)",
         "local _buildcache_extra = {",
     ]
     for item in extra:
-        spec = f"{prefix}{item['name']}"
+        # Only a package we serve takes the prefix; the rest is resolved by its
+        # own name from the official repositories.
+        spec = f"{prefix}{item['name']}" if item["name"] in owned else item["name"]
         if item.get("version"):
             spec += f" {item['version']}"
         lines.append(f'    "{spec}",')
