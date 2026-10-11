@@ -42,8 +42,8 @@
           "release": "libhat_0",
           "asset": "libhat-bfc5ac80a2ba46b3890d7852b6bb022e.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/libhat_0/libhat-bfc5ac80a2ba46b3890d7852b6bb022e.7z",
-          "sha256": "84c6cdcd0a6efe0e26c1a352a0377e0a0a3074b2d540f406c4f98a2a1d13504e",
-          "size": 43509,
+          "sha256": "183fda76aba09ac86f13bd9ff88d5e89aa6903cef719975e58293d3389a9bdf4",
+          "size": 43487,
           "container": "7z",
           "aliases": [
             {

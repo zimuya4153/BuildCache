@@ -1,11 +1,11 @@
 {
   "package": "bdslibrary",
   "version": "1.21.3-r01",
-  "built_at": "2026-10-11T10:22:33Z",
+  "built_at": "2026-10-11T11:08:17Z",
   "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 3,
+  "revision": 4,
   "configs": {
     "target_type": "server"
   },
@@ -18,11 +18,11 @@
     "default": {
       "package": "bdslibrary",
       "version": "1.21.3-r01",
-      "built_at": "2026-10-11T10:22:33Z",
+      "built_at": "2026-10-11T11:08:17Z",
       "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 3,
+      "revision": 4,
       "configs": {
         "target_type": "server"
       },
@@ -33,7 +33,7 @@
       "produced_for": "levilamina@0.13.5",
       "artifacts": [
         {
-          "package": "mifcache_bdslibrary",
+          "package": "bdslibrary",
           "upstream_package": "bdslibrary",
           "version": "1.21.3-r01",
           "buildhash": "813c57eabb134b8e9dc2800d9cd97bcc",

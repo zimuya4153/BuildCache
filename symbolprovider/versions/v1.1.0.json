@@ -1,8 +1,8 @@
 {
   "package": "symbolprovider",
   "version": "v1.1.0",
-  "built_at": "2026-10-11T10:53:32Z",
-  "xmake_version": "2.8.6",
+  "built_at": "2026-10-11T11:08:17Z",
+  "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 4,
@@ -13,13 +13,13 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@0.8.3",
+  "produced_for": "levilamina@0.13.5",
   "entries": {
     "default": {
       "package": "symbolprovider",
       "version": "v1.1.0",
-      "built_at": "2026-10-11T10:53:32Z",
-      "xmake_version": "2.8.6",
+      "built_at": "2026-10-11T11:08:17Z",
+      "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 4,
@@ -30,34 +30,34 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@0.8.3",
+      "produced_for": "levilamina@0.13.5",
       "artifacts": [
         {
           "package": "symbolprovider",
           "upstream_package": "symbolprovider",
           "version": "v1.1.0",
-          "buildhash": "355ae41e03ab4536a9e1f6767963f2f4",
-          "key": "windows-x64-vc-355ae41e03ab4536a9e1f6767963f2f4",
+          "buildhash": "8aace9a371e5415981bd4144196ba4d8",
+          "key": "windows-x64-vc-8aace9a371e5415981bd4144196ba4d8",
           "toolset": "14.44.35207",
           "release": "symbolprovider_0",
-          "asset": "symbolprovider-355ae41e03ab4536a9e1f6767963f2f4.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/symbolprovider_0/symbolprovider-355ae41e03ab4536a9e1f6767963f2f4.7z",
-          "sha256": "81d37b8b07e7b8628215bd9be04ff2244d521680fce712285501a304638aa465",
-          "size": 5384,
+          "asset": "symbolprovider-8aace9a371e5415981bd4144196ba4d8.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/symbolprovider_0/symbolprovider-8aace9a371e5415981bd4144196ba4d8.7z",
+          "sha256": "d4f5e74d27b54e8674848cf874a182ac38e233c8d60ad7a92ab93473893826a5",
+          "size": 5429,
           "container": "7z",
           "aliases": [
             {
               "id": "msvc",
               "toolchain": "msvc",
-              "buildhash": "6cd334542dc942b5bac40ff806ca46bb",
-              "key": "windows-x64-vc-6cd334542dc942b5bac40ff806ca46bb",
+              "buildhash": "6c8d5da354a14f579a022df9dd87ec7f",
+              "key": "windows-x64-vc-6c8d5da354a14f579a022df9dd87ec7f",
               "toolset": "14.44.35207"
             },
             {
               "id": "clang-cl",
               "toolchain": "clang-cl",
-              "buildhash": "ff921fdab291446284a695cc101ecc95",
-              "key": "windows-x64-vc-ff921fdab291446284a695cc101ecc95",
+              "buildhash": "cfac2b6c964843cb82080f4095a071e4",
+              "key": "windows-x64-vc-cfac2b6c964843cb82080f4095a071e4",
               "toolset": "14.44.35207"
             }
           ]

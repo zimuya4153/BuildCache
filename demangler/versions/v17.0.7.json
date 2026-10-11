@@ -1,8 +1,8 @@
 {
   "package": "demangler",
   "version": "v17.0.7",
-  "built_at": "2026-10-11T11:06:58Z",
-  "xmake_version": "3.0.1",
+  "built_at": "2026-10-11T11:08:17Z",
+  "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 4,
@@ -13,13 +13,13 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.4.4",
+  "produced_for": "levilamina@0.13.5",
   "entries": {
     "default": {
       "package": "demangler",
       "version": "v17.0.7",
-      "built_at": "2026-10-11T11:06:58Z",
-      "xmake_version": "3.0.1",
+      "built_at": "2026-10-11T11:08:17Z",
+      "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 4,
@@ -30,7 +30,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.4.4",
+      "produced_for": "levilamina@0.13.5",
       "artifacts": [
         {
           "package": "demangler",

@@ -1,8 +1,8 @@
 {
   "package": "mimalloc",
   "version": "2.1.2",
-  "built_at": "2026-10-11T10:53:32Z",
-  "xmake_version": "2.8.6",
+  "built_at": "2026-10-11T11:08:17Z",
+  "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 4,
@@ -13,13 +13,13 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@0.8.3",
+  "produced_for": "levilamina@0.13.5",
   "entries": {
     "default": {
       "package": "mimalloc",
       "version": "2.1.2",
-      "built_at": "2026-10-11T10:53:32Z",
-      "xmake_version": "2.8.6",
+      "built_at": "2026-10-11T11:08:17Z",
+      "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 4,
@@ -30,34 +30,34 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@0.8.3",
+      "produced_for": "levilamina@0.13.5",
       "artifacts": [
         {
           "package": "mimalloc",
           "upstream_package": "mimalloc",
           "version": "2.1.2",
-          "buildhash": "c42388cbccc641449a7a8e305d153b81",
-          "key": "windows-x64-vc-c42388cbccc641449a7a8e305d153b81",
+          "buildhash": "78d6c311a93f4da9a19e332f14f8363f",
+          "key": "windows-x64-vc-78d6c311a93f4da9a19e332f14f8363f",
           "toolset": "14.44.35207",
           "release": "mimalloc_0",
-          "asset": "mimalloc-c42388cbccc641449a7a8e305d153b81.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/mimalloc_0/mimalloc-c42388cbccc641449a7a8e305d153b81.7z",
-          "sha256": "55e3281255634009dbdc1f6d8700ede97e577b7aa941774f2264249b124f818e",
-          "size": 132592,
+          "asset": "mimalloc-78d6c311a93f4da9a19e332f14f8363f.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/mimalloc_0/mimalloc-78d6c311a93f4da9a19e332f14f8363f.7z",
+          "sha256": "81808140673fd0c7b415493acec6a6fd31eab2c64f96c7f8dddf31c09a2d466a",
+          "size": 112984,
           "container": "7z",
           "aliases": [
             {
               "id": "msvc",
               "toolchain": "msvc",
-              "buildhash": "9254a64bf25444f7b3f3dee597fe94eb",
-              "key": "windows-x64-vc-9254a64bf25444f7b3f3dee597fe94eb",
+              "buildhash": "cb54bee83f8448ee9d5563793824c89b",
+              "key": "windows-x64-vc-cb54bee83f8448ee9d5563793824c89b",
               "toolset": "14.44.35207"
             },
             {
               "id": "clang-cl",
               "toolchain": "clang-cl",
-              "buildhash": "e0ff95e303fc4ca69a3f8d54030d5a7e",
-              "key": "windows-x64-vc-e0ff95e303fc4ca69a3f8d54030d5a7e",
+              "buildhash": "2f2350d988a24a8b9bdf6ea1375903e1",
+              "key": "windows-x64-vc-2f2350d988a24a8b9bdf6ea1375903e1",
               "toolset": "14.44.35207"
             }
           ]
