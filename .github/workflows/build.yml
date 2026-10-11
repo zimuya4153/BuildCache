@@ -2,10 +2,11 @@ name: Build SDK
 
 on:
   # A round is incremental: `discover` only queues what is missing or built by an
-  # older revision, so a scheduled run with nothing to do costs a couple of
-  # minutes of discovery and no build jobs at all.
+  # older revision, so a run with nothing to do costs a couple of minutes of
+  # discovery and no build jobs at all -- which is what makes a frequent schedule
+  # affordable, and what drains a backlog of versions a few per run.
   schedule:
-    - cron: "0 2 * * *"
+    - cron: "0 */4 * * *"
   # A `revision` bump (or a new plugin) in config.json is the signal "everything
   # published so far is stale": the backlog then drains a few versions per run.
   push:
