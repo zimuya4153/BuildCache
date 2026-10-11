@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import build  # noqa: E402
+import discover  # noqa: E402
 import finalize  # noqa: E402
 from lib import (  # noqa: E402
     aliases,
@@ -647,6 +648,31 @@ def test_dependencies_come_from_today_and_the_project_from_its_era(tmp_path: Pat
     ) == "new\n"
     # a source that does not carry that package is simply skipped
     assert sources._overlay_from_cutoff(repo, "2025-01-01", "packages/x/nothing") == ""
+
+
+def test_every_release_line_gets_a_build_before_any_gets_two():
+    """A backlog is covered line by line first, patches after.
+
+    Patch levels of one line differ in which upstream commits they carry; lines
+    differ in what the SDK is built from. Covering lines first turns a backlog
+    into broad coverage quickly, and the remaining patches then fill in what is
+    missing -- the middle patch of each line being the representative, and the
+    order stable so that "the next few" means the same thing on every run.
+    """
+    pending = [
+        "26.51.6", "26.51.5", "26.51.4", "26.51.2", "26.51.1", "26.51.0",
+        "26.40.6", "26.40.5",
+        "1.4.4", "1.4.3",
+        "0.8.3",
+    ]
+    ordered = discover.cover_lines_first(pending)
+    # one per line first: 26.51 has six members (middle-biased -> 3rd newest),
+    # 26.40 two (the newer), 1.4 two (the newer), 0.8 one
+    assert ordered[:4] == ["26.51.4", "26.40.6", "1.4.4", "0.8.3"], ordered
+    # then the leftovers, still newest first, so patches come last
+    assert ordered[4:] == ["26.51.6", "26.51.5", "26.51.2", "26.51.1", "26.51.0", "26.40.5", "1.4.3"]
+    # stable: the same input always yields the same order
+    assert discover.cover_lines_first(pending) == ordered
 
 
 def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):

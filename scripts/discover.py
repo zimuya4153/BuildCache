@@ -26,6 +26,34 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _line_of(version: str) -> str:
+    """The release line of a version: ``26.51.6`` -> ``26.51``, ``1.0.0-rc.1`` -> ``1.0``."""
+    head = str(version).partition("-")[0]
+    parts = head.split(".")
+    return ".".join(parts[:-1]) if len(parts) > 1 else str(version)
+
+
+def cover_lines_first(versions: list[str]) -> list[str]:
+    """Order versions so that every release line gets a build before any line gets two.
+
+    Patch levels of one line differ in which upstream commits they carry, while
+    lines differ in what the SDK is built from -- so covering the lines first is
+    what turns a backlog into broad coverage quickly, and the remaining patches
+    then only fill in what is still missing. Inside a line the representative is
+    the middle patch level, biased towards the newest: neither the oldest (usually
+    the least useful) nor the newest, which upstream may still be moving.
+
+    ``versions`` arrives newest first and the order of the rest is preserved, so
+    picking the next few from the front of the result is stable across runs.
+    """
+    lines: dict[str, list[str]] = {}
+    for version in versions:
+        lines.setdefault(_line_of(version), []).append(version)
+    picks = [members[(len(members) - 1) // 2] for members in lines.values()]
+    chosen = set(picks)
+    return picks + [version for version in versions if version not in chosen]
+
+
 def main() -> int:
     args = parse_args()
     config = util.load_config()
@@ -56,7 +84,7 @@ def main() -> int:
                 util.die(f"version {args.version} is not tracked by the recipe repository")
         else:
             pending = [item for item in entries if item["version"] not in built]
-        pending = semver.sort_desc([item["version"] for item in pending])
+        pending = cover_lines_first(semver.sort_desc([item["version"] for item in pending]))
         by_version = {item["version"]: item for item in entries}
         if args.first_only:
             pending = pending[:1]
