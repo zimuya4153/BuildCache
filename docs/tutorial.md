@@ -25,6 +25,7 @@ packages/<首字母>/<包名>/<版本>/manifest.txt
 | 哈希里含工具链，消费端与编译端不同就对不上 | 可以「别名」：同一个压缩包再写一条 hash 离线重算出来的 manifest 条目（见 §6 `toolchain_aliases`） |
 | 解包时会**吃掉一层目录** | 包内必须是 `<字母>/<包名>/<版本>/<buildhash>/…`，且 xmake 3.1 不认 `.tar.zst`（用 7z） |
 | 校验失败会**静默回退编源码** | 必须自己校验发布一致性（见 `finalize` 的 verify） |
+| 依赖没编译过就不值得做产物 | header-only 库、纯数据包只是下载 + 复制文件，缓存它们省不了消费端任何时间：安装目录里没有编译器产出的依赖一律不发（`build.py::should_publish`），工程自己的包永远发 |
 
 ## 3. 仓库与分支布局
 
@@ -34,7 +35,7 @@ packages/<首字母>/<包名>/<版本>/manifest.txt
 | `index` 分支 | 生成物：`<包名>/index.json`、`<包名>/versions/<版本>.json` |
 | `assets` 分支 | 空分支，只作为 release tag 的落点，避免污染 main 的 tag |
 | GitHub Releases | 产物本体，按 `<包名>_<序号>` 分片（每片 ≤800 asset）；asset 名形如 `<原库名>-<buildhash>.7z`，release body 里是**直接下载直链** |
-| `zimuya4153/xmake-repo` | 消费端仓库：前缀化配方 + `manifest.txt` |
+| `zimuya4153/xmake-repo` | 消费端仓库：前缀化配方 + `manifest.txt`（没有 manifest 的包＝消费端自行编源码，配方始终保留） |
 
 所有发布出去的包都是 `mifcache_<原名>`，**不覆写上游包名**；官方仓库继续提供其它依赖。
 
@@ -189,7 +190,8 @@ cache.py trigger --plugin ll --entry client --local   # 只编某个条目
    因为 CMake 拒绝超过 250 字符的目标文件路径）。
 3. PATH 前置 git shim：把**未锁版本**的 clone 回退到该版本发布日期之前；已由配方锁定
    commit 的包不受影响。
-4. `xmake require --export` 导出整棵闭包，逐个打包为 `<字母>/<包名>/<版本>/<hash>/`。
+4. `xmake require --export` 导出整棵闭包，逐个打包为 `<字母>/<包名>/<版本>/<hash>/`；
+   只下载/复制文件的依赖跳过（没有编译器产出就没有可省的时间），工程自己的包必打。
 5. 为每个产物离线重算其它消费工具链的 buildhash，作为 manifest 别名记进索引。
 6. 上传分片、写索引；`finalize` 从索引重生成 manifest（含别名）、刷新 release body、
    校验一致性。
