@@ -2,65 +2,67 @@
   "package": "cpr",
   "version": "1.11.1",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T09:25:08Z",
-  "xmake_version": "3.0.1",
+  "built_at": "2026-10-11T10:06:11Z",
+  "xmake_version": "3.1.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.44.35207",
+  "vs_toolset": "14.51.36231",
   "revision": 3,
   "configs": {
     "target_type": "server"
   },
   "alias_profiles": [
-    "msvc"
+    "msvc",
+    "clang-cl"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.4.4",
+  "produced_for": "levilamina@26.51.5",
   "entries": {
     "default": {
       "package": "cpr",
       "version": "1.11.1",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T09:25:08Z",
-      "xmake_version": "3.0.1",
+      "built_at": "2026-10-11T10:06:11Z",
+      "xmake_version": "3.1.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.44.35207",
+      "vs_toolset": "14.51.36231",
       "revision": 3,
       "configs": {
         "target_type": "server"
       },
       "alias_profiles": [
-        "msvc"
+        "msvc",
+        "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.4.4",
+      "produced_for": "levilamina@26.51.5",
       "artifacts": [
         {
           "package": "mifcache_cpr",
           "upstream_package": "cpr",
           "version": "1.11.1",
-          "buildhash": "5cebf81912a24150a7cee397e51c88c9",
-          "key": "windows-x64-vc-5cebf81912a24150a7cee397e51c88c9",
-          "toolset": "14.44.35207",
+          "buildhash": "1c9ad4a4e04341219556b734b3fdce5d",
+          "key": "windows-x64-vc-1c9ad4a4e04341219556b734b3fdce5d",
+          "toolset": "14.51.36231",
           "release": "cpr_0",
-          "asset": "cpr-5cebf81912a24150a7cee397e51c88c9.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/cpr_0/cpr-5cebf81912a24150a7cee397e51c88c9.7z",
-          "sha256": "c1ce91468286684a392630351f364f2eacaaae0dd00c8352e0fba7a3b193df52",
-          "size": 528505,
+          "asset": "cpr-1c9ad4a4e04341219556b734b3fdce5d.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/cpr_0/cpr-1c9ad4a4e04341219556b734b3fdce5d.7z",
+          "sha256": "24227cfaa4dd686ca153a1ea10121cf2603b2bf6fef5b1f20aa142efaf45c668",
+          "size": 523477,
           "container": "7z",
           "aliases": [
             {
               "id": "msvc",
               "toolchain": "msvc",
-              "buildhash": "d4761bd3c00548eea56571ff620a33aa",
-              "key": "windows-x64-vc-d4761bd3c00548eea56571ff620a33aa",
-              "toolset": "14.44.35207"
+              "buildhash": "3a95096e5c70467fbd5a5d8585343423",
+              "key": "windows-x64-vc-3a95096e5c70467fbd5a5d8585343423",
+              "toolset": "14.51.36231"
             },
             {
               "id": "clang-cl",
               "toolchain": "clang-cl",
-              "buildhash": "e4a3ddd17af24c858bd178be62212ead",
-              "key": "windows-x64-vc-e4a3ddd17af24c858bd178be62212ead",
-              "toolset": "14.44.35207"
+              "buildhash": "595dddd1bb5443de92a1c339a160d7b8",
+              "key": "windows-x64-vc-595dddd1bb5443de92a1c339a160d7b8",
+              "toolset": "14.51.36231"
             }
           ]
         }

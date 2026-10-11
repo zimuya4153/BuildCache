@@ -2,37 +2,39 @@
   "package": "mifcache_leveldb",
   "version": "1.23",
   "prefix": "mifcache_",
-  "built_at": "2026-10-11T10:05:46Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-11T10:06:11Z",
+  "xmake_version": "3.1.1",
   "toolchain": "msvc",
-  "vs_toolset": "14.44.35207",
+  "vs_toolset": "14.51.36231",
   "revision": 3,
   "configs": {
     "target_type": "server"
   },
   "alias_profiles": [
-    "msvc"
+    "msvc",
+    "clang-cl"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.0.1",
+  "produced_for": "levilamina@26.51.5",
   "entries": {
     "default": {
       "package": "mifcache_leveldb",
       "version": "1.23",
       "prefix": "mifcache_",
-      "built_at": "2026-10-11T10:05:46Z",
-      "xmake_version": "2.9.7",
+      "built_at": "2026-10-11T10:06:11Z",
+      "xmake_version": "3.1.1",
       "toolchain": "msvc",
-      "vs_toolset": "14.44.35207",
+      "vs_toolset": "14.51.36231",
       "revision": 3,
       "configs": {
         "target_type": "server"
       },
       "alias_profiles": [
-        "msvc"
+        "msvc",
+        "clang-cl"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.0.1",
+      "produced_for": "levilamina@26.51.5",
       "artifacts": [
         {
           "package": "mifcache_leveldb",
@@ -40,7 +42,7 @@
           "version": "1.23",
           "buildhash": "2532d000dc9d47cbb618c80ba0e6d806",
           "key": "windows-x64-vc-2532d000dc9d47cbb618c80ba0e6d806",
-          "toolset": "14.44.35207",
+          "toolset": "14.51.36231",
           "release": "leveldb_0",
           "asset": "leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/leveldb_0/leveldb-2532d000dc9d47cbb618c80ba0e6d806.7z",
@@ -53,14 +55,14 @@
               "toolchain": "msvc",
               "buildhash": "562d97fa461941deaa4ae4ca06492415",
               "key": "windows-x64-vc-562d97fa461941deaa4ae4ca06492415",
-              "toolset": "14.44.35207"
+              "toolset": "14.51.36231"
             },
             {
               "id": "clang-cl",
               "toolchain": "clang-cl",
               "buildhash": "47e59e56afbe44f79ec7388e60e8ab6e",
               "key": "windows-x64-vc-47e59e56afbe44f79ec7388e60e8ab6e",
-              "toolset": "14.44.35207"
+              "toolset": "14.51.36231"
             }
           ]
         }

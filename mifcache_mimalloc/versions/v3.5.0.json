@@ -1,0 +1,72 @@
+{
+  "package": "mifcache_mimalloc",
+  "version": "v3.5.0",
+  "prefix": "mifcache_",
+  "built_at": "2026-10-11T10:06:11Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.51.36231",
+  "revision": 3,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc",
+    "clang-cl"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@26.51.5",
+  "entries": {
+    "default": {
+      "package": "mifcache_mimalloc",
+      "version": "v3.5.0",
+      "prefix": "mifcache_",
+      "built_at": "2026-10-11T10:06:11Z",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "revision": 3,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@26.51.5",
+      "artifacts": [
+        {
+          "package": "mifcache_mimalloc",
+          "upstream_package": "mimalloc",
+          "version": "v3.5.0",
+          "buildhash": "1dbbc847966349438c4f66166623a12b",
+          "key": "windows-x64-vc-1dbbc847966349438c4f66166623a12b",
+          "toolset": "14.51.36231",
+          "release": "mimalloc_0",
+          "asset": "mimalloc-1dbbc847966349438c4f66166623a12b.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/mimalloc_0/mimalloc-1dbbc847966349438c4f66166623a12b.7z",
+          "sha256": "4b9ab222dad5da327e103e27333deec8ca9c083bda3d4ec16c0c0579603800ba",
+          "size": 214109,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "70a4380c618d4927a7bbf86e86284092",
+              "key": "windows-x64-vc-70a4380c618d4927a7bbf86e86284092",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "721190f8fea544feb05fd065afa31ffb",
+              "key": "windows-x64-vc-721190f8fea544feb05fd065afa31ffb",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

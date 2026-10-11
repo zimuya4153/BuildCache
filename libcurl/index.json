@@ -1,7 +1,8 @@
 {
   "package": "libcurl",
-  "latest": "8.11.0",
+  "latest": "8.21.0",
   "versions": [
+    "8.21.0",
     "8.11.0"
   ]
 }
