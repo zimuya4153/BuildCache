@@ -1,0 +1,63 @@
+{
+  "package": "levilamina",
+  "version": "1.9.4",
+  "built_at": "2026-10-11T15:17:59Z",
+  "xmake_version": "3.0.6",
+  "toolchain": "msvc",
+  "vs_toolset": "14.51.36231",
+  "revision": 5,
+  "configs": {},
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "more-dimensions@0.13.0",
+  "entries": {
+    "default": {
+      "package": "levilamina",
+      "version": "1.9.4",
+      "built_at": "2026-10-11T15:17:59Z",
+      "xmake_version": "3.0.6",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "revision": 5,
+      "configs": {},
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "more-dimensions@0.13.0",
+      "artifacts": [
+        {
+          "package": "levilamina",
+          "version": "1.9.4",
+          "buildhash": "8c6d0e9c82224187934d5b722f4b0b0b",
+          "key": "windows-x64-vc-8c6d0e9c82224187934d5b722f4b0b0b",
+          "toolset": "14.51.36231",
+          "release": "levilamina_0",
+          "asset": "levilamina-8c6d0e9c82224187934d5b722f4b0b0b.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/levilamina_0/levilamina-8c6d0e9c82224187934d5b722f4b0b0b.7z",
+          "sha256": "4bb992a1f24d637c289683ee001a465e3ac1124780395ac2e739a092b915d4bd",
+          "size": 9488375,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "2c61cfcaf6ab4ee693cec3fd280833f9",
+              "key": "windows-x64-vc-2c61cfcaf6ab4ee693cec3fd280833f9",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "19de24217a8346c49006b5ff350a5fc3",
+              "key": "windows-x64-vc-19de24217a8346c49006b5ff350a5fc3",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
