@@ -290,20 +290,25 @@ def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
     if not failed:
         return
     util.log(
-        "retrying failed package(s): "
+        f"retrying {len(failed)} failed package(s) on their own: "
         + ", ".join(f"{name} {version}" for name, version in failed)
     )
     for name, version in failed:
         for attempt in range(1, attempts + 1):
+            # Say what is being retried and how it went: a silent retry loop is
+            # indistinguishable from a hang in the log.
+            util.log(f"== retry {name} {version} (attempt {attempt}/{attempts})")
             single = sandbox.xmake(
                 ["require", "-y", "--build", f"{name} {version}"],
                 stream=True,
                 check=False,
             )
             if single.returncode == 0:
+                util.log(f"== retry {name} {version} ok")
                 break
             util.warn(f"{name} {version} failed (attempt {attempt}/{attempts})")
-        else:
+            # The reason is in the package's own install log, which lives inside
+            # the sandbox: print it per failed attempt, not only at the end.
             xmake_env.dump_failed_logs(config, sandbox)
 
 
