@@ -1,11 +1,11 @@
 {
   "package": "fmt",
   "version": "10.2.1",
-  "built_at": "2026-10-11T11:09:07Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-12T03:39:57Z",
+  "xmake_version": "2.9.8",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 4,
+  "revision": 5,
   "configs": {
     "target_type": "server"
   },
@@ -13,16 +13,16 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.0.1",
+  "produced_for": "levilamina@1.1.0-rc.1",
   "entries": {
     "default": {
       "package": "fmt",
       "version": "10.2.1",
-      "built_at": "2026-10-11T11:09:07Z",
-      "xmake_version": "2.9.7",
+      "built_at": "2026-10-12T03:39:57Z",
+      "xmake_version": "2.9.8",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 4,
+      "revision": 5,
       "configs": {
         "target_type": "server"
       },
@@ -30,11 +30,10 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.0.1",
+      "produced_for": "levilamina@1.1.0-rc.1",
       "artifacts": [
         {
           "package": "fmt",
-          "upstream_package": "fmt",
           "version": "10.2.1",
           "buildhash": "2eeacf73125546e1ae5a2a161567d6e6",
           "key": "windows-x64-vc-2eeacf73125546e1ae5a2a161567d6e6",
@@ -42,8 +41,8 @@
           "release": "fmt_0",
           "asset": "fmt-2eeacf73125546e1ae5a2a161567d6e6.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/fmt_0/fmt-2eeacf73125546e1ae5a2a161567d6e6.7z",
-          "sha256": "af20c9d742d02a9efa8e7a19150457493e5ba4fccdde0c6072ace89a3154ebf7",
-          "size": 233460,
+          "sha256": "514709472099bde58d30eb56971c6977c9434ff2a03ab873113640a868013437",
+          "size": 233440,
           "container": "7z",
           "aliases": [
             {

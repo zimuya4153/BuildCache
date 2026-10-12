@@ -1,11 +1,11 @@
 {
   "package": "libhat",
   "version": "2024.9.22",
-  "built_at": "2026-10-11T11:09:07Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-12T03:39:57Z",
+  "xmake_version": "2.9.8",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 4,
+  "revision": 5,
   "configs": {
     "target_type": "server"
   },
@@ -13,16 +13,16 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.0.1",
+  "produced_for": "levilamina@1.1.0-rc.1",
   "entries": {
     "default": {
       "package": "libhat",
       "version": "2024.9.22",
-      "built_at": "2026-10-11T11:09:07Z",
-      "xmake_version": "2.9.7",
+      "built_at": "2026-10-12T03:39:57Z",
+      "xmake_version": "2.9.8",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 4,
+      "revision": 5,
       "configs": {
         "target_type": "server"
       },
@@ -30,11 +30,10 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.0.1",
+      "produced_for": "levilamina@1.1.0-rc.1",
       "artifacts": [
         {
           "package": "libhat",
-          "upstream_package": "libhat",
           "version": "2024.9.22",
           "buildhash": "bfc5ac80a2ba46b3890d7852b6bb022e",
           "key": "windows-x64-vc-bfc5ac80a2ba46b3890d7852b6bb022e",
@@ -42,8 +41,8 @@
           "release": "libhat_0",
           "asset": "libhat-bfc5ac80a2ba46b3890d7852b6bb022e.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/libhat_0/libhat-bfc5ac80a2ba46b3890d7852b6bb022e.7z",
-          "sha256": "183fda76aba09ac86f13bd9ff88d5e89aa6903cef719975e58293d3389a9bdf4",
-          "size": 43487,
+          "sha256": "7f42e170c85035816b1e2415171dad2161daf55ee5fe5bcb4c58baff5b45a56e",
+          "size": 43527,
           "container": "7z",
           "aliases": [
             {
