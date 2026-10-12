@@ -25,6 +25,54 @@ _FOUR_PART = re.compile(r"^\d+\.\d+\.\d+\.\d+")
 _HUNK = re.compile(r"^@@\s*-(\d+)(?:,(\d+))?\s*\+(\d+)(?:,(\d+))?\s*@@")
 _ADD_URLS = re.compile(r'add_urls\(\s*"([^"]+)"')
 _ADD_VERSIONS_ONE = re.compile(r'add_versions\(\s*"([^"]+)"\s*\)')
+_ON_INSTALL = re.compile(r"^\s*on_install\(function", re.M)
+
+#: Runs inside a recipe, in the project's own directory, just before the project is
+#: built. A require the project leaves *without* a version resolves to the newest
+#: one there is -- or, when the project's own build sees a rewound repository, to
+#: the newest of *that* moment, which is still not the one its sources were built
+#: against (three days were enough for `preloader` v1.6.0 to break `levilamina`
+#: 0.10.2). The versions come from the environment, so the framework decides them
+#: (build.py::dependency_pins); a project that pins everything itself makes this a
+#: no-op. Every project needs it -- LeviLamina's own recipe just as much as an
+#: upstream plugin's, which is why it lives here and not in one plugin.
+PIN_BLOCK = """        do
+            -- BuildCache: pin what this project leaves unpinned to the SDK of its
+            -- own era (the map comes from the environment; usually empty).
+            local pins = os.getenv("BUILDCACHE_PINS")
+            if pins and os.isfile("xmake.lua") then
+                local data = io.readfile("xmake.lua")
+                local updated = data
+                for name, version in pins:gmatch("([%w_%-%.]+)=([^,;]+)") do
+                    local pattern = 'add_requires%("' .. name .. '"'
+                    local pinned = 'add_requires("' .. name .. " " .. version .. '"'
+                    updated = updated:gsub(pattern, pinned)
+                end
+                if updated ~= data then
+                    io.writefile("xmake.lua", updated)
+                    print("BuildCache: pinned the open SDK versions: " .. pins)
+                end
+            end
+        end"""
+
+
+def pin_project_requires(recipe: Path) -> list[str]:
+    """Add the block that pins the SDK versions a project leaves open.
+
+    Idempotent: a recipe that already carries it is left alone, because the same
+    snapshot is prepared more than once (the dependency pass prepares it again).
+    """
+    text = util.read_text(recipe)
+    if "BuildCache: pin what this project leaves unpinned" in text:
+        return []
+    anchor = _ON_INSTALL.search(text)
+    if anchor is None:
+        return []
+    # After the whole line: the anchor is the start of a call whose arguments
+    # continue on that line.
+    line_end = text.index("\n", anchor.end())
+    util.write_text(recipe, text[: line_end + 1] + "\n" + PIN_BLOCK + "\n" + text[line_end + 1 :])
+    return [f"{recipe.parent.name}: pins the SDK versions it leaves open"]
 
 #: A repository's tags, by url, for as long as this process lives: one job asks
 #: about the same repository for every version of every project it builds.

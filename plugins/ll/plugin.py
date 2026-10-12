@@ -409,7 +409,25 @@ def repair_recipes(config, source_name: str, snapshot) -> list[str]:
         + _repair_era_sources(snapshot)
         + _disable_libcurl_docs(snapshot)
         + _declare_headeronly(snapshot)
+        + _pin_own_requires(snapshot)
     )
+
+
+def _pin_own_requires(snapshot) -> list[str]:
+    """Give LeviLamina's own recipe the block that pins its open requires.
+
+    The upstream plugin always had it; LeviLamina's own build did not, so the
+    project's own xmake resolved `add_requires("preloader")` to whatever the
+    rewound repository of the moment held. That is how 0.10.2 got preloader
+    v1.6.0 -- three days newer than its sources, whose `pl_diagnostic_dependency`
+    returns a different `std::unique_ptr` (C2664 inside 0.10.2's own file).
+    """
+    from lib import recipefix
+
+    notes: list[str] = []
+    for recipe in sorted(Path(snapshot).glob("packages/l/levilamina/xmake.lua")):
+        notes += recipefix.pin_project_requires(recipe)
+    return notes
 
 
 #: The docs a dependency builds are not what we publish, and the man pages of the
@@ -434,7 +452,25 @@ _LIBCURL_DOCS_AFTER = (
 #: which is how `levilamina` 0.12.2/0.12.3 died in their own era. Upstream added
 #: the declaration later, so the repair adds what it added.
 _HEADERONLY = {
-    "nlohmann_json": 'set_kind("library", { headeronly = true })',
+    name: 'set_kind("library", { headeronly = true })'
+    # The header-only libraries the LeviLamina eras depend on. Where the recipe
+    # already says so (anything from 0.13 on) the guard makes this a no-op.
+    for name in (
+        "concurrentqueue",
+        "ctre",
+        "debug_assert",
+        "expected-lite",
+        "glm",
+        "gsl",
+        "magic_enum",
+        "nlohmann_json",
+        "parallel-hashmap",
+        "pcg_cpp",
+        "pfr",
+        "rapidjson",
+        "stb",
+        "type_safe",
+    )
 }
 
 
