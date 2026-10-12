@@ -1,8 +1,8 @@
 {
   "package": "leveldb",
   "version": "1.23",
-  "built_at": "2026-10-12T08:02:15Z",
-  "xmake_version": "3.0.5",
+  "built_at": "2026-10-12T08:49:48Z",
+  "xmake_version": "3.0.1",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 5,
@@ -13,13 +13,13 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.7.6",
+  "produced_for": "levilamina@1.4.4",
   "entries": {
     "default": {
       "package": "leveldb",
       "version": "1.23",
-      "built_at": "2026-10-12T08:02:15Z",
-      "xmake_version": "3.0.5",
+      "built_at": "2026-10-12T08:49:48Z",
+      "xmake_version": "3.0.1",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 5,
@@ -30,7 +30,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.7.6",
+      "produced_for": "levilamina@1.4.4",
       "artifacts": [
         {
           "package": "leveldb",

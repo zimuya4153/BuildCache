@@ -1,11 +1,11 @@
 {
   "package": "prelink",
   "version": "v0.5.0",
-  "built_at": "2026-10-11T11:06:58Z",
+  "built_at": "2026-10-12T08:49:48Z",
   "xmake_version": "3.0.1",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 4,
+  "revision": 5,
   "configs": {
     "target_type": "server"
   },
@@ -18,11 +18,11 @@
     "default": {
       "package": "prelink",
       "version": "v0.5.0",
-      "built_at": "2026-10-11T11:06:58Z",
+      "built_at": "2026-10-12T08:49:48Z",
       "xmake_version": "3.0.1",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 4,
+      "revision": 5,
       "configs": {
         "target_type": "server"
       },
@@ -34,7 +34,6 @@
       "artifacts": [
         {
           "package": "prelink",
-          "upstream_package": "prelink",
           "version": "v0.5.0",
           "buildhash": "73362fce69714485a48046df1405fca5",
           "key": "windows-x64-vc-73362fce69714485a48046df1405fca5",
@@ -42,8 +41,8 @@
           "release": "prelink_0",
           "asset": "prelink-73362fce69714485a48046df1405fca5.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/prelink_0/prelink-73362fce69714485a48046df1405fca5.7z",
-          "sha256": "68cbd33c2ce97c6abc0650a92f97c66a8c500f60afef21686baba74a8ff4f292",
-          "size": 1190147,
+          "sha256": "41a0eb8d465c1b9d03fd75eda7fc94a3c4be9e80707d39c2b65facb8187e96c0",
+          "size": 1190168,
           "container": "7z",
           "aliases": [
             {

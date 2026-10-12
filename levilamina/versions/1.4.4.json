@@ -6,7 +6,7 @@
   "configs": {
     "target_type": "server"
   },
-  "revision": 4,
+  "revision": 5,
   "upstream_commit": "e1e7dd7b6fc3c833f6b235d9fb5f0b643c713a6e",
   "xmake_version": "3.0.1",
   "toolchain": "msvc",
@@ -16,16 +16,16 @@
   ],
   "vs_toolset": "14.44.35207",
   "recipe_commits": {
-    "levimc-repo": "ee45d8e189dd035647d758ecc5739d8c7392277e",
-    "oeotyan-repo": "78796496ce2595ea8321d2ab7b3705f6302f97b3",
-    "xmake-repo": "a8169020954a713b21f934c6b54b2a0eec5ff088"
+    "levimc-repo": "2af594f80bb887417c85f12136c33fe5c14a1894",
+    "oeotyan-repo": "f582a823b89d34c27daa51083c42023ee7cd0125",
+    "xmake-repo": "df0b639ed1106393f81fd597f3e135c75f20bcac"
   },
   "platform": {
     "plat": "windows",
     "arch": "x64",
     "mode": "release"
   },
-  "built_at": "2026-10-11T11:06:58Z",
+  "built_at": "2026-10-12T08:49:48Z",
   "compiled_with": "msvc",
   "entries": {
     "server": {
@@ -36,7 +36,7 @@
       "configs": {
         "target_type": "server"
       },
-      "revision": 4,
+      "revision": 5,
       "upstream_commit": "e1e7dd7b6fc3c833f6b235d9fb5f0b643c713a6e",
       "xmake_version": "3.0.1",
       "toolchain": "msvc",
@@ -46,20 +46,19 @@
       ],
       "vs_toolset": "14.44.35207",
       "recipe_commits": {
-        "levimc-repo": "ee45d8e189dd035647d758ecc5739d8c7392277e",
-        "oeotyan-repo": "78796496ce2595ea8321d2ab7b3705f6302f97b3",
-        "xmake-repo": "a8169020954a713b21f934c6b54b2a0eec5ff088"
+        "levimc-repo": "2af594f80bb887417c85f12136c33fe5c14a1894",
+        "oeotyan-repo": "f582a823b89d34c27daa51083c42023ee7cd0125",
+        "xmake-repo": "df0b639ed1106393f81fd597f3e135c75f20bcac"
       },
       "platform": {
         "plat": "windows",
         "arch": "x64",
         "mode": "release"
       },
-      "built_at": "2026-10-11T11:06:58Z",
+      "built_at": "2026-10-12T08:49:48Z",
       "artifacts": [
         {
           "package": "levilamina",
-          "upstream_package": "levilamina",
           "version": "1.4.4",
           "buildhash": "3ea5781bf5dc46ad9fe1983c1735bfd5",
           "key": "windows-x64-vc-3ea5781bf5dc46ad9fe1983c1735bfd5",
@@ -67,8 +66,8 @@
           "release": "levilamina_0",
           "asset": "levilamina-3ea5781bf5dc46ad9fe1983c1735bfd5.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/levilamina_0/levilamina-3ea5781bf5dc46ad9fe1983c1735bfd5.7z",
-          "sha256": "8d098f308d335d233e4f1c6950362e94d952d0c22631c4798fe3c555507ea23c",
-          "size": 8855964,
+          "sha256": "262b34f17e30b3e4c9e8b309a4213ab3b20358d5f11fbf8bf84a1eae62f676cf",
+          "size": 8934854,
           "container": "7z",
           "aliases": [
             {
