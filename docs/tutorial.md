@@ -304,5 +304,8 @@ python scripts/selftest.py --component levilamina --toolchain clang-cl
 | `manifest.txt not found when installing artifacts` | 压缩包内部层级不对（必须三段后再放文件） |
 | `cannot extract ... .tar.zst` | 该包容器不是 7z |
 | `unable to parse semver` | 老配方有四段版本号 → `recipefix.normalize_tree` 会剔除 |
+| `Cannot create bedrock_runtime_api.lib` | 那个年代的 `prelink` 工具与后来的数据/对象格式不同（`bsci` ≤0.1.6 用的 prelink v0.3.0 就是这种），工具本身也修不了 → 用插件配置里的 `skipBelow`/`skipVersions` 声明这些版本不参与预编译 |
+| `vs not found!` | 年代 xmake 太老、不认识镜像上的 Visual Studio（例如 3.0.2 对 VS 2026）→ `lib/xmake_env.ERA_IMAGES` 会把这个年代排到 windows-2022 |
+| `fatal: Remote branch <版本> not found in upstream origin` | 快照取在发布 commit 之前，配方里还没有这个版本 → `recipefix.declare_version` 会补上 |
 | 下载全失败 | 先确认 `gh`/`curl` 能直连；本机可显式 `BUILDCACHE_PROXY` |
 | clang-cl 工程没命中缓存 | 先确认 `set_toolchains("clang-cl")` 写在 xmake.lua 里（命令行 `--toolchain=` 不触发选择）；再看 build 日志里的 `alias skipped ...`：头文件包/宿主工具包本来就不需要别名，重算 hash 与产物不符则说明拿来重算的配方或 configs 不是产出该产物的那一份 |
