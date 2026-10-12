@@ -81,6 +81,12 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
             gitops.ensure_checkout(
                 config, f"https://github.com/{owner}/{name}.git", checkout
             )
+            # Say so: a mirror that is not there is indistinguishable from one
+            # whose manifests never match, and the log has to tell them apart.
+            util.log(
+                f"reusing the artifacts {owner}/{name} publishes "
+                f"({len(list((checkout / 'packages').glob('*/*/*')))} manifest(s) visible)"
+            )
             local_repos.append((f"mirror-{name}", checkout))
         # xmake searches the project's own repositories before the main one, so the
         # recipe lookup for a package has to follow the same order.
