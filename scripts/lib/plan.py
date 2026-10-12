@@ -206,6 +206,32 @@ def dependency_specs(plugin, ctx, version: str, commit: str, recipe_dir) -> list
     return [spec for spec in specs if spec_name(spec)]
 
 
+def own_pins(plugin, ctx, version: str, commit: str) -> dict[str, str]:
+    """The versions the project's own file pins, by package name (lower case).
+
+    A dependency is usually declared twice -- a range in the recipe
+    (``levilamina >=1.7.6 <1.8.0``) and the version the project itself was built
+    against in its own ``xmake.lua`` (``levilamina 1.7.6``) -- and xmake settles on
+    the newest that satisfies, which is the range's answer, prereleases included.
+    The build forces the project's own version on the whole resolve tree for that
+    very reason (``build.py::dependency_overrides``), so planning has to make the
+    same call: otherwise a round queues an SDK nobody installs (and makes the
+    project wait for it) while the SDK it really needs stays unbuilt.
+
+    A range the project itself names is not a pin and is left to xmake.
+    """
+    found: dict[str, str] = {}
+    for item in plugin.call("extra_deps", ctx, version, commit) or []:
+        name = str(item.get("name") or "")
+        pinned = str(item.get("version") or "")
+        if not name or not pinned:
+            continue
+        if any(char in pinned for char in "~^><*|"):
+            continue
+        found[name.lower()] = pinned
+    return found
+
+
 def extra_deps(plugin, ctx, version: str, commit: str, recipe_dir) -> list[dict]:
     """The project's own requires, minus the ones its recipe already declares.
 
@@ -296,14 +322,18 @@ def split(config: dict, ctx, plugins_list, jobs: list[dict], built):
             cutoff = plugin.call("recipe_cutoff", ctx, item["version"], item["commit"])
             # A dependency can be declared twice with different versions (the
             # recipe's own table, and the project file's `add_requires`), and xmake
-            # settles on the newest of them -- so plan that one, and say so.
+            # settles on the newest of them -- unless the project's own file pins
+            # one, which is the version its build is forced to use (see own_pins).
+            pins = own_pins(plugin, ctx, item["version"], item["commit"])
             wanted: dict[str, set[str]] = {}
             for spec in specs:
                 name = spec_name(spec)
                 owner = by_package.get(name)
                 if owner is None or owner.name == plugin.name:
                     continue
-                version = _owned_version(config, ctx, owner, spec, cutoff)
+                version = pins.get(name.lower()) or _owned_version(
+                    config, ctx, owner, spec, cutoff
+                )
                 if not version:
                     notes.append(f"{name}: cannot resolve the version of {spec!r}")
                     continue

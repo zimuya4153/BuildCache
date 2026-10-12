@@ -114,6 +114,71 @@ def backfill_commits(root: Path) -> list[str]:
     return notes
 
 
+def declare_version(prepared: dict, package: str, version: str, commit: str) -> list[str]:
+    """Make a snapshot's recipe declare the version it is being built for.
+
+    A snapshot is taken *before* the version's release -- that is what a cutoff
+    date means -- and the release is usually the very commit that adds the version
+    to the recipe. The snapshot then declares every earlier version and not this
+    one, and xmake, finding no source for a version of a git package, falls back to
+    fetching it by *tag*: these projects tag with a "v" ("v0.12.1" against the
+    recipe's "0.12.1"), so the fetch dies with
+
+        fatal: Remote branch 0.12.1 not found in upstream origin
+
+    before a single line is compiled -- and it says nothing about the recipe being
+    older than the release. The commit added here is the one the recipe of today
+    resolves that version to, i.e. exactly what the release commit wrote.
+    """
+    notes: list[str] = []
+    for name, (directory, _sha) in (prepared or {}).items():
+        recipe = Path(directory) / "packages" / package[0] / package / "xmake.lua"
+        if not recipe.is_file():
+            continue
+        text = util.read_text(recipe)
+        if _declares_version(recipe, text, version):
+            continue
+        listing = _ADD_VERSIONFILES.search(text)
+        listing_file = recipe.parent / listing.group(1) if listing else None
+        if listing_file is not None and listing_file.is_file():
+            body = util.read_text(listing_file).rstrip("\n")
+            util.write_text(listing_file, f"{body}\n{version} {commit}\n")
+            notes.append(
+                f"{name}: {package} {version} added to {listing.group(1)} "
+                f"(the snapshot predates the release)"
+            )
+            continue
+        rows = list(_ADD_VERSIONS.finditer(text))
+        line = f'    add_versions("{version}", "{commit}")'
+        if rows:
+            end = text.find("\n", rows[-1].start())
+            end = len(text) if end < 0 else end
+            updated = text[:end] + "\n" + line + text[end:]
+        else:
+            updated = text.rstrip("\n") + "\n" + line + "\n"
+        util.write_text(recipe, updated)
+        notes.append(
+            f"{name}: {package} {version} declared (the snapshot predates the release)"
+        )
+    return notes
+
+
+def _declares_version(recipe: Path, text: str, version: str) -> bool:
+    """Does this recipe already offer ``version``, inline or in a version file?"""
+    for match in _ADD_VERSIONS.finditer(text):
+        if match.group(2) == version:
+            return True
+    for match in _ADD_VERSIONFILES.finditer(text):
+        listing = recipe.parent / match.group(1)
+        if not listing.is_file():
+            continue
+        for line in util.read_text(listing).splitlines():
+            parts = line.split()
+            if parts and parts[0] == version:
+                return True
+    return False
+
+
 def repair_patch(text: str) -> tuple[str, int]:
     """Give blank context lines their leading space back. Returns (text, repairs)."""
     match = re.search(r"\r\n|\n", text)

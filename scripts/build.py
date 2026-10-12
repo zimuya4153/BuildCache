@@ -23,6 +23,7 @@ from lib import (  # noqa: E402
     packer,
     plan,
     plugins,
+    recipefix,
     sources,
     util,
     xmake_env,
@@ -34,12 +35,12 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
                recipe_cutoff: str, git_cutoff: str, binary_repo, plans: list[tuple[bool, str]]):
     """Build the closure in the first sandbox that configures and exports.
 
-    A plan is ``(use_today, label)``. The first one takes the dependencies from
-    today's recipes -- that is what a consumer resolves, so the artifacts land on
-    addresses a consumer asks for -- and keeps the project's own recipe from its
-    era, which is what pins the dependency versions and carries our repairs. It is
-    the only plan when nothing moved in the recipe sources since the version was
-    released, because then the era *is* today.
+    A plan is ``(use_today, label)``. The first one takes today's recipes -- that is
+    what a consumer resolves, so the artifacts land on addresses a consumer asks
+    for -- with the versions the project's own file pins forced on the whole tree
+    (see :func:`dependency_overrides`). It is the only plan when nothing moved in
+    the recipe sources since the version was released, because then the era *is*
+    today.
 
     The second plan rolls everything back to the era, and is only reached when the
     era's xmake cannot read today's recipes (0.8.3's 2.8.6 dies on `on_source`).
@@ -62,6 +63,12 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
             label=label,
             overlay=overlay if use_today else (),
         )
+        # A snapshot of the era is taken just *before* the release, so the recipe
+        # in it may not know the version being built at all -- and then xmake
+        # fetches the project by tag, which these repositories do not use for
+        # their releases. See recipefix.declare_version.
+        for note in recipefix.declare_version(prepared, own, args.version, commit):
+            util.log(note)
         recipe_commits = {name: sha for name, (_dir, sha) in prepared.items()}
         main_repo = prepared.get("xmake-repo", (None, ""))[0]
         local_repos = [
@@ -101,6 +108,20 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
         declared_sources = {name: Path(directory) for name, directory in repo_order}
         pins = dependency_pins(config, ctx, declared_sources, extra, cutoff=recipe_cutoff)
         requires += extra_requires(config, ctx, repo_order, extra, pinned=pins)
+        overrides = dependency_overrides(ctx, plugin, args.version, commit, extra, pins)
+        lua = list(requires)
+        for name, chosen in sorted(overrides.items()):
+            # `override` is what makes xmake ignore the version the recipe's own
+            # `on_load` dependency resolved -- which is a range, and reads a
+            # prerelease as inside it. See dependency_overrides.
+            lua.append(
+                f'add_requireconfs("**.{name}", {{override = true, version = "{chosen}"}})'
+            )
+        if overrides:
+            util.log(
+                "forced on the whole resolve tree (the project's own file pins these): "
+                + ", ".join(f"{name}={chosen}" for name, chosen in sorted(overrides.items()))
+            )
         suffix = "" if use_today else "-era"
         sandbox = xmake_env.create_sandbox(
             config,
@@ -111,7 +132,7 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
             repositories=local_repos,
             main_repo=main_repo,
             binary_repo=binary_repo,
-            extra_lua="\n".join(requires),
+            extra_lua="\n".join(lua),
         )
         git_shim.install(config, sandbox.env, git_cutoff)
         if pins:
@@ -578,6 +599,56 @@ def dependency_pins(
         if version:
             pins[name] = version
     return pins
+
+
+def dependency_overrides(
+    ctx, plugin, version: str, commit: str, extra: list[dict], pins: dict[str, str]
+) -> dict[str, str]:
+    """The SDK versions the whole resolve tree is forced to, and why.
+
+    A recipe declares a *range* for the SDK it needs (`levilamina >=1.7.6 <1.8.0`),
+    and xmake reads a prerelease as inside it: ``more-dimensions`` 0.12.1 then
+    resolves to ``1.8.0-rc.2`` -- although its own file pins ``levilamina 1.7.6``,
+    which is what its sources were written against. That SDK's generated headers do
+    not even compile (``template <ThreadOwnerBehavior B = 0>`` over a scoped enum,
+    under ``mc/util/ThreadOwner.h``), so the build dies inside a header nobody wrote
+    a line about, and the version in the log is not the version anybody asked for.
+
+    Which version the project's own build resolves is decided by the project's own
+    file; what it *links* is the newest SDK installed in the sandbox, which is the
+    recipe's unless the whole tree is told otherwise -- the project's own
+    ``add_packages("levilamina")`` has no version to prefer. So the versions a
+    project pins are collected here and handed to xmake as ``add_requireconfs``
+    overrides (``build_once``), the one mechanism that rewrites a dependency's
+    version for every package below the requirement.
+
+    A version the project leaves *open* gets the era's answer, the same one
+    :func:`dependency_pins` gives the project's own build: two answers for one
+    dependency is exactly the mismatch this exists to remove. A dependency the
+    recipe does not declare at all keeps its own place in this map: it is asked for
+    directly (see :func:`extra_requires`), at a version already decided.
+    """
+    raw = plugin.call("extra_deps", ctx, version, commit) or []
+    forced: dict[str, str] = {}
+    for item in raw:
+        name = str(item.get("name") or "")
+        if not name:
+            continue
+        declared = str(item.get("version") or "")
+        if declared and any(char in declared for char in "~^><*|"):
+            # A range of its own ("1.7.x", ">=1.7.0 <=1.7.5") is not a version to
+            # check out, and it is a deliberate statement: leave it to the two
+            # resolvers, which agree on it anyway.
+            util.warn(
+                f"{name}: the project's own file names {declared!r}, which is a range; "
+                f"its build keeps whatever that range resolves to"
+            )
+            continue
+        chosen = declared or pins.get(name, "")
+        if not chosen:
+            continue
+        forced[name] = chosen
+    return forced
 
 
 def extra_requires(

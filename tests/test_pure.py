@@ -1483,6 +1483,142 @@ def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):
     assert build.extra_requires(config, ctx, [("levimc-repo", repo)], []) == []
 
 
+class _StubPlugin:
+    """The smallest plugin the planning and version logic ever asks anything."""
+
+    def __init__(self, name, package, deps=(), versions=(), entries=(), specs=()):
+        self.name = name
+        self._package = package
+        self._deps = list(deps)
+        self._versions = list(versions)
+        self._entries = list(entries) or [{"id": "default", "configs": {}}]
+        self._specs = list(specs)
+
+    def call(self, function, *args, **kwargs):
+        if function == "metadata":
+            return {"id": self.name, "package": self._package}
+        if function == "extra_deps":
+            return list(self._deps)
+        if function == "dependency_specs":
+            return list(self._specs)
+        if function == "list_versions":
+            return [{"version": item, "commit": "ab" * 20} for item in self._versions]
+        if function == "recipe_cutoff":
+            return None
+        if function == "recipe_dir":
+            return None
+        return None
+
+    def entries(self, ctx, version, commit, settings=None):
+        return list(self._entries)
+
+
+def test_a_snapshot_that_predates_the_release_declares_the_version(tmp_path: Path):
+    """A recipe newer than the version cannot fetch it, and says something else.
+
+    The snapshot is taken just before the release, so the version it is built for
+    may not be in the recipe at all; xmake then fetches a git package by *tag*,
+    and these projects tag with a "v" ("v0.12.1" against the recipe's "0.12.1"),
+    which fails with "fatal: Remote branch 0.12.1 not found in upstream origin".
+    """
+    snapshot = tmp_path / "levimc-repo@0.12.1"
+    recipe = snapshot / "packages" / "m" / "more-dimensions"
+    recipe.mkdir(parents=True)
+    (recipe / "xmake.lua").write_text(
+        'package("more-dimensions")\n'
+        '    add_urls("https://github.com/LiteLDev/MoreDimensions.git")\n'
+        '    add_versions("0.12.0", "213818c9653fd9db63a279e9afbf893aed68efcc")\n'
+        "    on_install(function (package) end)\n",
+        encoding="utf-8",
+    )
+    prepared = {"levimc-repo": (snapshot, "b3d8952f8120")}
+    notes = recipefix.declare_version(prepared, "more-dimensions", "0.12.1", "25db4b93" * 5)
+    assert notes and "0.12.1" in notes[0], notes
+    text = (recipe / "xmake.lua").read_text(encoding="utf-8")
+    assert 'add_versions("0.12.1", "' + "25db4b93" * 5 + '")' in text
+    # the version that was already there is untouched, and the call is a no-op
+    assert 'add_versions("0.12.0", "213818c9653fd9db63a279e9afbf893aed68efcc")' in text
+    assert recipefix.declare_version(prepared, "more-dimensions", "0.12.1", "x") == []
+    assert text == (recipe / "xmake.lua").read_text(encoding="utf-8")
+
+    # a recipe that lists its versions in a file gets the line there
+    listing_dir = tmp_path / "levimc-repo@1.9.4" / "packages" / "l" / "levilamina"
+    (listing_dir / "versions").mkdir(parents=True)
+    (listing_dir / "xmake.lua").write_text(
+        'package("levilamina")\n    add_versionfiles("versions/versions.txt")\n',
+        encoding="utf-8",
+    )
+    (listing_dir / "versions" / "versions.txt").write_text(
+        "1.9.0 abcdef\n", encoding="utf-8"
+    )
+    files = {"levimc-repo": (tmp_path / "levimc-repo@1.9.4", "deadbeef")}
+    assert recipefix.declare_version(files, "levilamina", "1.9.4", "0123456789")
+    assert (listing_dir / "versions" / "versions.txt").read_text(
+        encoding="utf-8"
+    ) == "1.9.0 abcdef\n1.9.4 0123456789\n"
+    assert recipefix.declare_version(files, "levilamina", "1.9.4", "0123456789") == []
+
+    # a package the snapshot does not carry is skipped
+    assert recipefix.declare_version(files, "not-here", "1.0.0", "abc") == []
+
+
+def test_the_projects_own_pin_forces_the_sdk_version():
+    """A recipe's range is not what a project of its own age was built against.
+
+    ``more-dimensions`` 0.12.1 pins ``levilamina 1.7.6`` in its own file while its
+    recipe allows ``>=1.7.6 <1.8.0``, and xmake reads the prerelease `1.8.0-rc.2`
+    as inside that -- an SDK whose generated headers do not even compile. The
+    project's own version is forced on the resolve tree instead (``add_requireconfs``
+    in ``build_once``), and a dependency the project leaves open gets the era's
+    answer, the same one the project's own build is pinned to.
+    """
+    ctx = plugins.Context(dict(util.load_config()))
+    pinned = _StubPlugin("moredimensions", "more-dimensions",
+                         deps=[{"name": "levilamina", "version": "1.7.6"}])
+    # the recipe declares that name too, so it is not asked for directly
+    forced = build.dependency_overrides(
+        ctx, pinned, "0.12.1", "25db4b93", [], {}
+    )
+    assert forced == {"levilamina": "1.7.6"}
+
+    # a dependency the project names without a version takes the era's answer
+    open_dep = _StubPlugin("bsci", "bsci", deps=[{"name": "levilamina", "version": ""}])
+    assert build.dependency_overrides(
+        ctx, open_dep, "0.4.0", "4c88ff64", [], {"levilamina": "26.20.0"}
+    ) == {"levilamina": "26.20.0"}
+
+    # a range of its own is a deliberate statement, and is left to the resolvers
+    ranged = _StubPlugin("bsci", "bsci", deps=[{"name": "levilamina", "version": "26.20.*"}])
+    assert build.dependency_overrides(ctx, ranged, "0.4.0", "4c88ff64", [], {}) == {}
+    assert plan.own_pins(ranged, ctx, "0.4.0", "4c88ff64") == {}
+
+
+def test_the_planned_sdk_is_the_version_the_project_pins():
+    """Planning has to make the same call as the build, or it queues a stranger.
+
+    The recipe's range resolves to the newest SDK there is; the project's own file
+    pins the one its sources were written against. A round that planned the range
+    would build and publish an SDK the dependent never installs, and leave the one
+    it does need unbuilt -- and make the dependent wait for the wrong artifact.
+    """
+    config = dict(util.load_config())
+    ctx = plugins.Context(config)
+    project = _StubPlugin(
+        "moredimensions",
+        "more-dimensions",
+        deps=[{"name": "levilamina", "version": "1.7.6"}],
+        specs=["levilamina >=1.7.6 <1.8.0", "levilamina 1.7.6"],
+    )
+    owner = _StubPlugin("ll", "levilamina", versions=["1.8.0-rc.2", "1.7.7", "1.7.6"])
+    jobs = [plan.job(config, ctx, project, "0.12.1", "25db4b93", {"id": "default", "configs": {}})]
+    first, dependencies, waiting, notes = plan.split(
+        config, ctx, [project, owner], jobs, lambda package, version: False
+    )
+    assert [item["version"] for item in dependencies] == ["1.7.6"], (dependencies, notes)
+    assert waiting and waiting[0]["waits_for"] == ["levilamina@1.7.6"], waiting
+    assert first == []
+
+
 def test_copy_only_dependencies_are_not_cached(tmp_path: Path):
     """Nothing compiled means nothing to precompile.
 
