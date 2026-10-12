@@ -1513,6 +1513,43 @@ class _StubPlugin:
         return list(self._entries)
 
 
+def test_dependencies_are_resolved_at_the_versions_own_date(monkeypatch):
+    """The recipe snapshot may be days later; a dependency may not.
+
+    ``recipe_cutoff`` is intentionally a few days after the release (the snapshot
+    has to contain the version's own recipe entry), but resolving a *dependency*
+    there can pick a release the project's sources never saw: preloader v1.6.0
+    landed three days after levilamina 0.10.2 and changed
+    ``pl_diagnostic_dependency`` to return a ``std::unique_ptr`` with a
+    function-pointer deleter, which 0.10.2's own code does not match (C2664).
+    ``dependency_cutoff`` is what the planning and the pins ask for, and it falls
+    back to ``recipe_cutoff`` for a plugin that does not provide one.
+    """
+    ll = next(
+        item for item in plugins.load_all(util.load_config()) if item.name == "ll"
+    )
+    # the ll plugin answers with the commit date itself, not the snapshot's
+    monkeypatch.setattr(ll.module, "commit_date", lambda ctx, commit: "2024-03-28T10:00:00Z")
+    assert ll.call("dependency_cutoff", plugins.Context(dict(util.load_config())), "0.10.2", "abc") == (
+        "2024-03-28T10:00:00Z"
+    )
+
+    # a plugin without the hook: planning falls back to recipe_cutoff
+    class Fake:
+        name = "no-hook"
+
+        def call(self, function, *args, **kwargs):
+            if function == "recipe_cutoff":
+                return "2024-04-01T00:00:00Z"
+            return None
+
+    dummy = Fake()
+    assert (
+        dummy.call("dependency_cutoff", None, "1", "abc")
+        or dummy.call("recipe_cutoff", None, "1", "abc")
+    ) == "2024-04-01T00:00:00Z"
+
+
 def test_an_old_header_only_recipe_is_told_it_is_one(tmp_path: Path):
     """Without the declaration xmake treats it as a library and wants a link.
 

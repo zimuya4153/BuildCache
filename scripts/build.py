@@ -106,7 +106,12 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
         # another version; asking for both would build a second SDK nobody uses.
         # Not `sources`: that is the module this loop already uses.
         declared_sources = {name: Path(directory) for name, directory in repo_order}
-        pins = dependency_pins(config, ctx, declared_sources, extra, cutoff=recipe_cutoff)
+        # The dependencies are resolved at the version's own date; the snapshot's
+        # date (+ a few days, so the version's own recipe entry exists) is only for
+        # the recipes. See plugins/ll/plugin.py::dependency_cutoff for what the
+        # difference cost (preloader v1.6.0 landing three days after 0.10.2).
+        deps_cutoff = plugin.call("dependency_cutoff", ctx, args.version, commit) or recipe_cutoff
+        pins = dependency_pins(config, ctx, declared_sources, extra, cutoff=deps_cutoff)
         requires += extra_requires(config, ctx, repo_order, extra, pinned=pins)
         overrides = dependency_overrides(ctx, plugin, args.version, commit, extra, pins)
         lua = list(requires)

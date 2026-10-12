@@ -167,6 +167,21 @@ def git_cutoff(ctx, version: str, commit: str) -> str:
     return _shift(commit_date(ctx, commit), offset)
 
 
+def dependency_cutoff(ctx, version: str, commit: str) -> str:
+    """Date the *dependency versions* are resolved at: the version's own commit.
+
+    Deliberately not ``recipe_cutoff``, which is three days later so that the
+    snapshot contains the version's own recipe entry: a dependency is one the
+    project's build resolved *at that moment*, and three days can be a release
+    apart. ``preloader`` v1.6.0 landed three days after ``levilamina`` 0.10.2 and
+    changed ``pl_diagnostic_dependency`` to return a ``std::unique_ptr`` with a
+    function-pointer deleter, while 0.10.2's own ``NativePluginManager.cpp``
+    declares the parameter as a plain ``std::unique_ptr`` -- a C2664 inside the
+    project's own source that no recipe can be blamed for.
+    """
+    return commit_date(ctx, commit)
+
+
 def _shift(iso: str, days: int) -> str:
     if not days:
         return iso

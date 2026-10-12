@@ -22,6 +22,7 @@ class Plugin:
         "toolchain_aliases",
         "toolchain_plan",
         "recipe_cutoff",
+        "dependency_cutoff",
         "git_cutoff",
         "extra_deps",
         "dependency_specs",

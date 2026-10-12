@@ -319,7 +319,12 @@ def split(config: dict, ctx, plugins_list, jobs: list[dict], built):
                 plugin, ctx, item["version"], item["commit"],
                 plugin.call("recipe_dir", ctx, item["version"], item["commit"]),
             )
-            cutoff = plugin.call("recipe_cutoff", ctx, item["version"], item["commit"])
+            # The date the *dependencies* are resolved at is the version's own one;
+            # the recipe snapshot's date may be a few days later, on purpose (its own
+            # recipe entry has to exist) -- see plugins/ll/plugin.py::dependency_cutoff.
+            cutoff = plugin.call(
+                "dependency_cutoff", ctx, item["version"], item["commit"]
+            ) or plugin.call("recipe_cutoff", ctx, item["version"], item["commit"])
             # A dependency can be declared twice with different versions (the
             # recipe's own table, and the project file's `add_requires`), and xmake
             # settles on the newest of them -- unless the project's own file pins
