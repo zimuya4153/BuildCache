@@ -502,6 +502,35 @@ def test_only_the_eras_that_build_with_llvm_22_download_it():
     assert plan.job({}, None, silent, "1.0.0", "a", {"id": "default"})["llvm"] is True
 
 
+def test_every_plugin_repairs_the_snapshot_not_only_the_one_being_built(monkeypatch, tmp_path: Path):
+    """A dependency is built from this snapshot too, and its repairs belong to its owner.
+
+    `bsci` builds LeviLamina, and the era data packages LL is built from (four
+    component versions xmake cannot parse) are repaired by the LeviLamina plugin --
+    not by the plugin being built. Repairing them only when LL itself is the
+    project left `bsci 0.1.6` unable to create `bedrock_runtime_api.lib`.
+    """
+    calls = []
+
+    class Other:
+        name = "ll"
+
+        def repair_recipes(self, config, source_name, snapshot):
+            calls.append((self.name, source_name))
+            return [f"{self.name} repaired something"]
+
+    monkeypatch.setattr("lib.plugins.load_all", lambda config: [Other()])
+    building = type("B", (), {"name": "bsci", "module": object()})()
+
+    notes = recipefix.plugin_repairs({}, building, "levimc-repo", tmp_path)
+
+    assert calls == [("ll", "levimc-repo")], calls
+    assert notes == ["ll repaired something"]
+    # the plugin being built is not asked twice
+    monkeypatch.setattr("lib.plugins.load_all", lambda config: [])
+    assert recipefix.plugin_repairs({}, building, "levimc-repo", tmp_path) == []
+
+
 def test_a_version_without_a_commit_is_given_the_one_its_tag_has(tmp_path: Path, monkeypatch):
     """`add_versions("0.12.1")` leaves xmake cloning *by tag*, which fails upstream.
 

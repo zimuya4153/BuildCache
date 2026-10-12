@@ -175,6 +175,31 @@ def plugin_repair(config: dict, plugin, source_name: str, snapshot: Path) -> lis
     return [str(note) for note in notes]
 
 
+def plugin_repairs(config: dict, building, source_name: str, snapshot: Path) -> list[str]:
+    """Every plugin gets to repair the snapshot, not only the one being built.
+
+    A project is built *from* this snapshot together with its dependencies, and
+    the plugin that knows how a package has to be repaired is not necessarily the
+    one being built: `bsci` builds LeviLamina, and the era data packages LL needs
+    (four-component versions such as `1.21.0.3-server`, which xmake's own parser
+    rejects) are repaired by the LeviLamina plugin. Repairing them only when LL
+    itself is the project left `bsci 0.1.6` unable to create
+    `bedrock_runtime_api.lib` -- a failure that says nothing about its cause.
+
+    Each plugin decides for itself which packages are its business, and the
+    repairs are guarded, so a snapshot repaired twice is unchanged.
+    """
+    from . import plugins
+
+    seen = {getattr(building, "name", None)}
+    notes = list(plugin_repair(config, building, source_name, snapshot)) if building else []
+    for other in plugins.load_all(config):
+        if other.name in seen:
+            continue
+        notes += plugin_repair(config, other, source_name, snapshot)
+    return notes
+
+
 def _report_unparseable_versions(recipe: Path, text: str) -> list[str]:
     """Point out versions xmake cannot parse, without touching them."""
     bad = [
