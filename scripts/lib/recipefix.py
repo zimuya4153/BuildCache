@@ -192,11 +192,19 @@ def plugin_repairs(config: dict, building, source_name: str, snapshot: Path) -> 
     from . import plugins
 
     seen = {getattr(building, "name", None)}
-    notes = list(plugin_repair(config, building, source_name, snapshot)) if building else []
-    for other in plugins.load_all(config):
-        if other.name in seen:
+    notes: list[str] = []
+    # A repair is best effort by definition: it exists to make a package build at
+    # all, so one that fails on a snapshot it does not recognise is reported and
+    # the build goes on. Failing the whole round here would turn "this plugin
+    # knows how to fix that project" into "nothing can be built".
+    for candidate in [building] + plugins.load_all(config):
+        if candidate is None or getattr(candidate, "name", None) in seen:
             continue
-        notes += plugin_repair(config, other, source_name, snapshot)
+        seen.add(candidate.name)
+        try:
+            notes += plugin_repair(config, candidate, source_name, snapshot)
+        except Exception as error:  # noqa: BLE001 - a repair must not fail a build
+            util.warn(f"plugin {candidate.name}: repairing {source_name} failed: {error}")
     return notes
 
 
