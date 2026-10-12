@@ -1593,6 +1593,44 @@ def test_the_projects_own_pin_forces_the_sdk_version():
     assert plan.own_pins(ranged, ctx, "0.4.0", "4c88ff64") == {}
 
 
+def test_an_entry_can_say_which_versions_have_that_dimension(tmp_path: Path):
+    """Not every version of a project has every build dimension.
+
+    ``bsci`` only grew its ``target_type`` option at 0.3.0: asking 0.1.6 for a
+    client artifact resolves a client LeviLamina its era never published, and the
+    project's own file does not even mention the option. The bounds are declared
+    with the project (``config.json``), not invented by the framework.
+    """
+    import importlib.util
+
+    path = ROOT / "plugins" / "upstream.py"
+    spec = importlib.util.spec_from_file_location("upstream_plugin_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    plugin = module.create(
+        {
+            "id": "bsci",
+            "recipe_package": "bsci",
+            "entries": [
+                {"id": "server", "configs": {"target_type": "server"}},
+                {"id": "client", "from": "0.3.0", "configs": {"target_type": "client"}},
+                {"id": "legacy", "until": "0.1.6", "configs": {}},
+            ],
+        }
+    )
+    ctx = plugins.Context(dict(util.load_config()))
+    ids = [item["id"] for item in plugin.entries(ctx, "0.1.6", "abc")]
+    assert ids == ["server", "legacy"], ids
+    ids = [item["id"] for item in plugin.entries(ctx, "0.3.0", "abc")]
+    assert ids == ["server", "client"], ids
+    # the bounds are not part of the entry a job is built from
+    assert all("from" not in item and "until" not in item
+               for item in plugin.entries(ctx, "0.3.0", "abc"))
+    # a version nothing can compare (a branch) keeps every entry rather than
+    # silently publishing nothing
+    assert len(plugin.entries(ctx, "main", "abc")) == 3
+
+
 def test_the_planned_sdk_is_the_version_the_project_pins():
     """Planning has to make the same call as the build, or it queues a stranger.
 

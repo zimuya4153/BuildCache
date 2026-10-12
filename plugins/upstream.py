@@ -197,11 +197,30 @@ class _UpstreamPlugin:
         return entries[0]["configs"] if entries else {}
 
     def entries(self, ctx, version: str, commit: str) -> list[dict]:
-        """Entries declared by the settings (``id`` + package ``configs``)."""
+        """Entries declared by the settings (``id`` + package ``configs``).
+
+        An entry may carry ``from`` / ``until`` bounds (inclusive, semver) for the
+        versions it exists in. A build dimension is not automatically a property of
+        every version of a project: ``bsci`` only grew its ``target_type`` option at
+        0.3.0, so asking 0.1.6 for a client artifact resolves a client LeviLamina
+        its era never published -- a failure about a dependency the project's own
+        file does not even name (it has no such option to name it with), while the
+        server artifact of that version is fine. Which versions of a project have
+        which dimension is that project's knowledge, so it is declared with it.
+        """
         declared = self.settings.get("entries")
-        if declared:
-            return declared
-        return [{"id": "default", "configs": self.settings.get("configs") or {}}]
+        if not declared:
+            return [{"id": "default", "configs": self.settings.get("configs") or {}}]
+        found = []
+        for item in declared:
+            entry = dict(item) if isinstance(item, dict) else {"id": item}
+            low = str(entry.pop("from", "") or "")
+            high = str(entry.pop("until", "") or "")
+            if not _in_version_range(version, low, high):
+                continue
+            entry.setdefault("configs", {})
+            found.append(entry)
+        return found
 
     def extra_deps(self, ctx, version: str, commit: str) -> list[dict]:
         """Dependencies only named by the upstream project's own xmake.lua."""
@@ -268,6 +287,25 @@ class _UpstreamPlugin:
             util.write_text(recipe, text.replace(find, replace))
             notes.append(f"{package}: repaired recipe ({find!r} -> {replace!r})")
         return notes
+
+
+def _in_version_range(version: str, low: str, high: str) -> bool:
+    """Is ``version`` within ``[low, high]`` (both optional, both inclusive)?
+
+    A version the comparison cannot read (a branch name, a date-like tag) keeps
+    every entry: dropping one because of a parsing quirk would silently stop
+    publishing something that worked.
+    """
+    if not low and not high:
+        return True
+    try:
+        if low and semver.lt(version, low):
+            return False
+        if high and semver.gt(version, high):
+            return False
+    except ValueError:
+        return True
+    return True
 
 
 def _pin_project_requires(recipe: Path) -> list[str]:
