@@ -1,0 +1,67 @@
+{
+  "package": "mimalloc",
+  "version": "v2.1.2",
+  "built_at": "2026-10-12T11:03:10Z",
+  "xmake_version": "2.9.7",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 5,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@0.13.3",
+  "entries": {
+    "default": {
+      "package": "mimalloc",
+      "version": "v2.1.2",
+      "built_at": "2026-10-12T11:03:10Z",
+      "xmake_version": "2.9.7",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 5,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@0.13.3",
+      "artifacts": [
+        {
+          "package": "mimalloc",
+          "version": "v2.1.2",
+          "buildhash": "5a867983a4004b08ba422a9c7832eb7a",
+          "key": "windows-x64-vc-5a867983a4004b08ba422a9c7832eb7a",
+          "toolset": "14.44.35207",
+          "release": "mimalloc_0",
+          "asset": "mimalloc-5a867983a4004b08ba422a9c7832eb7a.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/mimalloc_0/mimalloc-5a867983a4004b08ba422a9c7832eb7a.7z",
+          "sha256": "3a007b0e1821c7c05cdefcfdac8796ac1088294b747f576aa9bdb4d750818da7",
+          "size": 112929,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "e172b6fd19bd4ca4965e7748943a678c",
+              "key": "windows-x64-vc-e172b6fd19bd4ca4965e7748943a678c",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "b782ae1dd585437f9ce6328076ec109c",
+              "key": "windows-x64-vc-b782ae1dd585437f9ce6328076ec109c",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

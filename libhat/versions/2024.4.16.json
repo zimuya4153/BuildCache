@@ -1,11 +1,11 @@
 {
   "package": "libhat",
   "version": "2024.4.16",
-  "built_at": "2026-10-11T11:08:17Z",
+  "built_at": "2026-10-12T11:03:10Z",
   "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 4,
+  "revision": 5,
   "configs": {
     "target_type": "server"
   },
@@ -13,16 +13,16 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@0.13.5",
+  "produced_for": "levilamina@0.13.3",
   "entries": {
     "default": {
       "package": "libhat",
       "version": "2024.4.16",
-      "built_at": "2026-10-11T11:08:17Z",
+      "built_at": "2026-10-12T11:03:10Z",
       "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 4,
+      "revision": 5,
       "configs": {
         "target_type": "server"
       },
@@ -30,34 +30,33 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@0.13.5",
+      "produced_for": "levilamina@0.13.3",
       "artifacts": [
         {
           "package": "libhat",
-          "upstream_package": "libhat",
           "version": "2024.4.16",
-          "buildhash": "89bad1c8b6484db9ba10f75a6b0b82d6",
-          "key": "windows-x64-vc-89bad1c8b6484db9ba10f75a6b0b82d6",
+          "buildhash": "bfc5ac80a2ba46b3890d7852b6bb022e",
+          "key": "windows-x64-vc-bfc5ac80a2ba46b3890d7852b6bb022e",
           "toolset": "14.44.35207",
           "release": "libhat_0",
-          "asset": "libhat-89bad1c8b6484db9ba10f75a6b0b82d6.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/libhat_0/libhat-89bad1c8b6484db9ba10f75a6b0b82d6.7z",
-          "sha256": "1e51d3abeb11d2f6d58b85eb7b4c510a47944422d36e0cca46754ef3d761e28f",
-          "size": 41495,
+          "asset": "libhat-bfc5ac80a2ba46b3890d7852b6bb022e.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/libhat_0/libhat-bfc5ac80a2ba46b3890d7852b6bb022e.7z",
+          "sha256": "cf44c12e34b431bd15a7a8f5af347f861d75abfd5a9d725f6c31edc42bc16748",
+          "size": 43497,
           "container": "7z",
           "aliases": [
             {
               "id": "msvc",
               "toolchain": "msvc",
-              "buildhash": "1d3ce0885f6a4a83994b09f712f2a915",
-              "key": "windows-x64-vc-1d3ce0885f6a4a83994b09f712f2a915",
+              "buildhash": "f6fac68a7c0c432d8e906fbf944d99a0",
+              "key": "windows-x64-vc-f6fac68a7c0c432d8e906fbf944d99a0",
               "toolset": "14.44.35207"
             },
             {
               "id": "clang-cl",
               "toolchain": "clang-cl",
-              "buildhash": "8922f03fad3a4913b417248b18e84eb1",
-              "key": "windows-x64-vc-8922f03fad3a4913b417248b18e84eb1",
+              "buildhash": "e81f86885e3e4837b733dedcf9a03949",
+              "key": "windows-x64-vc-e81f86885e3e4837b733dedcf9a03949",
               "toolset": "14.44.35207"
             }
           ]
