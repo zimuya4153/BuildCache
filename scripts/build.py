@@ -69,6 +69,19 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
             for name, (directory, _sha) in prepared.items()
             if name != "xmake-repo"
         ]
+        # Other consumer repositories whose published manifests this build may
+        # reuse: a cache is a cache, and the artifacts of another deployment are
+        # the same builds when the hash matches (which is what xmake checks --
+        # nothing here reads a manifest that is not about this very build).
+        for slug in config.get("repos", {}).get("packageMirrors") or []:
+            owner, _, name = str(slug).partition("/")
+            if not owner or not name:
+                continue
+            checkout = util.work_dir(config, f"mirror-{name}")
+            gitops.ensure_checkout(
+                config, f"https://github.com/{owner}/{name}.git", checkout
+            )
+            local_repos.append((f"mirror-{name}", checkout))
         # xmake searches the project's own repositories before the main one, so the
         # recipe lookup for a package has to follow the same order.
         repo_order = local_repos + [("xmake-repo", main_repo)]

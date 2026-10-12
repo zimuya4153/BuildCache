@@ -12,6 +12,9 @@
       "repo": "xmake-repo",
       "branch": "main"
     },
+    "packageMirrors": [
+      "MiracleForest/xmake-repo"
+    ],
     "cache": {
       "owner": "zimuya4153",
       "repo": "BuildCache"
