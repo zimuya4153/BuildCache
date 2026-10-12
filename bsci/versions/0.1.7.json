@@ -1,0 +1,86 @@
+{
+  "plugin": "bsci",
+  "package": "bsci",
+  "version": "0.1.7",
+  "entry": "server",
+  "configs": {
+    "target_type": "server"
+  },
+  "revision": 5,
+  "upstream_commit": "6f74e2d00e574ea24cdac76238d7d67310586eec",
+  "xmake_version": "3.0.2",
+  "toolchain": "msvc",
+  "upstream_toolchain": "msvc",
+  "alias_profiles": [
+    "msvc"
+  ],
+  "vs_toolset": "14.44.35207",
+  "recipe_commits": {
+    "levimc-repo": "ee45d8e189dd035647d758ecc5739d8c7392277e",
+    "oeotyan-repo": "78796496ce2595ea8321d2ab7b3705f6302f97b3",
+    "xmake-repo": "c06db3e8c4b92226af46b0469585c4343a554669"
+  },
+  "platform": {
+    "plat": "windows",
+    "arch": "x64",
+    "mode": "release"
+  },
+  "built_at": "2026-10-12T09:11:35Z",
+  "compiled_with": "msvc",
+  "entries": {
+    "server": {
+      "plugin": "bsci",
+      "package": "bsci",
+      "version": "0.1.7",
+      "entry": "server",
+      "configs": {
+        "target_type": "server"
+      },
+      "revision": 5,
+      "upstream_commit": "6f74e2d00e574ea24cdac76238d7d67310586eec",
+      "xmake_version": "3.0.2",
+      "toolchain": "msvc",
+      "upstream_toolchain": "msvc",
+      "alias_profiles": [
+        "msvc"
+      ],
+      "vs_toolset": "14.44.35207",
+      "recipe_commits": {
+        "levimc-repo": "ee45d8e189dd035647d758ecc5739d8c7392277e",
+        "oeotyan-repo": "78796496ce2595ea8321d2ab7b3705f6302f97b3",
+        "xmake-repo": "c06db3e8c4b92226af46b0469585c4343a554669"
+      },
+      "platform": {
+        "plat": "windows",
+        "arch": "x64",
+        "mode": "release"
+      },
+      "built_at": "2026-10-12T09:11:35Z",
+      "artifacts": [
+        {
+          "package": "bsci",
+          "version": "0.1.7",
+          "buildhash": "a308f760428c4ec6bc8f132aefbbfeca",
+          "key": "windows-x64-vc-a308f760428c4ec6bc8f132aefbbfeca",
+          "toolset": "14.44.35207",
+          "release": "bsci_0",
+          "asset": "bsci-a308f760428c4ec6bc8f132aefbbfeca.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/bsci_0/bsci-a308f760428c4ec6bc8f132aefbbfeca.7z",
+          "sha256": "c98cb116f173db4a05954878f903df9ab261261ebe19a0cdd86fce29255b04c6",
+          "size": 1084091,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "2bfd0990159142d5bbba9f9e3d238a4a",
+              "key": "windows-x64-vc-2bfd0990159142d5bbba9f9e3d238a4a",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ],
+      "compiled_with": "msvc"
+    }
+  }
+}
