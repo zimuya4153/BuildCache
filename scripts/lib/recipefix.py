@@ -88,12 +88,20 @@ def backfill_commits(root: Path) -> list[str]:
             continue
         tags = _tags_of(urls[0])
         if not tags:
+            # Silent so far, which is how a lookup that returns nothing looks the
+            # same as "the recipe was already fine" -- and it is not: xmake will
+            # clone by tag and fail in a way that says nothing about this.
+            util.warn(
+                f"{recipe.parent.name}: cannot read the tags of {urls[0]}; "
+                f"versions without a commit are left as they are"
+            )
             continue
         updated = text
         for match in missing:
             version = match.group(1)
             commit = tags.get(version) or tags.get("v" + version)
             if not commit:
+                util.warn(f"{recipe.parent.name}: no tag for {version} in {urls[0]}")
                 continue
             updated = updated.replace(
                 match.group(0), f'add_versions("{version}", "{commit}")'
