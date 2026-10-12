@@ -238,6 +238,33 @@ def newest_xmake(config: dict) -> str:
     return xmake_version_for_date(config, today)
 
 
+#: Which CI image can drive an xmake of a given era. An xmake that predates a
+#: Visual Studio generation cannot drive it: xmake 3.0.2 on the windows-latest
+#: image of 2026 does not know Visual Studio 18, so every package whose recipe
+#: builds through CMake (entt, gsl, ...) dies inside the tool with
+#: ``vs not found!`` -- a message that names no version at all.
+#:
+#: The hosted images no longer carry an MSVC of an older generation either (in
+#: 2026 windows-2022 ships Visual Studio 17.14 with MSVC 14.44 only, and
+#: windows-2019 has been retired), so an era is expressed by the *image* alone and
+#: an old xmake gets whatever MSVC that image has. A version that turns out to be
+#: unusable there fails loudly and is requeued; producing artifacts with a
+#: compiler the era does not understand would be worse.
+ERA_IMAGES = [
+    # era xmake floor, runner label, GitHub ImageOS value
+    ("3.1.0", "windows-latest", "win25"),
+    ("0.0.0", "windows-2022", "win22"),
+]
+
+
+def era_image(era: str) -> tuple[str, str]:
+    """``(runner label, ImageOS value)`` for an era's xmake. Newest floor wins."""
+    for floor, runner, imageos in ERA_IMAGES:
+        if semver.ge(era, floor):
+            return runner, imageos
+    return "windows-2022", "win22"
+
+
 def ensure_xmake(config: dict, version: str, proxy: str | None = None) -> Path:
     """Download + extract ``xmake-v<version>.win64.zip``; returns ``xmake.exe``."""
     import urllib.request

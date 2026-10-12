@@ -637,45 +637,23 @@ def should_skip(ctx, version: str, commit: str) -> tuple[bool, str]:
     )
 
 
-# Which CI image an era's xmake can drive. Floors are checked newest first;
-# "win25" means the current windows-latest image.
-#
-# The images used to be pinned to a toolset of the era's own generation, but the
-# hosted images no longer carry one: in 2026 windows-2022 ships Visual Studio
-# 17.14 with MSVC 14.44 only (asking for --vs_toolset=14.38 makes xmake report
-# "vs not found!" and every package fail), and windows-2019 -- the image the
-# oldest era needed -- has been retired. So the era is now expressed by the image
-# alone and an old xmake gets whatever MSVC that image has. If that turns out to
-# be unusable for a version, the build fails loudly and the entry is requeued;
-# producing artifacts with a compiler the era does not understand would be worse.
-ERA_IMAGES = [
-    # era xmake floor, runner label, GitHub ImageOS value, msvc toolset
-    ("3.1.0", "windows-latest", "win25", None),
-    ("0.0.0", "windows-2022", "win22", None),
-]
+# The era-to-image mapping itself is shared with every other plugin that builds a
+# version with the xmake of its own time (see lib/xmake_env.ERA_IMAGES).
 LOCAL_IMAGEOS = "win25"
 
 
 def toolchain_plan(ctx, version: str, commit: str) -> dict:
     """Era xmake plus the image/toolset that can serve it."""
-    from lib import semver, xmake_env
+    from lib import xmake_env
 
     era = xmake_env.xmake_version_for_date(
         ctx.config, commit_date(ctx, commit), floor="0.0.0"
     )
-    for floor, runner, imageos, toolset in ERA_IMAGES:
-        if semver.ge(era, floor):
-            return {
-                "era_xmake": era,
-                "image": runner,
-                "imageos": imageos,
-                "vs_toolset": toolset,
-                "llvm": needs_llvm22(version),
-            }
+    runner, imageos = xmake_env.era_image(era)
     return {
         "era_xmake": era,
-        "image": "windows-2022",
-        "imageos": "win22",
+        "image": runner,
+        "imageos": imageos,
         "vs_toolset": None,
         "llvm": needs_llvm22(version),
     }

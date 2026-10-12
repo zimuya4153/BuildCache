@@ -2054,11 +2054,53 @@ def test_eras_use_the_toolset_the_image_has():
     old for those sources (preloader dies in unordered_set, LeviLamina's own
     optional_ref.h cannot use std::optional the way it does), while the missing
     include the newest STL complained about is repaired in the sources instead.
+    The era is expressed by the *image* alone, for every plugin that builds with
+    the xmake of its own time.
     """
-    ll = next(
-        item for item in plugins.load_all(util.load_config()) if item.name == "ll"
+    from lib import semver, xmake_env
+
+    config = dict(util.load_config())
+    ctx = plugins.Context(config)
+    ll = next(item for item in plugins.load_all(config) if item.name == "ll")
+    for version, commit in (("26.51.6", "a" * 40), ("1.4.4", "b" * 40)):
+        plan = ll.module.toolchain_plan(ctx, version, commit)
+        assert plan["vs_toolset"] is None, plan
+    # an era xmake that predates a Visual Studio generation gets the image that
+    # has one it knows; a current era keeps the current image
+    assert xmake_env.era_image("3.1.1") == ("windows-latest", "win25")
+    assert xmake_env.era_image("3.0.2") == ("windows-2022", "win22")
+    assert xmake_env.era_image("2.8.6") == ("windows-2022", "win22")
+    # the table is ordered newest floor first, so the first match is the answer
+    floors = [semver.key(floor) for floor, _runner, _imageos in xmake_env.ERA_IMAGES]
+    assert floors == sorted(floors, reverse=True)
+
+
+def test_an_upstream_project_gets_the_image_of_its_era(tmp_path: Path):
+    """A project built with an old xmake cannot be driven on today's image.
+
+    ``bsci`` 0.1.7 died with ``vs not found!`` on every attempt: its era xmake is
+    3.0.2, which does not know Visual Studio 18, so the CMake-based dependency
+    (entt) could not configure at all -- a failure that names no version.
+    """
+    import importlib.util
+
+    path = ROOT / "plugins" / "upstream.py"
+    spec = importlib.util.spec_from_file_location("upstream_plugin_test2", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    plugin = module.create(
+        {
+            "id": "bsci",
+            "recipe_package": "bsci",
+            "upstream_repo": "OEOTYAN/BedrockServerClientInterface",
+        }
     )
-    assert all(toolset is None for _floor, _runner, _imageos, toolset in ll.module.ERA_IMAGES)
+    ctx = plugins.Context(dict(util.load_config()))
+    plugin.commit_date = lambda ctx, commit: "2025-09-14T00:00:00Z"
+    plan = plugin.toolchain_plan(ctx, "0.1.7", "c" * 40)
+    assert plan["image"] == "windows-2022", plan
+    assert plan["imageos"] == "win22"
+    assert plan["era_xmake"] and plan["era_xmake"].startswith("3."), plan
 
 
 def test_pre_2_9_4_xmake_gets_the_toolset_fix_backported(tmp_path: Path):

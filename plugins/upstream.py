@@ -174,6 +174,29 @@ class _UpstreamPlugin:
 
         return xmake_env.xmake_version_for_date(ctx.config, self.commit_date(ctx, commit))
 
+    def toolchain_plan(self, ctx, version: str, commit: str) -> dict:
+        """The image the era's xmake needs to run on.
+
+        A project built with the xmake of its own time needs the image of that
+        generation too, and for the same reason LeviLamina's own plugin does: an
+        xmake that predates a Visual Studio cannot drive it, and a CMake-based
+        *dependency* then dies with ``vs not found!`` -- which names no version,
+        no package and no recipe. That is how ``bsci`` 0.1.7 failed on every
+        attempt: xmake 3.0.2 asking the windows-latest image of 2026 for MSVC
+        14.51, a Visual Studio generation it has never heard of.
+
+        Nothing else is pinned here: the toolset stays whatever the image has (the
+        era's own generation, which is the point), and an era recent enough for the
+        current image keeps it.
+        """
+        from lib import xmake_env
+
+        era = xmake_env.xmake_version_for_date(
+            ctx.config, self.commit_date(ctx, commit), floor="0.0.0"
+        )
+        runner, imageos = xmake_env.era_image(era)
+        return {"era_xmake": era, "image": runner, "imageos": imageos}
+
     def recipe_cutoff(self, ctx, version: str, commit: str) -> str:
         return self.commit_date(ctx, commit)
 
