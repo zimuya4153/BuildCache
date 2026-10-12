@@ -1,42 +1,39 @@
 {
   "package": "prelink",
   "version": "v0.8.6",
-  "built_at": "2026-10-11T11:10:24Z",
+  "built_at": "2026-10-12T14:16:14Z",
   "xmake_version": "3.1.1",
   "toolchain": "msvc",
   "vs_toolset": "14.51.36231",
-  "revision": 4,
+  "revision": 5,
   "configs": {
     "target_type": "client"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@26.51.6",
+  "produced_for": "bsci@26.51.0",
   "entries": {
     "default": {
       "package": "prelink",
       "version": "v0.8.6",
-      "built_at": "2026-10-11T11:10:24Z",
+      "built_at": "2026-10-12T14:16:14Z",
       "xmake_version": "3.1.1",
       "toolchain": "msvc",
       "vs_toolset": "14.51.36231",
-      "revision": 4,
+      "revision": 5,
       "configs": {
         "target_type": "client"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.51.6",
+      "produced_for": "bsci@26.51.0",
       "artifacts": [
         {
           "package": "prelink",
-          "upstream_package": "prelink",
           "version": "v0.8.6",
           "buildhash": "2af432b8e9844196a88c103051e332ec",
           "key": "windows-x64-vc-2af432b8e9844196a88c103051e332ec",
@@ -44,8 +41,8 @@
           "release": "prelink_0",
           "asset": "prelink-2af432b8e9844196a88c103051e332ec.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/prelink_0/prelink-2af432b8e9844196a88c103051e332ec.7z",
-          "sha256": "dcbfca5226fbede6c94365baee5526a70c982f036850e2b4bce1bc2144391632",
-          "size": 4283194,
+          "sha256": "e71a329b833daac5739ec7e8617d59d97a8fe52bd0692b651cf1a6b026ef6633",
+          "size": 4283216,
           "container": "7z",
           "aliases": [
             {

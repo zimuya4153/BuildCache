@@ -1,8 +1,8 @@
 {
   "package": "mimalloc",
   "version": "v2.1.7",
-  "built_at": "2026-10-12T11:25:49Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-12T13:54:41Z",
+  "xmake_version": "3.0.3",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 5,
@@ -13,13 +13,13 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.0.0-rc.3",
+  "produced_for": "levilamina@1.6.0",
   "entries": {
     "default": {
       "package": "mimalloc",
       "version": "v2.1.7",
-      "built_at": "2026-10-12T11:25:49Z",
-      "xmake_version": "2.9.7",
+      "built_at": "2026-10-12T13:54:41Z",
+      "xmake_version": "3.0.3",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 5,
@@ -30,7 +30,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.0.0-rc.3",
+      "produced_for": "levilamina@1.6.0",
       "artifacts": [
         {
           "package": "mimalloc",
@@ -57,35 +57,6 @@
               "toolchain": "clang-cl",
               "buildhash": "a52239cffae548d9a541231d12ed5505",
               "key": "windows-x64-vc-a52239cffae548d9a541231d12ed5505",
-              "toolset": "14.44.35207"
-            }
-          ]
-        },
-        {
-          "package": "mimalloc",
-          "version": "v2.1.7",
-          "buildhash": "6d5b17657f3a46ba8f417148aa29bac1",
-          "key": "windows-x64-vc-6d5b17657f3a46ba8f417148aa29bac1",
-          "toolset": "14.44.35207",
-          "release": "mimalloc_0",
-          "asset": "mimalloc-6d5b17657f3a46ba8f417148aa29bac1.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/mimalloc_0/mimalloc-6d5b17657f3a46ba8f417148aa29bac1.7z",
-          "sha256": "13fde869819f24caac0924436ee40b7995e9e2052c344e64336f389eea94cd80",
-          "size": 146604,
-          "container": "7z",
-          "aliases": [
-            {
-              "id": "msvc",
-              "toolchain": "msvc",
-              "buildhash": "b9b28b273a974dd3a3de747e0412bb74",
-              "key": "windows-x64-vc-b9b28b273a974dd3a3de747e0412bb74",
-              "toolset": "14.44.35207"
-            },
-            {
-              "id": "clang-cl",
-              "toolchain": "clang-cl",
-              "buildhash": "fc066c2b7d3a4b8a91fae71d2ac0bb0f",
-              "key": "windows-x64-vc-fc066c2b7d3a4b8a91fae71d2ac0bb0f",
               "toolset": "14.44.35207"
             }
           ]

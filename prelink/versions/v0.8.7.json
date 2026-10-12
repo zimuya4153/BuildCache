@@ -1,0 +1,69 @@
+{
+  "package": "prelink",
+  "version": "v0.8.7",
+  "built_at": "2026-10-12T13:59:40Z",
+  "xmake_version": "3.1.1",
+  "toolchain": "msvc",
+  "vs_toolset": "14.51.36231",
+  "revision": 5,
+  "configs": {
+    "target_type": "client"
+  },
+  "alias_profiles": [
+    "msvc",
+    "clang-cl"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@26.51.7",
+  "entries": {
+    "default": {
+      "package": "prelink",
+      "version": "v0.8.7",
+      "built_at": "2026-10-12T13:59:40Z",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "vs_toolset": "14.51.36231",
+      "revision": 5,
+      "configs": {
+        "target_type": "client"
+      },
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@26.51.7",
+      "artifacts": [
+        {
+          "package": "prelink",
+          "version": "v0.8.7",
+          "buildhash": "68891138ab8e416394189ae957461dca",
+          "key": "windows-x64-vc-68891138ab8e416394189ae957461dca",
+          "toolset": "14.51.36231",
+          "release": "prelink_0",
+          "asset": "prelink-68891138ab8e416394189ae957461dca.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/prelink_0/prelink-68891138ab8e416394189ae957461dca.7z",
+          "sha256": "9c20e9d0bc03c5051d909aa3ac6bfcc6db91780847cefaff27d718695e93ca08",
+          "size": 4286878,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "f09d110138cb47889ecab5118f778701",
+              "key": "windows-x64-vc-f09d110138cb47889ecab5118f778701",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "475a57dd18ec4ca4bca966677bd94def",
+              "key": "windows-x64-vc-475a57dd18ec4ca4bca966677bd94def",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

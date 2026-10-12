@@ -46,8 +46,8 @@
           "release": "preloader_0",
           "asset": "preloader-eb3bd4602e864f98b2d7077a22cca552.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/preloader_0/preloader-eb3bd4602e864f98b2d7077a22cca552.7z",
-          "sha256": "6b08f321355434bb111e2158a48697e48dcb73b83cf0253b26640a84a752f59d",
-          "size": 3078299,
+          "sha256": "f3b030e0c7232852f4a22ad253a04f1714faf7c0629019fc8b5ff008df968af3",
+          "size": 3078319,
           "container": "7z",
           "aliases": [
             {

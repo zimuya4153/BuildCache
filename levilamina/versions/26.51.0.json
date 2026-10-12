@@ -1,0 +1,157 @@
+{
+  "plugin": "ll",
+  "package": "levilamina",
+  "version": "26.51.0",
+  "entry": "server",
+  "configs": {
+    "target_type": "server"
+  },
+  "revision": 5,
+  "upstream_commit": "f5f9397a63f1b32bcf402a36d90b835de45ea9ec",
+  "xmake_version": "3.1.1",
+  "toolchain": "msvc",
+  "upstream_toolchain": "clang-cl",
+  "alias_profiles": [
+    "msvc",
+    "clang-cl"
+  ],
+  "vs_toolset": "14.51.36231",
+  "recipe_commits": {
+    "levimc-repo": "56f390b260799fe11e1aee0745c2f3777943d40a",
+    "oeotyan-repo": "f582a823b89d34c27daa51083c42023ee7cd0125",
+    "xmake-repo": "2eedd731d1e7e377bc0eea970b9f0c120ca5f00d"
+  },
+  "platform": {
+    "plat": "windows",
+    "arch": "x64",
+    "mode": "release"
+  },
+  "built_at": "2026-10-12T13:55:46Z",
+  "compiled_with": "clang-cl",
+  "entries": {
+    "client": {
+      "plugin": "ll",
+      "package": "levilamina",
+      "version": "26.51.0",
+      "entry": "client",
+      "configs": {
+        "target_type": "client"
+      },
+      "revision": 5,
+      "upstream_commit": "f5f9397a63f1b32bcf402a36d90b835de45ea9ec",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "upstream_toolchain": "clang-cl",
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "vs_toolset": "14.51.36231",
+      "recipe_commits": {
+        "levimc-repo": "56f390b260799fe11e1aee0745c2f3777943d40a",
+        "oeotyan-repo": "f582a823b89d34c27daa51083c42023ee7cd0125",
+        "xmake-repo": "2eedd731d1e7e377bc0eea970b9f0c120ca5f00d"
+      },
+      "platform": {
+        "plat": "windows",
+        "arch": "x64",
+        "mode": "release"
+      },
+      "built_at": "2026-10-12T14:05:17Z",
+      "artifacts": [
+        {
+          "package": "levilamina",
+          "version": "26.51.0",
+          "buildhash": "4423a496234c42feb5f11b6999be1350",
+          "key": "windows-x64-vc-4423a496234c42feb5f11b6999be1350",
+          "toolset": "14.51.36231",
+          "release": "levilamina_0",
+          "asset": "levilamina-4423a496234c42feb5f11b6999be1350.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/levilamina_0/levilamina-4423a496234c42feb5f11b6999be1350.7z",
+          "sha256": "9525f6075bd930a61f9291252ffb77dbf05b279339f99744d59f0fc8410349db",
+          "size": 12239701,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "e835a9b93f654a8aac09bb5d77d2fa3d",
+              "key": "windows-x64-vc-e835a9b93f654a8aac09bb5d77d2fa3d",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "b3857e7d4d4c4129a0e24ea1562c2f7b",
+              "key": "windows-x64-vc-b3857e7d4d4c4129a0e24ea1562c2f7b",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ],
+      "compiled_with": "clang-cl"
+    },
+    "server": {
+      "plugin": "ll",
+      "package": "levilamina",
+      "version": "26.51.0",
+      "entry": "server",
+      "configs": {
+        "target_type": "server"
+      },
+      "revision": 5,
+      "upstream_commit": "f5f9397a63f1b32bcf402a36d90b835de45ea9ec",
+      "xmake_version": "3.1.1",
+      "toolchain": "msvc",
+      "upstream_toolchain": "clang-cl",
+      "alias_profiles": [
+        "msvc",
+        "clang-cl"
+      ],
+      "vs_toolset": "14.51.36231",
+      "recipe_commits": {
+        "levimc-repo": "56f390b260799fe11e1aee0745c2f3777943d40a",
+        "oeotyan-repo": "f582a823b89d34c27daa51083c42023ee7cd0125",
+        "xmake-repo": "2eedd731d1e7e377bc0eea970b9f0c120ca5f00d"
+      },
+      "platform": {
+        "plat": "windows",
+        "arch": "x64",
+        "mode": "release"
+      },
+      "built_at": "2026-10-12T13:55:46Z",
+      "artifacts": [
+        {
+          "package": "levilamina",
+          "version": "26.51.0",
+          "buildhash": "ac9d9838872347fc8d44cb6a0fb4fa55",
+          "key": "windows-x64-vc-ac9d9838872347fc8d44cb6a0fb4fa55",
+          "toolset": "14.51.36231",
+          "release": "levilamina_0",
+          "asset": "levilamina-ac9d9838872347fc8d44cb6a0fb4fa55.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/levilamina_0/levilamina-ac9d9838872347fc8d44cb6a0fb4fa55.7z",
+          "sha256": "10d85df5374bd43e03746d016586b3b88493ac35e349a783b79160566b623d41",
+          "size": 11630724,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "22f5fb22cb6547c3adfcf85749f8a73c",
+              "key": "windows-x64-vc-22f5fb22cb6547c3adfcf85749f8a73c",
+              "toolset": "14.51.36231"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "b3673bd343324f899cb4beae9fc0dabb",
+              "key": "windows-x64-vc-b3673bd343324f899cb4beae9fc0dabb",
+              "toolset": "14.51.36231"
+            }
+          ]
+        }
+      ],
+      "compiled_with": "clang-cl"
+    }
+  }
+}

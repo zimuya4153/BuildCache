@@ -1,37 +1,66 @@
 {
   "package": "cpr",
   "version": "1.11.1",
-  "built_at": "2026-10-12T09:42:26Z",
-  "xmake_version": "3.0.8",
+  "built_at": "2026-10-12T13:54:41Z",
+  "xmake_version": "3.0.3",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 5,
   "configs": {
-    "target_type": "client"
+    "target_type": "server"
   },
   "alias_profiles": [
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@26.10.7",
+  "produced_for": "levilamina@1.6.0",
   "entries": {
     "default": {
       "package": "cpr",
       "version": "1.11.1",
-      "built_at": "2026-10-12T09:42:26Z",
-      "xmake_version": "3.0.8",
+      "built_at": "2026-10-12T13:54:41Z",
+      "xmake_version": "3.0.3",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 5,
       "configs": {
-        "target_type": "client"
+        "target_type": "server"
       },
       "alias_profiles": [
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.10.7",
+      "produced_for": "levilamina@1.6.0",
       "artifacts": [
+        {
+          "package": "cpr",
+          "version": "1.11.1",
+          "buildhash": "5cebf81912a24150a7cee397e51c88c9",
+          "key": "windows-x64-vc-5cebf81912a24150a7cee397e51c88c9",
+          "toolset": "14.44.35207",
+          "release": "cpr_0",
+          "asset": "cpr-5cebf81912a24150a7cee397e51c88c9.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/cpr_0/cpr-5cebf81912a24150a7cee397e51c88c9.7z",
+          "sha256": "89bed55c83d60b58b7e62b158d531c2bb3f7d023d813868ea49e0432bb57b5c4",
+          "size": 528813,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "d4761bd3c00548eea56571ff620a33aa",
+              "key": "windows-x64-vc-d4761bd3c00548eea56571ff620a33aa",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "e4a3ddd17af24c858bd178be62212ead",
+              "key": "windows-x64-vc-e4a3ddd17af24c858bd178be62212ead",
+              "toolset": "14.44.35207"
+            }
+          ]
+        },
         {
           "package": "cpr",
           "version": "1.11.1",
