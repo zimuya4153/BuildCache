@@ -23,6 +23,87 @@ _ADD_VERSIONFILES = re.compile(r'add_versionfiles\(\s*"([^"]+)"')
 _SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.\-+]*)?$")
 _FOUR_PART = re.compile(r"^\d+\.\d+\.\d+\.\d+")
 _HUNK = re.compile(r"^@@\s*-(\d+)(?:,(\d+))?\s*\+(\d+)(?:,(\d+))?\s*@@")
+_ADD_URLS = re.compile(r'add_urls\(\s*"([^"]+)"')
+_ADD_VERSIONS_ONE = re.compile(r'add_versions\(\s*"([^"]+)"\s*\)')
+
+#: A repository's tags, by url, for as long as this process lives: one job asks
+#: about the same repository for every version of every project it builds.
+_TAGS: dict[str, dict[str, str]] = {}
+
+
+def _tags_of(url: str) -> dict[str, str]:
+    """``{tag: commit}`` for a repository, with annotated tags resolved."""
+    if url in _TAGS:
+        return _TAGS[url]
+    safe = "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in url)[-120:]
+    cache = util.cache_dir({}, "gittags") / f"{safe}.json"
+    found = util.read_json(cache, None)
+    if found is None:
+        found = {}
+        env = util.subprocess_env(util.load_config(), proxy=util.proxy_url())
+        listing = util.run_out(["git", "ls-remote", "--tags", url], env=env, check=False)
+        for line in listing.splitlines():
+            parts = line.split()
+            if len(parts) != 2 or not parts[1].startswith("refs/tags/"):
+                continue
+            tag = parts[1][len("refs/tags/"):]
+            # An annotated tag lists the tag object and the commit it points at
+            # ("^{}"): the commit is what can be fetched and checked out.
+            if tag.endswith("^{}"):
+                found[tag[:-3]] = parts[0]
+            else:
+                found.setdefault(tag, parts[0])
+        util.write_json(cache, found)
+    _TAGS[url] = found
+    return found
+
+
+def backfill_commits(root: Path) -> list[str]:
+    """Give a version declared without a commit the one its upstream tag has.
+
+    A recipe may declare a version alone (``add_versions("0.12.1")``), and then
+    xmake has nothing to check out: it clones the repository *by tag*, and for one
+    that tags its releases with a "v" ("v0.12.1" against the recipe's "0.12.1")
+    that clone fails before a single file is compiled --
+
+        fatal: Remote branch 0.12.1 not found in upstream origin
+
+    which says nothing about the recipe, and hides whatever else the build would
+    have reported. The commit comes from the repository's own tags (asked once per
+    repository, cached on disk); a version whose tag cannot be found is left
+    exactly as it was, because a guess here is worse than the clone failure.
+    """
+    notes: list[str] = []
+    for recipe in sorted(Path(root).glob("packages/*/*/xmake.lua")):
+        text = util.read_text(recipe)
+        missing = [
+            match
+            for match in _ADD_VERSIONS_ONE.finditer(text)
+            if ":" not in match.group(1)
+        ]
+        if not missing:
+            continue
+        urls = [url for url in _ADD_URLS.findall(text) if "://" in url and url.endswith(".git")]
+        if not urls:
+            continue
+        tags = _tags_of(urls[0])
+        if not tags:
+            continue
+        updated = text
+        for match in missing:
+            version = match.group(1)
+            commit = tags.get(version) or tags.get("v" + version)
+            if not commit:
+                continue
+            updated = updated.replace(
+                match.group(0), f'add_versions("{version}", "{commit}")'
+            )
+            notes.append(
+                f"{recipe.parent.name}: {version} pinned to {commit[:12]} (from its tag)"
+            )
+        if updated != text:
+            util.write_text(recipe, updated)
+    return notes
 
 
 def repair_patch(text: str) -> tuple[str, int]:

@@ -67,6 +67,8 @@ def prepare(
             util.log(note)
         for note in recipefix.normalize_tree(dest):
             util.log(note)
+        for note in recipefix.backfill_commits(dest):
+            util.log(note)
         prepared[name] = (dest, commit)
 
     return prepared

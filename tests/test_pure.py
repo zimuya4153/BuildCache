@@ -502,6 +502,44 @@ def test_only_the_eras_that_build_with_llvm_22_download_it():
     assert plan.job({}, None, silent, "1.0.0", "a", {"id": "default"})["llvm"] is True
 
 
+def test_a_version_without_a_commit_is_given_the_one_its_tag_has(tmp_path: Path, monkeypatch):
+    """`add_versions("0.12.1")` leaves xmake cloning *by tag*, which fails upstream.
+
+    The repository tags its releases `v0.12.1`, so the clone dies with "Remote
+    branch 0.12.1 not found in upstream origin" -- before a single file is
+    compiled, and saying nothing about the recipe. The commit is looked up from
+    the repository's own tags; a version whose tag is not there is left alone.
+    """
+    root = tmp_path / "levimc-repo@test"
+    recipe = root / "packages" / "m" / "more-dimensions" / "xmake.lua"
+    recipe.parent.mkdir(parents=True)
+    recipe.write_text(
+        'package("more-dimensions")\n'
+        '    add_urls("https://github.com/LiteLDev/MoreDimensions.git")\n'
+        '    add_versions("0.12.1")\n'
+        '    add_versions("0.13.0", "3d89965e0b5208aff1462a2bb09f97bb6034cfb0")\n'
+        '    add_versions("0.9.0")\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        recipefix,
+        "_tags_of",
+        lambda url: {"v0.12.1": "25db4b9319db98c37323c952a036d8b7a8d73a8f"},
+    )
+
+    notes = recipefix.backfill_commits(root)
+
+    assert len(notes) == 1, notes
+    text = util.read_text(recipe)
+    assert 'add_versions("0.12.1", "25db4b9319db98c37323c952a036d8b7a8d73a8f")' in text
+    # the one that already had a commit is untouched, and the one with no tag is
+    # left exactly as it was (a clone failure is better than a wrong commit)
+    assert 'add_versions("0.13.0", "3d89965e0b5208aff1462a2bb09f97bb6034cfb0")' in text
+    assert 'add_versions("0.9.0")' in text
+    # idempotent: nothing left to backfill
+    assert recipefix.backfill_commits(root) == []
+
+
 def test_the_git_shim_retries_a_ref_upstream_spells_another_way():
     """A recipe may name `0.4.0` where upstream tags it `v0.4.0`.
 
