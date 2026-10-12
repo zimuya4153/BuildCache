@@ -1,7 +1,8 @@
 {
   "package": "bsci",
-  "latest": "0.1.7",
+  "latest": "0.3.0",
   "versions": [
+    "0.3.0",
     "0.1.7"
   ]
 }

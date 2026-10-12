@@ -1,0 +1,140 @@
+{
+  "plugin": "bsci",
+  "package": "bsci",
+  "version": "0.3.0",
+  "entry": "server",
+  "configs": {
+    "target_type": "server"
+  },
+  "revision": 5,
+  "upstream_commit": "35a49d2f7f393ed3870822c3dfc987665dcb0631",
+  "xmake_version": "3.0.8",
+  "toolchain": "msvc",
+  "upstream_toolchain": "msvc",
+  "alias_profiles": [
+    "msvc"
+  ],
+  "vs_toolset": "14.44.35207",
+  "recipe_commits": {
+    "levimc-repo": "3caf442b18cfca9948ad97b265cd87204376642c",
+    "oeotyan-repo": "f73b5a2e4e45c2ba718351fe349ca9d55624887e",
+    "xmake-repo": "b72b9beca06020df9b7a54b1df52f4cb0ca0e54c"
+  },
+  "platform": {
+    "plat": "windows",
+    "arch": "x64",
+    "mode": "release"
+  },
+  "built_at": "2026-10-12T09:59:48Z",
+  "compiled_with": "msvc",
+  "entries": {
+    "client": {
+      "plugin": "bsci",
+      "package": "bsci",
+      "version": "0.3.0",
+      "entry": "client",
+      "configs": {
+        "target_type": "client"
+      },
+      "revision": 5,
+      "upstream_commit": "35a49d2f7f393ed3870822c3dfc987665dcb0631",
+      "xmake_version": "3.0.8",
+      "toolchain": "msvc",
+      "upstream_toolchain": "msvc",
+      "alias_profiles": [
+        "msvc"
+      ],
+      "vs_toolset": "14.44.35207",
+      "recipe_commits": {
+        "levimc-repo": "3caf442b18cfca9948ad97b265cd87204376642c",
+        "oeotyan-repo": "f73b5a2e4e45c2ba718351fe349ca9d55624887e",
+        "xmake-repo": "b72b9beca06020df9b7a54b1df52f4cb0ca0e54c"
+      },
+      "platform": {
+        "plat": "windows",
+        "arch": "x64",
+        "mode": "release"
+      },
+      "built_at": "2026-10-12T10:00:16Z",
+      "artifacts": [
+        {
+          "package": "bsci",
+          "version": "0.3.0",
+          "buildhash": "b1a3fcaea443484abab68c1ab9bdbbdb",
+          "key": "windows-x64-vc-b1a3fcaea443484abab68c1ab9bdbbdb",
+          "toolset": "14.44.35207",
+          "release": "bsci_0",
+          "asset": "bsci-b1a3fcaea443484abab68c1ab9bdbbdb.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/bsci_0/bsci-b1a3fcaea443484abab68c1ab9bdbbdb.7z",
+          "sha256": "7130f62b99ab676092800ebe6a0a4f4b3f77bbeb714c2cca609a317b31fa7417",
+          "size": 17336631,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "57a74a5259c049d799a7afce2b375e8f",
+              "key": "windows-x64-vc-57a74a5259c049d799a7afce2b375e8f",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ],
+      "compiled_with": "msvc"
+    },
+    "server": {
+      "plugin": "bsci",
+      "package": "bsci",
+      "version": "0.3.0",
+      "entry": "server",
+      "configs": {
+        "target_type": "server"
+      },
+      "revision": 5,
+      "upstream_commit": "35a49d2f7f393ed3870822c3dfc987665dcb0631",
+      "xmake_version": "3.0.8",
+      "toolchain": "msvc",
+      "upstream_toolchain": "msvc",
+      "alias_profiles": [
+        "msvc"
+      ],
+      "vs_toolset": "14.44.35207",
+      "recipe_commits": {
+        "levimc-repo": "3caf442b18cfca9948ad97b265cd87204376642c",
+        "oeotyan-repo": "f73b5a2e4e45c2ba718351fe349ca9d55624887e",
+        "xmake-repo": "b72b9beca06020df9b7a54b1df52f4cb0ca0e54c"
+      },
+      "platform": {
+        "plat": "windows",
+        "arch": "x64",
+        "mode": "release"
+      },
+      "built_at": "2026-10-12T09:59:48Z",
+      "artifacts": [
+        {
+          "package": "bsci",
+          "version": "0.3.0",
+          "buildhash": "b1a3fcaea443484abab68c1ab9bdbbdb",
+          "key": "windows-x64-vc-b1a3fcaea443484abab68c1ab9bdbbdb",
+          "toolset": "14.44.35207",
+          "release": "bsci_0",
+          "asset": "bsci-b1a3fcaea443484abab68c1ab9bdbbdb.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/bsci_0/bsci-b1a3fcaea443484abab68c1ab9bdbbdb.7z",
+          "sha256": "7130f62b99ab676092800ebe6a0a4f4b3f77bbeb714c2cca609a317b31fa7417",
+          "size": 17336631,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "57a74a5259c049d799a7afce2b375e8f",
+              "key": "windows-x64-vc-57a74a5259c049d799a7afce2b375e8f",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ],
+      "compiled_with": "msvc"
+    }
+  }
+}
