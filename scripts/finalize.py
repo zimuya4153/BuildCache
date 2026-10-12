@@ -212,12 +212,42 @@ def write_ledger(config: dict, ctx, results: list[dict], dry_run: bool = False) 
             # and it already knows exactly this artifact.
             continue
         if package in own_packages:
-            util.warn(
-                f"{package} {version}: this build produced an artifact the owning "
-                f"plugin does not have; recorded it as well"
-            )
+            # A project's package has *entries* (LeviLamina builds a server and a
+            # client SDK), and its artifact belongs to whichever of them matches
+            # what it was built with -- a dependency record under "default" would
+            # put an entry the project does not have next to its own, in the ledger
+            # and in every release body that shows the column.
+            entry = _owning_entry(ctx, package, version, record.get("configs") or {})
+            if entry:
+                index_store.write_single(ctx.index_root, package, version, entry, record)
+            else:
+                # No entry of the owner matches it: the owner's own build produces
+                # this artifact later, and until then nothing here is ours to say.
+                util.log(
+                    f"{package} {version}: no entry of the owning plugin matches "
+                    f"{record.get('configs') or '{}'}; not recorded from this build"
+                )
+            continue
         index_store.write_single(ctx.index_root, package, version, "default", record)
     return entries
+
+
+def _owning_entry(ctx, package: str, version: str, configs: dict) -> str:
+    """The entry of the package's owning plugin that these configs are."""
+    for plugin in plugins.load_all(ctx.config):
+        metadata = plugin.call("metadata") or {}
+        if (metadata.get("package") or "").lower() != package.lower():
+            continue
+        commit = ""
+        for item in plugin.call("list_versions", ctx) or []:
+            if item["version"] == version:
+                commit = item["commit"]
+                break
+        for entry in plugin.entries(ctx, version, commit):
+            declared = entry.get("configs") or {}
+            if all(configs.get(key) == value for key, value in declared.items()):
+                return entry["id"]
+    return ""
 
 
 def refresh_release_notes(config: dict, ctx) -> None:

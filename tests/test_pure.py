@@ -1667,6 +1667,50 @@ def test_upstream_pins_are_rewritten_while_the_project_builds(tmp_path: Path):
     assert ll.module._patch_upstream_sources(snapshot, renames) == []
 
 
+def test_an_owned_packages_dependency_artifact_takes_the_entry_it_matches(monkeypatch, tmp_path: Path):
+    """A plugin's own package has entries; a dependency record must not add "default".
+
+    LeviLamina is both a project of its own plugin and a dependency of every LL
+    plugin, so a plugin's round can publish an artifact of it first. Those carry
+    the configs they were built with (`target_type=client`), which is exactly one
+    of the owner's entries -- and recording it as `default` would put an entry the
+    project does not have next to its own, in the ledger and in every release body
+    that shows the column. Configs no entry matches are left to the owner's build.
+    """
+    ll = next(item for item in plugins.load_all(util.load_config()) if item.name == "ll")
+    monkeypatch.setattr(finalize.plugins, "load_all", lambda config: [ll])
+    monkeypatch.setattr(
+        ll.module, "list_versions", lambda ctx: [{"version": "26.51.6", "commit": "aaa"}]
+    )
+    monkeypatch.setattr(
+        ll.module,
+        "upstream_xmake_lua",
+        lambda ctx, commit: 'option("target_type")\nset_values("server", "client")\n',
+    )
+    ctx = plugins.Context(dict(util.load_config(), _index_dir=str(tmp_path / "index")))
+
+    assert finalize._owning_entry(ctx, "levilamina", "26.51.6", {"target_type": "client"}) == "client"
+    assert finalize._owning_entry(ctx, "levilamina", "26.51.6", {"target_type": "server"}) == "server"
+    # configs no entry of the owner matches are left to the owner's own build
+    assert finalize._owning_entry(ctx, "levilamina", "26.51.6", {"target_type": "arm"}) == ""
+    # and a package the owner does not publish says nothing at all
+    assert finalize._owning_entry(ctx, "fmt", "11.2.0", {}) == ""
+
+
+def test_default_is_not_an_entry_a_reader_ever_sees():
+    """"default" is the framework's name for "no build dimension".
+
+    MoreDimensions is the same API for a client and a server, so it is built once
+    and has nothing to say in an `entry` column -- which then drops itself, as a
+    column empty in every row does.
+    """
+    assert reports.artifact_row({}, version="0.14.1", entry_id="default", own=True)["entry"] == ""
+    # a project that does have dimensions keeps them
+    assert reports.artifact_row({}, entry_id="server", own=True)["entry"] == "server"
+    # a dependency is never given one
+    assert reports.artifact_row({}, entry_id="server", own=False)["entry"] == ""
+
+
 def test_dependencies_are_recorded_once_without_an_entry(tmp_path: Path):
     """Only the project's own package has an entry dimension."""
     config = dict(util.load_config())

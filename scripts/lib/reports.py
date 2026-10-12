@@ -20,6 +20,10 @@ from __future__ import annotations
 
 from . import semver, util
 
+#: The entry id the framework uses for "this project has no build dimension"
+#: (``plugins.Plugin.DEFAULT_ENTRY``); see :func:`artifact_row`.
+DEFAULT_ENTRY = "default"
+
 
 # --------------------------------------------------------------------- renderers
 def code(value, row: dict | None = None) -> str:
@@ -178,6 +182,13 @@ def artifact_row(
     disappear from its table).
     """
     entry = entry or {}
+    # "default" is the framework's name for "this project has no build dimension":
+    # a package that is built once (MoreDimensions is the same API for a client and
+    # a server) has nothing to say there, so the column stays empty and the table
+    # drops it -- which is what a reader wants, rather than a `default` that means
+    # nothing next to a `server`/`client` that does.
+    if entry_id and entry_id == DEFAULT_ENTRY:
+        entry_id = ""
     return {
         "version": version or artifact.get("version") or "",
         "buildhash": artifact.get("buildhash") or "",
