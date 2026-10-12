@@ -425,6 +425,36 @@ _ERA_EDITS = {
             "                    std::invoke(std::forward<Fn>(fn), static_cast<T&>(*mPtr))\n"
             "                }",
         ),
+        # 0.13.x built its tuple-like notion out of MSVC STL internals. Newer STLs
+        # do not expose them any more, and because this is a *header* it hits every
+        # consumer that compiles against the SDK:
+        #
+        #     ll/api/base/Concepts.h(121): error C3878: syntax error ...
+        #     ll/api/base/Concepts.h(121): error C2039: "_Is_std_array_v": is not a
+        #         member of "std"
+        #
+        # (the syntax error is just the fallout of the unresolved name). The
+        # replacement is the spelling upstream itself adopted for 1.0: ask the
+        # supported `std::tuple_size`/`std::get`, which answer the same for tuples,
+        # pairs, `std::array` and subranges.
+        (
+            "src/ll/api/base/Concepts.h",
+            "template <class T>\n"
+            "inline constexpr bool tuple_like_impl =\n"
+            "    is_specialization_of_v<T, ::std::tuple> || is_specialization_of_v<T, ::std::pair> || ::std::_Is_std_array_v<T>\n"
+            "    || ::std::_Is_subrange_v<T>;\n"
+            "\n"
+            "template <class T>\n"
+            "concept TupleLike = tuple_like_impl<std::remove_cvref_t<T>> || (!Rangeable<T> && requires(T t) {\n"
+            "                        std::tuple_size<std::remove_cvref_t<T>>::value;\n"
+            "                        std::get<0>(t);\n"
+            "                    });",
+            "template <class T>\n"
+            "concept TupleLike = requires(T t) {\n"
+            "    std::tuple_size<std::remove_cvref_t<T>>::value;\n"
+            "    std::get<0>(t);\n"
+            "};",
+        ),
     ],
 }
 

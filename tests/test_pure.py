@@ -1820,6 +1820,14 @@ def test_old_era_sources_stop_reaching_into_the_stl(tmp_path: Path):
     assert "std::_Construct_from_invoke_result_tag{}," in text
     assert "std::invoke(std::forward<Fn>(fn), static_cast<T&>(*mPtr))" in text
     assert "{plain = true})" in text
+    # 0.13.x reached into the STL for the other one too: its tuple-like concept
+    # named ``std::_Is_std_array_v``/``std::_Is_subrange_v``, which newer STLs do
+    # not expose -- and because it is a *header*, every consumer that compiled
+    # against the SDK failed with C3878/C2039 inside it:
+    assert 'local file = "src/ll/api/base/Concepts.h"' in text
+    assert "::std::_Is_std_array_v<T>" in text
+    assert "concept TupleLike = requires(T t) {" in text
+    assert "std::tuple_size<std::remove_cvref_t<T>>::value;" in text
 
 
 def test_repaired_versions_are_renamed_where_the_resolver_reads_them(tmp_path: Path):
