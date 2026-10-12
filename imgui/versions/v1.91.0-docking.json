@@ -1,0 +1,67 @@
+{
+  "package": "imgui",
+  "version": "v1.91.0-docking",
+  "built_at": "2026-10-12T03:21:17Z",
+  "xmake_version": "3.0.6",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 5,
+  "configs": {
+    "target_type": "client"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@1.8.0-rc.2",
+  "entries": {
+    "default": {
+      "package": "imgui",
+      "version": "v1.91.0-docking",
+      "built_at": "2026-10-12T03:21:17Z",
+      "xmake_version": "3.0.6",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 5,
+      "configs": {
+        "target_type": "client"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@1.8.0-rc.2",
+      "artifacts": [
+        {
+          "package": "imgui",
+          "version": "v1.91.0-docking",
+          "buildhash": "c59778dd4b2147ecbceccab6feb7b29c",
+          "key": "windows-x64-vc-c59778dd4b2147ecbceccab6feb7b29c",
+          "toolset": "14.44.35207",
+          "release": "imgui_0",
+          "asset": "imgui-c59778dd4b2147ecbceccab6feb7b29c.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/imgui_0/imgui-c59778dd4b2147ecbceccab6feb7b29c.7z",
+          "sha256": "ebe31bd1d36408aefe6768f8b010cb1aa4704de07dfe578d8ae887d2c8f73fb4",
+          "size": 1070128,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "3132d458ce7d4d368687ff88e79c4041",
+              "key": "windows-x64-vc-3132d458ce7d4d368687ff88e79c4041",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "48c1c3ef296543408d0f318e868d5126",
+              "key": "windows-x64-vc-48c1c3ef296543408d0f318e868d5126",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
