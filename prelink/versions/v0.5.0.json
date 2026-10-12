@@ -1,8 +1,8 @@
 {
   "package": "prelink",
   "version": "v0.5.0",
-  "built_at": "2026-10-12T09:11:35Z",
-  "xmake_version": "3.0.2",
+  "built_at": "2026-10-12T22:07:27Z",
+  "xmake_version": "3.0.0",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 5,
@@ -13,13 +13,13 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "bsci@0.1.7",
+  "produced_for": "levilamina@1.4.1",
   "entries": {
     "default": {
       "package": "prelink",
       "version": "v0.5.0",
-      "built_at": "2026-10-12T09:11:35Z",
-      "xmake_version": "3.0.2",
+      "built_at": "2026-10-12T22:07:27Z",
+      "xmake_version": "3.0.0",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 5,
@@ -30,7 +30,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "bsci@0.1.7",
+      "produced_for": "levilamina@1.4.1",
       "artifacts": [
         {
           "package": "prelink",

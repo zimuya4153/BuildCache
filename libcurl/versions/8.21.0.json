@@ -1,38 +1,36 @@
 {
   "package": "libcurl",
   "version": "8.21.0",
-  "built_at": "2026-10-12T14:10:15Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-12T22:07:27Z",
+  "xmake_version": "3.0.0",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "revision": 5,
   "configs": {
-    "target_type": "client"
+    "target_type": "server"
   },
   "alias_profiles": [
-    "msvc",
-    "clang-cl"
+    "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@26.40.0",
+  "produced_for": "levilamina@1.4.1",
   "entries": {
     "default": {
       "package": "libcurl",
       "version": "8.21.0",
-      "built_at": "2026-10-12T14:10:15Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-12T22:07:27Z",
+      "xmake_version": "3.0.0",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
+      "vs_toolset": "14.44.35207",
       "revision": 5,
       "configs": {
-        "target_type": "client"
+        "target_type": "server"
       },
       "alias_profiles": [
-        "msvc",
-        "clang-cl"
+        "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.40.0",
+      "produced_for": "levilamina@1.4.1",
       "artifacts": [
         {
           "package": "libcurl",
