@@ -1,11 +1,11 @@
 {
   "package": "snappy",
   "version": "1.2.1",
-  "built_at": "2026-10-11T11:09:07Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-12T10:13:01Z",
+  "xmake_version": "2.9.8",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 4,
+  "revision": 5,
   "configs": {
     "target_type": "server"
   },
@@ -13,16 +13,16 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.0.1",
+  "produced_for": "bsci@0.1.6",
   "entries": {
     "default": {
       "package": "snappy",
       "version": "1.2.1",
-      "built_at": "2026-10-11T11:09:07Z",
-      "xmake_version": "2.9.7",
+      "built_at": "2026-10-12T10:13:01Z",
+      "xmake_version": "2.9.8",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 4,
+      "revision": 5,
       "configs": {
         "target_type": "server"
       },
@@ -30,11 +30,10 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.0.1",
+      "produced_for": "bsci@0.1.6",
       "artifacts": [
         {
           "package": "snappy",
-          "upstream_package": "snappy",
           "version": "1.2.1",
           "buildhash": "95042f33987c4d339f7e96106057275f",
           "key": "windows-x64-vc-95042f33987c4d339f7e96106057275f",
@@ -42,8 +41,8 @@
           "release": "snappy_0",
           "asset": "snappy-95042f33987c4d339f7e96106057275f.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/snappy_0/snappy-95042f33987c4d339f7e96106057275f.7z",
-          "sha256": "345a479de3848c06e7df9ecc441f96bc6c8d686a19d783ffcee66f777e7586f3",
-          "size": 39203,
+          "sha256": "d51f9cbb8a9e1e5fb01f80e5128f8350290533bb1369f8f4dae4a14e7080a7eb",
+          "size": 39234,
           "container": "7z",
           "aliases": [
             {
