@@ -1826,7 +1826,15 @@ def test_old_era_sources_stop_reaching_into_the_stl(tmp_path: Path):
     # against the SDK failed with C3878/C2039 inside it:
     assert 'local file = "src/ll/api/base/Concepts.h"' in text
     assert "::std::_Is_std_array_v<T>" in text
-    assert "concept TupleLike = requires(T t) {" in text
+    # ... and the repair spells both traits out locally, keeping the expression
+    # that used them (so tuple, pair, array and subrange all stay tuple-like)
+    assert "struct is_std_array<::std::array<T, N>> : ::std::true_type {};" in text
+    assert "struct is_subrange<::std::ranges::subrange<I, S, K>> : ::std::true_type {};" in text
+    assert "|| is_specialization_of_v<T, ::std::pair> || is_std_array_v<T> || is_subrange_v<T>;" in text
+    assert "concept TupleLike = tuple_like_impl<std::remove_cvref_t<T>>" in text
+    # the names it now mentions bring their own headers
+    assert '"src/ll/api/base/Concepts.h", "<array>"' in text or "#include <array>" in text
+    assert "#include <ranges>" in text
     assert "std::tuple_size<std::remove_cvref_t<T>>::value;" in text
 
 

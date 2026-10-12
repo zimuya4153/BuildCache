@@ -406,6 +406,13 @@ _ERA_INCLUDES = {
     "libhat": [
         ("include/libhat/Process.hpp", "<string>", "std::string"),
     ],
+    # The repair below spells the two tuple-like traits out itself, so the header
+    # needs the names it now mentions: 0.13.x reached for MSVC STL internals and
+    # got away without including their headers.
+    "levilamina": [
+        ("src/ll/api/base/Concepts.h", "<array>", "std::array"),
+        ("src/ll/api/base/Concepts.h", "<ranges>", "std::ranges::subrange"),
+    ],
 }
 
 #: The old era also reached *into* the STL: ``optional_ref::transform`` built its
@@ -433,10 +440,9 @@ _ERA_EDITS = {
         #     ll/api/base/Concepts.h(121): error C2039: "_Is_std_array_v": is not a
         #         member of "std"
         #
-        # (the syntax error is just the fallout of the unresolved name). The
-        # replacement is the spelling upstream itself adopted for 1.0: ask the
-        # supported `std::tuple_size`/`std::get`, which answer the same for tuples,
-        # pairs, `std::array` and subranges.
+        # (the syntax error is just the fallout of the unresolved name). The two
+        # traits are spelled out here instead -- same notion, no STL internals --
+        # and the expression that used them stays as it was.
         (
             "src/ll/api/base/Concepts.h",
             "template <class T>\n"
@@ -450,10 +456,29 @@ _ERA_EDITS = {
             "                        std::get<0>(t);\n"
             "                    });",
             "template <class T>\n"
-            "concept TupleLike = requires(T t) {\n"
-            "    std::tuple_size<std::remove_cvref_t<T>>::value;\n"
-            "    std::get<0>(t);\n"
-            "};",
+            "struct is_std_array : ::std::false_type {};\n"
+            "template <class T, ::std::size_t N>\n"
+            "struct is_std_array<::std::array<T, N>> : ::std::true_type {};\n"
+            "template <class T>\n"
+            "inline constexpr bool is_std_array_v = is_std_array<::std::remove_cvref_t<T>>::value;\n"
+            "\n"
+            "template <class T>\n"
+            "struct is_subrange : ::std::false_type {};\n"
+            "template <class I, class S, ::std::ranges::subrange_kind K>\n"
+            "struct is_subrange<::std::ranges::subrange<I, S, K>> : ::std::true_type {};\n"
+            "template <class T>\n"
+            "inline constexpr bool is_subrange_v = is_subrange<::std::remove_cvref_t<T>>::value;\n"
+            "\n"
+            "template <class T>\n"
+            "inline constexpr bool tuple_like_impl =\n"
+            "    is_specialization_of_v<T, ::std::tuple>\n"
+            "    || is_specialization_of_v<T, ::std::pair> || is_std_array_v<T> || is_subrange_v<T>;\n"
+            "\n"
+            "template <class T>\n"
+            "concept TupleLike = tuple_like_impl<std::remove_cvref_t<T>> || (!Rangeable<T> && requires(T t) {\n"
+            "                        std::tuple_size<std::remove_cvref_t<T>>::value;\n"
+            "                        std::get<0>(t);\n"
+            "                    });",
         ),
     ],
 }
