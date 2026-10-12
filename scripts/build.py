@@ -119,7 +119,7 @@ def build_once(config, ctx, plugin, args, *, plat, arch, toolchain, vs_toolset,
             )
         if overrides:
             util.log(
-                "forced on the whole resolve tree (the project's own file pins these): "
+                "forced on the whole resolve tree: "
                 + ", ".join(f"{name}={chosen}" for name, chosen in sorted(overrides.items()))
             )
         suffix = "" if use_today else "-era"
