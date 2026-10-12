@@ -170,9 +170,28 @@ class _UpstreamPlugin:
         return [item for item in found if item["toolchain"] in allowed]
 
     def xmake_version(self, ctx, version: str, commit: str) -> str:
+        """The xmake the project was released with -- its own, never a newer one.
+
+        Deliberately not clamped to ``xmake.minArtifactsVersion``, exactly like
+        LeviLamina's own plugin (see its ``xmake_version``): a project's build is
+        driven by the tooling of its time. The clamp used to raise an era that
+        predates the floor to the *newest* xmake there is, so `bsci` 0.1.6 -- whose
+        era is 2.9.8 -- was built by 3.1.1 after all: a new xmake driving the era's
+        own link rule and its era's `prelink`, which report a format mismatch deep
+        inside the tool ("Cannot create bedrock_runtime_api.lib, no such file or
+        directory") instead of anything a recipe could be blamed for.
+
+        The image the job runs on follows from the same value (see toolchain_plan),
+        so both have to come from one place.
+        """
+        return self._era_xmake(ctx, commit)
+
+    def _era_xmake(self, ctx, commit: str) -> str:
         from lib import xmake_env
 
-        return xmake_env.xmake_version_for_date(ctx.config, self.commit_date(ctx, commit))
+        return xmake_env.xmake_version_for_date(
+            ctx.config, self.commit_date(ctx, commit), floor="0.0.0"
+        )
 
     def toolchain_plan(self, ctx, version: str, commit: str) -> dict:
         """The image the era's xmake needs to run on.
@@ -191,9 +210,7 @@ class _UpstreamPlugin:
         """
         from lib import xmake_env
 
-        era = xmake_env.xmake_version_for_date(
-            ctx.config, self.commit_date(ctx, commit), floor="0.0.0"
-        )
+        era = self._era_xmake(ctx, commit)
         runner, imageos = xmake_env.era_image(era)
         return {"era_xmake": era, "image": runner, "imageos": imageos}
 

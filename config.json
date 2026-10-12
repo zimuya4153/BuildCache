@@ -148,7 +148,6 @@
         "upstream_repo": "OEOTYAN/BedrockServerClientInterface",
         "recipe_source": "oeotyan-repo",
         "recipe_package": "bsci",
-        "skipBelow": "0.1.7",
         "toolchain": "msvc",
         "toolchainAliases": [
           {
