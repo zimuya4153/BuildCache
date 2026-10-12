@@ -1513,6 +1513,37 @@ class _StubPlugin:
         return list(self._entries)
 
 
+def test_an_old_libcurl_does_not_build_its_documentation(tmp_path: Path):
+    """The man pages are not what we publish, and these images cannot make them.
+
+    The libcurl of the 1.0 era fails inside ``docs/libcurl/curl-man.vcxproj`` with
+    MSB8066 ("custom build ... exited with code 1") and takes the whole era build of
+    ``levilamina 1.0.0-rc.3`` with it, while the library itself compiles fine. Its
+    recipe passes neither flag, so the repair adds the one CMake offers for docs.
+    """
+    recipe = tmp_path / "xmake-repo@test" / "packages" / "l" / "libcurl"
+    recipe.mkdir(parents=True)
+    (recipe / "xmake.lua").write_text(
+        'package("libcurl")\n'
+        "    on_install(function (package)\n"
+        '        local configs = {"-DBUILD_TESTING=OFF", "-DENABLE_MANUAL=OFF", "-DENABLE_CURL_MANUAL=OFF"}\n'
+        "    end)\n",
+        encoding="utf-8",
+    )
+    ll = next(item for item in plugins.load_all(util.load_config()) if item.name == "ll")
+    notes = ll.module._disable_libcurl_docs(tmp_path / "xmake-repo@test")
+    text = (recipe / "xmake.lua").read_text(encoding="utf-8")
+    assert notes and "docs disabled" in notes[0], notes
+    assert '"-DENABLE_CURL_MANUAL=OFF", "-DBUILD_LIBCURL_DOCS=OFF"}' in text
+    # idempotent, and a recipe that does not look like this one is left alone
+    assert ll.module._disable_libcurl_docs(tmp_path / "xmake-repo@test") == []
+    other = tmp_path / "xmake-repo@other" / "packages" / "l" / "libcurl"
+    other.mkdir(parents=True)
+    (other / "xmake.lua").write_text('package("libcurl")\n', encoding="utf-8")
+    assert ll.module._disable_libcurl_docs(tmp_path / "xmake-repo@other") == []
+    assert (other / "xmake.lua").read_text(encoding="utf-8") == 'package("libcurl")\n'
+
+
 def test_the_plugin_being_built_repairs_its_own_snapshot(tmp_path: Path, monkeypatch):
     """The one plugin that must run is the one whose project this is.
 

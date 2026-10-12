@@ -395,7 +395,44 @@ def repair_recipes(config, source_name: str, snapshot) -> list[str]:
     alias, and rename the matching dependency strings in our snapshot's version
     files.
     """
-    return _repair_legacy_versions(snapshot) + _repair_era_sources(snapshot)
+    return (
+        _repair_legacy_versions(snapshot)
+        + _repair_era_sources(snapshot)
+        + _disable_libcurl_docs(snapshot)
+    )
+
+
+#: The docs a dependency builds are not what we publish, and the man pages of the
+#: libcurl of the 1.0 era cannot be generated in these images any more: their
+#: custom build (`docs/libcurl/curl-man.vcxproj`) dies with MSB8066 and takes the
+#: whole era build of `levilamina 1.0.0-rc.3` with it, while the library itself
+#: compiles fine. The recipe of the day passes neither flag, so both are added --
+#: the one that turns its docs off is what CMake offers for exactly this.
+_LIBCURL_DOCS_BEFORE = 'local configs = {"-DBUILD_TESTING=OFF", "-DENABLE_MANUAL=OFF", "-DENABLE_CURL_MANUAL=OFF"}'
+_LIBCURL_DOCS_AFTER = (
+    'local configs = {"-DBUILD_TESTING=OFF", "-DENABLE_MANUAL=OFF", '
+    '"-DENABLE_CURL_MANUAL=OFF", "-DBUILD_LIBCURL_DOCS=OFF"}'
+)
+
+
+def _disable_libcurl_docs(snapshot) -> list[str]:
+    """Turn libcurl's documentation target off, where the recipe builds it."""
+    notes: list[str] = []
+    for recipe in sorted(Path(snapshot).glob("packages/l/libcurl/xmake.lua")):
+        text = util.read_text(recipe)
+        if "-DBUILD_LIBCURL_DOCS=OFF" in text:
+            continue
+        updated = text.replace(_LIBCURL_DOCS_BEFORE, _LIBCURL_DOCS_AFTER)
+        if updated == text:
+            # A recipe that does not look like this one: leave it alone rather
+            # than guess at its options.
+            continue
+        util.write_text(recipe, updated)
+        notes.append(
+            f"{Path(snapshot).name}/libcurl: docs disabled "
+            f"(the man pages are not part of the artifact)"
+        )
+    return notes
 
 
 #: Headers of the old-era packages that use a type from the standard library
