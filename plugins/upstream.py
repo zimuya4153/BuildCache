@@ -189,9 +189,14 @@ class _UpstreamPlugin:
     def _era_xmake(self, ctx, commit: str) -> str:
         from lib import xmake_env
 
-        return xmake_env.xmake_version_for_date(
+        era = xmake_env.xmake_version_for_date(
             ctx.config, self.commit_date(ctx, commit), floor="0.0.0"
         )
+        # The floor of the era's own release line: 2.9.0-2.9.3 ask CMake for a
+        # Visual Studio 2026 toolset on an image that has none, which kills every
+        # CMake dependency of such an era with MSB8020 -- that is how `bsci` 0.1.4
+        # failed while its neighbours built (see lib/xmake_env.LINE_FLOORS).
+        return xmake_env.line_floor(era)
 
     def toolchain_plan(self, ctx, version: str, commit: str) -> dict:
         """The image the era's xmake needs to run on.

@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from lib import repos, semver, util
+from lib import repos, semver, util, xmake_env
 
 # Where the LL recipe lives upstream (LiteLDev's package repository).
 RECIPE_SOURCE = "levimc-repo"
@@ -142,17 +142,11 @@ def xmake_version(ctx, version: str, commit: str) -> str:
 #: 2.9.7 is the same line (same recipes, same build layout) and maps it correctly.
 #: Nothing older is bumped: the 2.8 line has to stay on 2.8, because a newer xmake
 #: renamed directories that those projects' own link scripts refer to.
-LINE_FLOORS = {"2.9": "2.9.7"}
-
-
-def line_floor(era: str) -> str:
-    """Raise an era's xmake to the floor of its own release line, if there is one."""
-    from lib import semver
-
-    floor = LINE_FLOORS.get(".".join(str(era).split(".")[:2]))
-    if floor and not semver.ge(era, floor):
-        return floor
-    return era
+# The floors themselves are shared with every other plugin that builds a version
+# with the xmake of its own time (see lib/xmake_env.LINE_FLOORS): asking CMake for
+# a toolset the image does not have is not a LeviLamina problem.
+LINE_FLOORS = xmake_env.LINE_FLOORS
+line_floor = xmake_env.line_floor
 
 
 def recipe_cutoff(ctx, version: str, commit: str) -> str:
@@ -399,6 +393,7 @@ def repair_recipes(config, source_name: str, snapshot) -> list[str]:
         _repair_legacy_versions(snapshot)
         + _repair_era_sources(snapshot)
         + _disable_libcurl_docs(snapshot)
+        + _declare_headeronly(snapshot)
     )
 
 
@@ -413,6 +408,40 @@ _LIBCURL_DOCS_AFTER = (
     'local configs = {"-DBUILD_TESTING=OFF", "-DENABLE_MANUAL=OFF", '
     '"-DENABLE_CURL_MANUAL=OFF", "-DBUILD_LIBCURL_DOCS=OFF"}'
 )
+
+
+#: Old recipes of header-only packages predate the declaration that says so, and
+#: xmake then treats them as libraries: after the install it looks for a link to
+#: write into the ``.pc`` file and refuses the package with
+#:
+#:     error: package(nlohmann_json): links not found!
+#:
+#: which is how `levilamina` 0.12.2/0.12.3 died in their own era. Upstream added
+#: the declaration later, so the repair adds what it added.
+_HEADERONLY = {
+    "nlohmann_json": 'set_kind("library", { headeronly = true })',
+}
+
+
+def _declare_headeronly(snapshot) -> list[str]:
+    """Say a header-only package is one, where the recipe of that era forgot to."""
+    notes: list[str] = []
+    for package, declaration in _HEADERONLY.items():
+        for recipe in sorted(
+            Path(snapshot).glob(f"packages/{package[0]}/{package}/xmake.lua")
+        ):
+            text = util.read_text(recipe)
+            if declaration in text:
+                continue
+            anchor = f'package("{package}")'
+            if anchor not in text:
+                continue
+            util.write_text(recipe, text.replace(anchor, f"{anchor}\n    {declaration}", 1))
+            notes.append(
+                f"{Path(snapshot).name}/{package}: declared header-only "
+                f"(the recipe of that era does not say so)"
+            )
+    return notes
 
 
 def _disable_libcurl_docs(snapshot) -> list[str]:

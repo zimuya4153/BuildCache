@@ -1513,6 +1513,33 @@ class _StubPlugin:
         return list(self._entries)
 
 
+def test_an_old_header_only_recipe_is_told_it_is_one(tmp_path: Path):
+    """Without the declaration xmake treats it as a library and wants a link.
+
+    The recipe of the 0.12 era has no ``set_kind("library", {headeronly = true})``,
+    so after installing a header-only package xmake looks for a link to write into
+    the ``.pc`` file and refuses it ("package(nlohmann_json): links not found!"),
+    which is how levilamina 0.12.2/0.12.3 died. Upstream added the declaration
+    later, and the repair adds what it added -- where it is missing.
+    """
+    recipe = tmp_path / "xmake-repo@test" / "packages" / "n" / "nlohmann_json"
+    recipe.mkdir(parents=True)
+    (recipe / "xmake.lua").write_text(
+        'package("nlohmann_json")\n'
+        '    set_homepage("https://nlohmann.github.io/json/")\n'
+        "    on_install(function (package) end)\n",
+        encoding="utf-8",
+    )
+    ll = next(item for item in plugins.load_all(util.load_config()) if item.name == "ll")
+    notes = ll.module._declare_headeronly(tmp_path / "xmake-repo@test")
+    text = (recipe / "xmake.lua").read_text(encoding="utf-8")
+    assert notes and "declared header-only" in notes[0], notes
+    assert text.startswith('package("nlohmann_json")\n    set_kind("library", { headeronly = true })\n')
+    # idempotent, and a package the snapshot does not carry is skipped
+    assert ll.module._declare_headeronly(tmp_path / "xmake-repo@test") == []
+    assert ll.module._declare_headeronly(tmp_path / "xmake-repo@other") == []
+
+
 def test_an_old_libcurl_does_not_build_its_documentation(tmp_path: Path):
     """The man pages are not what we publish, and these images cannot make them.
 

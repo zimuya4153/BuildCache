@@ -265,6 +265,26 @@ def era_image(era: str) -> tuple[str, str]:
     return "windows-2022", "win22"
 
 
+#: Per release line: the oldest xmake of that line that works with the images we
+#: can actually get. 2.9.0-2.9.3 ask CMake for the platform toolset ``v144`` when
+#: they see MSVC 14.4x -- but v144 belongs to Visual Studio 2026 and the
+#: windows-2022 image has only v143, so *every* CMake-based dependency of such an
+#: era dies with MSB8020 ("The build tools for v144 cannot be found"), which is
+#: how `bsci` 0.1.4 failed while its neighbours built. 2.9.7 is the same line
+#: (same recipes, same build layout) and maps it correctly. Nothing older is
+#: bumped: the 2.8 line has to stay on 2.8, because a newer xmake renamed
+#: directories that those projects' own link scripts refer to.
+LINE_FLOORS = {"2.9": "2.9.7"}
+
+
+def line_floor(era: str) -> str:
+    """Raise an era's xmake to the floor of its own release line, if there is one."""
+    floor = LINE_FLOORS.get(".".join(str(era).split(".")[:2]))
+    if floor and not semver.ge(era, floor):
+        return floor
+    return era
+
+
 def ensure_xmake(config: dict, version: str, proxy: str | None = None) -> Path:
     """Download + extract ``xmake-v<version>.win64.zip``; returns ``xmake.exe``."""
     import urllib.request
