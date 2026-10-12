@@ -15,6 +15,17 @@ CONFIG_PATH = ROOT / "config.json"
 
 _CONFIG: dict | None = None
 
+# A runner's console is not UTF-8: xmake prints bullets and arrows (👉) in its
+# progress output, and a logger that dies on them takes the job down minutes into
+# a build, with a traceback that says nothing about what was being built. Output
+# goes out as UTF-8, with anything unencodable replaced rather than fatal.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
 
 def log(message: str) -> None:
     print(mask(str(message)), flush=True)
