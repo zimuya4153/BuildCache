@@ -127,6 +127,16 @@ msvc 工具链，而它的预编译选择逻辑要求「存在已 check、带 vc
 顺手修历史遗留问题（坏补丁、xmake 解析不了的四段版本号）—— 修的是**我们沙箱里**的快照，
 发布出去的只有 manifest，官方配方、依赖名、版本号一概不动。
 
+快照有两个坑要填，都在 `scripts/lib/recipefix.py` 里：
+
+* 快照取的是**发布之前**（cutoff 的含义），而发布那一下通常就是往配方里加这个版本的
+  commit —— 于是快照里根本没有这次要编的版本，xmake 找不到源码就只能**按 tag 拉**，
+  而这些仓库的 tag 带 `v`（`v0.12.1` vs 配方里的 `0.12.1`），报的是
+  `fatal: Remote branch 0.12.1 not found in upstream origin`（`declare_version` 补上
+  版本与 commit，就是发布 commit 后来自己写的那一行）；
+* 版本声明了却没有 commit（`add_versions("0.12.1")`），xmake 同样会按 tag 拉
+  （`backfill_commits` 用仓库自己的 tag 查出 commit 补上）。
+
 ### 别名（同一个产物，多个地址）
 
 xmake 给产物寻址用的是「平台 + 架构 + configs + 源码 hash + 工具链」的哈希，所以
@@ -228,6 +238,25 @@ SDK"。所以 `discover` 在排队列时会先**把依赖版本提取出来**：
 拿不准的一律**不排**（例如 `~`/`^` 这种我们不复刻的约束、解析不出 owner 版本的、动态加的
 依赖）：依赖方留在第一阶段，按老办法把没发布的那部分自己编掉并作为依赖记录发布。方向是
 安全的——任何情况下都往前走，不存在"等一个永远对不上的 hash"。
+
+### 版本谁说了算：工程自己 `xmake.lua` 里的锁
+
+同一个依赖往往被声明两次：配方里是**范围**（`levilamina >=1.7.6 <1.8.0`），工程自己的
+`xmake.lua` 里是**它当年真正用的那个版本**（`levilamina 1.7.6`）。xmake 会在满足范围的
+版本里挑最新的，而预发布版也算满足（`1.8.0-rc.2 < 1.8.0`），于是
+`more-dimensions` 0.12.1 会解析到 1.8.0-rc.2 —— 一个它没写过、而且头文件本身就不是合法
+C++ 的 SDK（`mc/util/ThreadOwner.h` 把 `enum class` 的模板默认参数写成 `= 0`）。
+
+更麻烦的是：工程自己的 `add_packages("levilamina")` 不带版本，xmake 会用**沙箱里最好的
+那个** —— 也就是外层配方解析出来的那个，而不是工程自己 require 的那个。所以：
+
+* 构建时把工程自己锁定的版本**强制到整棵解析树**（`add_requireconfs("**.levilamina",
+  {override = true, version = "1.7.6"})`，见 `build.py::dependency_overrides`）；工程自己
+  没写版本时用年代答案，也就是 `dependency_pins` 给工程自己那个 build 的同一个版本；
+* `discover` 排队列时必须做**同一个判断**（`plan.own_pins`），否则会去编一个依赖方根本
+  不安装的 SDK（还让它等在那里），而真正要的 SDK 一个都没编；
+* 产物地址（buildhash）只由平台/架构/configs/源码 hash/工具链决定，跟依赖版本无关，
+  所以按工程自己的锁编出来的产物，消费端照样能按名字命中。
 
 ## 9. CI
 
