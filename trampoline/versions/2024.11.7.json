@@ -1,36 +1,36 @@
 {
   "package": "trampoline",
   "version": "2024.11.7",
-  "built_at": "2026-10-12T09:42:26Z",
-  "xmake_version": "3.0.8",
+  "built_at": "2026-10-12T11:25:49Z",
+  "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 5,
   "configs": {
-    "target_type": "client"
+    "target_type": "server"
   },
   "alias_profiles": [
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@26.10.7",
+  "produced_for": "levilamina@1.0.0-rc.3",
   "entries": {
     "default": {
       "package": "trampoline",
       "version": "2024.11.7",
-      "built_at": "2026-10-12T09:42:26Z",
-      "xmake_version": "3.0.8",
+      "built_at": "2026-10-12T11:25:49Z",
+      "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 5,
       "configs": {
-        "target_type": "client"
+        "target_type": "server"
       },
       "alias_profiles": [
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@26.10.7",
+      "produced_for": "levilamina@1.0.0-rc.3",
       "artifacts": [
         {
           "package": "trampoline",
@@ -41,8 +41,8 @@
           "release": "trampoline_0",
           "asset": "trampoline-552c1d2061e44233a497ba064002bba0.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/trampoline_0/trampoline-552c1d2061e44233a497ba064002bba0.7z",
-          "sha256": "3b0ffada80466126a1b3c07291130411fb3a54f127e2df58d16a31e8185849a4",
-          "size": 5256,
+          "sha256": "10beb5b430ecf7752d2a4130a3b31aee4e28b2dac6299130027b2588d613d966",
+          "size": 5284,
           "container": "7z",
           "aliases": [
             {

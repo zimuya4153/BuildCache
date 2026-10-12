@@ -1,8 +1,8 @@
 {
   "package": "libhat",
   "version": "2024.9.22",
-  "built_at": "2026-10-12T03:39:57Z",
-  "xmake_version": "2.9.8",
+  "built_at": "2026-10-12T11:25:49Z",
+  "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 5,
@@ -13,13 +13,13 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@1.1.0-rc.1",
+  "produced_for": "levilamina@1.0.0-rc.3",
   "entries": {
     "default": {
       "package": "libhat",
       "version": "2024.9.22",
-      "built_at": "2026-10-12T03:39:57Z",
-      "xmake_version": "2.9.8",
+      "built_at": "2026-10-12T11:25:49Z",
+      "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 5,
@@ -30,7 +30,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@1.1.0-rc.1",
+      "produced_for": "levilamina@1.0.0-rc.3",
       "artifacts": [
         {
           "package": "libhat",
@@ -41,8 +41,8 @@
           "release": "libhat_0",
           "asset": "libhat-bfc5ac80a2ba46b3890d7852b6bb022e.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/libhat_0/libhat-bfc5ac80a2ba46b3890d7852b6bb022e.7z",
-          "sha256": "cf44c12e34b431bd15a7a8f5af347f861d75abfd5a9d725f6c31edc42bc16748",
-          "size": 43497,
+          "sha256": "445f9e210faeb16988268886efa0c9571c312ec3b117f7f85dc0fc502aad9ac9",
+          "size": 43526,
           "container": "7z",
           "aliases": [
             {

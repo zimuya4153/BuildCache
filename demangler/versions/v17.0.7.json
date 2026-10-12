@@ -1,7 +1,7 @@
 {
   "package": "demangler",
   "version": "v17.0.7",
-  "built_at": "2026-10-12T11:03:10Z",
+  "built_at": "2026-10-12T11:25:49Z",
   "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
@@ -13,12 +13,12 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@0.13.3",
+  "produced_for": "levilamina@1.0.0-rc.3",
   "entries": {
     "default": {
       "package": "demangler",
       "version": "v17.0.7",
-      "built_at": "2026-10-12T11:03:10Z",
+      "built_at": "2026-10-12T11:25:49Z",
       "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
@@ -30,7 +30,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@0.13.3",
+      "produced_for": "levilamina@1.0.0-rc.3",
       "artifacts": [
         {
           "package": "demangler",
@@ -41,8 +41,8 @@
           "release": "demangler_0",
           "asset": "demangler-57206051c21c41009d4a5306cebc56d2.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/demangler_0/demangler-57206051c21c41009d4a5306cebc56d2.7z",
-          "sha256": "0a3b4622b2072e9a22c8879e8f8b1dc3b75006ed880a0c7283b375eaec1ce943",
-          "size": 243652,
+          "sha256": "1b39eabf443423fd9baf5627ea95cdb4babed85be8b395c39e7000a218bc06bd",
+          "size": 243681,
           "container": "7z",
           "aliases": [
             {
