@@ -556,16 +556,21 @@ def dependency_pins(
     ``plan.era_version``). ``bsci`` 0.4.0 asks for ``levilamina`` and was then
     compiled against 26.51.6; its era's own newest is 26.20.0.
 
+    It is not only our own packages: a rule package such as ``levibuildscript``
+    resolves to the newest one too, and that is written for the newest xmake --
+    while a project of an older era builds with the xmake of its own. The mismatch
+    surfaces as a Lua error *inside* the build (``attempt to index a nil value
+    (global 'co')``), which says nothing about a version at all.
+
     This decides the version twice -- for our sandbox's top-level require, and for
     the project's own build, which resolves it again in a fresh xmake of its own
     (the same map is handed to that build through the recipe, see
     ``plugins/upstream.py``).
     """
-    owned = {name.lower() for name in plugins.project_packages(config, ctx)}
     pins: dict[str, str] = {}
     for item in extra:
         name = str(item.get("name") or "")
-        if not name or name.lower() not in owned:
+        if not name:
             continue
         if _declared_version(sources, name, item.get("version", "")) not in ("", None):
             continue
