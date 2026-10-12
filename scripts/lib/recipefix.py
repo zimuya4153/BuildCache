@@ -261,17 +261,35 @@ def plugin_repairs(config: dict, building, source_name: str, snapshot: Path) -> 
 
     Each plugin decides for itself which packages are its business, and the
     repairs are guarded, so a snapshot repaired twice is unchanged.
+
+    The plugin being built goes *first*, and it has to run: it is the one that
+    knows how this project's own recipe has to be prepared. It used to be filtered
+    out -- the "already seen" set was seeded with its name, so the first candidate
+    of the loop was always skipped -- and the visible effect was that a project
+    pinning no SDK version (`bsci` >= 0.3.0 asks for a bare `levilamina`) was built
+    against today's newest SDK instead of the one of its era: the SDK then got
+    compiled a second time inside the dependent's job and packed and uploaded
+    again, and the artifact itself was built against headers its sources never
+    saw.
     """
     from . import plugins
 
-    seen = {getattr(building, "name", None)}
+    order = plugins.load_all(config)
+    if building is not None:
+        # The building plugin is normally in that list too; keep it first, and
+        # keep it even when it is not (a probe builds a plugin that its config may
+        # not list yet).
+        order = [building] + [
+            item for item in order if getattr(item, "name", None) != getattr(building, "name", None)
+        ]
+    seen: set = set()
     notes: list[str] = []
     # A repair is best effort by definition: it exists to make a package build at
     # all, so one that fails on a snapshot it does not recognise is reported and
     # the build goes on. Failing the whole round here would turn "this plugin
     # knows how to fix that project" into "nothing can be built".
-    for candidate in [building] + plugins.load_all(config):
-        if candidate is None or getattr(candidate, "name", None) in seen:
+    for candidate in order:
+        if getattr(candidate, "name", None) in seen:
             continue
         seen.add(candidate.name)
         try:

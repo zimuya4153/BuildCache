@@ -1513,6 +1513,40 @@ class _StubPlugin:
         return list(self._entries)
 
 
+def test_the_plugin_being_built_repairs_its_own_snapshot(tmp_path: Path, monkeypatch):
+    """The one plugin that must run is the one whose project this is.
+
+    Its ``repair_recipes`` is what prepares the project's own recipe -- for the
+    upstream plugin that means injecting the block that pins the SDK versions the
+    project leaves open. A "already seen" set seeded with its name made the loop
+    skip it, so such a project was built against today's newest SDK (compiled a
+    second time inside the dependent's job, then packed and uploaded again), while
+    every *other* plugin's repairs still ran and hid the bug.
+    """
+    calls: list[str] = []
+
+    class Fake:
+        def __init__(self, name):
+            self.name = name
+
+        def repair_recipes(self, config, source_name, snapshot):
+            if source_name == "some-repo":
+                calls.append(self.name)
+                return [f"{self.name}: repaired"]
+            return []
+
+    building = Fake("the-one-being-built")
+    monkeypatch.setattr(plugins, "load_all", lambda config: [building, Fake("another")])
+    notes = recipefix.plugin_repairs({}, building, "some-repo", tmp_path)
+    assert calls == ["the-one-being-built", "another"], calls
+    assert notes == ["the-one-being-built: repaired", "another: repaired"], notes
+    # a plugin the config does not list (a probe) still gets its turn, once
+    monkeypatch.setattr(plugins, "load_all", lambda config: [Fake("another")])
+    calls.clear()
+    notes = recipefix.plugin_repairs({}, Fake("probe-only"), "some-repo", tmp_path)
+    assert calls == ["probe-only", "another"], calls
+
+
 def test_a_snapshot_that_predates_the_release_declares_the_version(tmp_path: Path):
     """A recipe newer than the version cannot fetch it, and says something else.
 
