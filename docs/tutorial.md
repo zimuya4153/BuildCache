@@ -122,6 +122,34 @@ msvc 工具链，而它的预编译选择逻辑要求「存在已 check、带 vc
 }
 ```
 
+通用插件的全部字段（都写在 `settings` 里，除前三项外都可省）：
+
+| 字段 | 作用 |
+|---|---|
+| `id` / `display` | 插件名（`cache.py`/`discover.py` 的 `--plugin` 用它）与报表里的显示名 |
+| `upstream` / `upstream_repo` | 工程源码仓库（用来取该版本的 commit 日期、读它自己的 `xmake.lua`） |
+| `recipe_source` / `recipe_package` | 配方在哪个源里、叫什么名字；**`recipe_package` 同时就是发布出去的包名**（消费端 `add_requires("<它> <版本>")`） |
+| `extra_packages` | 工程自己的 `xmake.lua` 里 require、而**属于我们自己会发布的包**（一般是 `["levilamina"]`）：排队列时先把这些 SDK 的 job 排到前面，依赖方等着复用，不用自己再编一遍 |
+| `entries` | 要编几个条目（构建维度）：`[{"id": "server", "configs": {...}}, ...]`；条目可加 `from` / `until` 版本区间（含端点），例如 `{"id": "client", "from": "0.3.0", ...}` —— 只有那几个版本真的有这个维度时才声明 |
+| `configs` | 单条目项目的默认 configs（`entries` 缺省时用） |
+| `toolchain` / `native_toolchain` | 编缓存用哪个工具链（默认 `msvc`）；工程自己用的是另一个时用 `native_toolchain` 说明（只记录进索引） |
+| `toolchainAliases` | 还能被哪些消费端工具链命中同一份产物（见下节；只声明这个版本真支持的） |
+| `recipeEdits` | 配方里必须改的文本：`[{"find": "...", "replace": "..."}]`，只改**我们沙箱里**的快照 |
+| `skipBelow` / `skipVersions` | 声明"这些版本本质编不出来"（年代工具/格式问题、上游源码本身编不过）：不排队列，日志里会说明跳过了哪些 |
+| `assetName` | 自定义 asset 文件名模板（默认 `<库名>-<buildhash>.<ext>`） |
+
+接入一个项目的清单：
+
+1. 确认它的版本能在某个配方源里查到（`recipes.sources` 里已有 `levimc-repo` / `oeotyan-repo` / `xmake-repo`；别处再加一条）；
+2. 往 `config.json` 的 `plugins` 加一段上面的 `settings`；
+3. 本地先看计划：`python scripts/discover.py --plugin <id> --report-skipped --out matrix.json`，
+   确认版本、条目、以及"要先编哪个 SDK"都符合预期；
+4. 触发一轮：`gh workflow run build.yml -f plugin=<id>`（只想先试一个版本再加 `-f version=<版本>`）；
+5. `finalize` 会把 manifest 推到消费端仓库，消费端写 `add_requires("<包名> <版本>")` 即可命中。
+
+年代的 xmake 与 CI 镜像由插件决定（`xmake_version` / `toolchain_plan`）：**工程用自己发布
+时的那个 xmake 编**，镜像也随之换成那个年代的（见 §9 与「常见报错」里的 `vs not found!`）。
+
 新增配方源只要往 `recipes.sources` 加一条（例如 `oeotyan-repo`）。构建时框架会把这些
 源**快照回该版本发布前后的状态**（保证用那个年代的配方与依赖版本编出那个年代的产物），
 顺手修历史遗留问题（坏补丁、xmake 解析不了的四段版本号）—— 修的是**我们沙箱里**的快照，
