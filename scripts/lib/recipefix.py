@@ -19,6 +19,7 @@ _ADD_PATCHES = re.compile(
     r'add_patches\(\s*("[^"]+"|\'[^\']+\')\s*,\s*"([^"]+)"\s*,\s*"([0-9a-fA-F]{64})"\s*\)'
 )
 _ADD_VERSIONS = re.compile(r'^(\s*)add_versions\(\s*"([^"]+)"', re.M)
+_VERSION_COMMIT = re.compile(r'add_versions\(\s*"([^"]+)"\s*,\s*"([^"]+)"')
 _ADD_VERSIONFILES = re.compile(r'add_versionfiles\(\s*"([^"]+)"')
 _SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.\-+]*)?$")
 _FOUR_PART = re.compile(r"^\d+\.\d+\.\d+\.\d+")
@@ -184,7 +185,22 @@ def declare_version(prepared: dict, package: str, version: str, commit: str) -> 
         if not recipe.is_file():
             continue
         text = util.read_text(recipe)
-        if _declares_version(recipe, text, version):
+        declared = _declared_commit(recipe, text, version)
+        if declared:
+            # The version is there but points somewhere else: the recipe of that
+            # moment was written before the release moved, and its commit is the
+            # source *before* the fix the release itself carries. `more-dimensions`
+            # 0.2.1 is the example -- its era recipe says 82b58e1 while the tag (and
+            # today's recipe) say 0b79e6a, and 82b58e1 is the commit whose own
+            # "fix: fix compile" successor it is: the build then failed inside
+            # MoreDimensions' own sources, in code its release does not have.
+            if declared != commit:
+                updated = _rewrite_commit(recipe, text, version, declared, commit)
+                if updated:
+                    notes.append(
+                        f"{name}: {package} {version} moved {declared[:12]} -> {commit[:12]} "
+                        f"(the recipe of today resolves it there)"
+                    )
             continue
         listing = _ADD_VERSIONFILES.search(text)
         listing_file = recipe.parent / listing.group(1) if listing else None
@@ -223,6 +239,44 @@ def _declares_version(recipe: Path, text: str, version: str) -> bool:
         for line in util.read_text(listing).splitlines():
             parts = line.split()
             if parts and parts[0] == version:
+                return True
+    return False
+
+
+def _declared_commit(recipe: Path, text: str, version: str) -> str:
+    """The commit this recipe resolves ``version`` to; "" when it declares none."""
+    for match in _VERSION_COMMIT.finditer(text):
+        if match.group(1) == version:
+            return match.group(2)
+    for match in _ADD_VERSIONFILES.finditer(text):
+        listing = recipe.parent / match.group(1)
+        if not listing.is_file():
+            continue
+        for line in util.read_text(listing).splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and parts[0] == version:
+                return parts[1].split(":", 1)[-1]
+    return ""
+
+
+def _rewrite_commit(recipe: Path, text: str, version: str, old: str, new: str) -> bool:
+    """Point a declared version at another commit. Returns whether anything moved."""
+    updated = text.replace(
+        f'add_versions("{version}", "{old}")', f'add_versions("{version}", "{new}")', 1
+    )
+    if updated != text:
+        util.write_text(recipe, updated)
+        return True
+    for match in _ADD_VERSIONFILES.finditer(text):
+        listing = recipe.parent / match.group(1)
+        if not listing.is_file():
+            continue
+        original = util.read_text(listing)
+        for separator in (" ", "\t"):
+            if f"{version}{separator}{old}" in original:
+                util.write_text(
+                    listing, original.replace(f"{version}{separator}{old}", f"{version}{separator}{new}", 1)
+                )
                 return True
     return False
 

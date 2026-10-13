@@ -1779,8 +1779,39 @@ def test_a_snapshot_that_predates_the_release_declares_the_version(tmp_path: Pat
     assert 'add_versions("0.12.1", "' + "25db4b93" * 5 + '")' in text
     # the version that was already there is untouched, and the call is a no-op
     assert 'add_versions("0.12.0", "213818c9653fd9db63a279e9afbf893aed68efcc")' in text
-    assert recipefix.declare_version(prepared, "more-dimensions", "0.12.1", "x") == []
+    assert recipefix.declare_version(prepared, "more-dimensions", "0.12.1", "25db4b93" * 5) == []
     assert text == (recipe / "xmake.lua").read_text(encoding="utf-8")
+
+
+def test_a_version_whose_commit_moved_is_pointed_at_the_release(tmp_path: Path):
+    """An era's recipe can name a commit the release does not use any more.
+
+    `more-dimensions` 0.2.1 is the example: the recipe as it was on that date says
+    82b58e1, while the tag (and the recipe of today) say 0b79e6a -- and 82b58e1 is
+    the commit *before* the release's own "fix: fix compile". Building the snapshot
+    then fails inside MoreDimensions' own sources, in code its release does not have.
+    """
+    snapshot = tmp_path / "levimc-repo@0.2.1"
+    recipe = snapshot / "packages" / "m" / "more-dimensions"
+    recipe.mkdir(parents=True)
+    (recipe / "xmake.lua").write_text(
+        'package("more-dimensions")\n'
+        '    add_versions("0.2.0", "eb2f733b21f258c2e8925db7517e81b7818d3740")\n'
+        '    add_versions("0.2.1", "82b58e1fea4c024b5db62c4e00665f24ef3df9c3")\n',
+        encoding="utf-8",
+    )
+    prepared = {"levimc-repo": (snapshot, "deadbeef")}
+    notes = recipefix.declare_version(
+        prepared, "more-dimensions", "0.2.1", "0b79e6a73be7c4a74066f0069463a0431102efd3"
+    )
+    assert notes and "moved" in notes[0], notes
+    text = (recipe / "xmake.lua").read_text(encoding="utf-8")
+    assert 'add_versions("0.2.1", "0b79e6a73be7c4a74066f0069463a0431102efd3")' in text
+    assert 'add_versions("0.2.0", "eb2f733b21f258c2e8925db7517e81b7818d3740")' in text
+    # idempotent once it agrees
+    assert recipefix.declare_version(
+        prepared, "more-dimensions", "0.2.1", "0b79e6a73be7c4a74066f0069463a0431102efd3"
+    ) == []
 
     # a recipe that lists its versions in a file gets the line there
     listing_dir = tmp_path / "levimc-repo@1.9.4" / "packages" / "l" / "levilamina"

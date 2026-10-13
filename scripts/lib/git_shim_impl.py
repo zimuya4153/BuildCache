@@ -159,9 +159,16 @@ def main(argv: list[str]) -> int:
         attempts.append(with_v(argv))
         attempts.append(without_ref(argv))
     result = 0
+    asked_for_a_ref = True
     for index, attempt in enumerate(attempts):
         result = subprocess.call([git] + attempt)
         if result == 0:
+            # The pin below is for a clone that names no ref: nothing else says which
+            # commit was meant, so the cutoff decides. An attempt that did name one
+            # has an answer already, and rewinding it would quietly build something
+            # else -- for a tag, the commit *before* the release, which is how
+            # `more-dimensions` 0.2.1 compiled its own pre-release sources.
+            asked_for_a_ref = _ref_position(attempt[1:]) is not None
             if index:
                 note(f"clone retried without a ref that does not exist: {' '.join(attempt)}")
             break
@@ -172,7 +179,7 @@ def main(argv: list[str]) -> int:
             shutil.rmtree(destination, ignore_errors=True)
     if result != 0:
         return result
-    if target:
+    if target and not asked_for_a_ref:
         pin(Path.cwd() / target)
     return result
 
