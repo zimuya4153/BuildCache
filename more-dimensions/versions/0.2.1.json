@@ -1,0 +1,82 @@
+{
+  "plugin": "moredimensions",
+  "package": "more-dimensions",
+  "version": "0.2.1",
+  "entry": "default",
+  "configs": {},
+  "revision": 5,
+  "upstream_commit": "0b79e6a73be7c4a74066f0069463a0431102efd3",
+  "xmake_version": "2.8.9",
+  "toolchain": "msvc",
+  "upstream_toolchain": "msvc",
+  "alias_profiles": [
+    "msvc"
+  ],
+  "vs_toolset": "14.44.35207",
+  "recipe_commits": {
+    "levimc-repo": "f45901f92386eb485a394f691f5fc3e7b599469b",
+    "oeotyan-repo": "f582a823b89d34c27daa51083c42023ee7cd0125",
+    "xmake-repo": "384db22e3c1c8de46af0568f86c1efe8c701c36a"
+  },
+  "platform": {
+    "plat": "windows",
+    "arch": "x64",
+    "mode": "release"
+  },
+  "built_at": "2026-10-13T10:30:17Z",
+  "compiled_with": "msvc",
+  "entries": {
+    "default": {
+      "plugin": "moredimensions",
+      "package": "more-dimensions",
+      "version": "0.2.1",
+      "entry": "default",
+      "configs": {},
+      "revision": 5,
+      "upstream_commit": "0b79e6a73be7c4a74066f0069463a0431102efd3",
+      "xmake_version": "2.8.9",
+      "toolchain": "msvc",
+      "upstream_toolchain": "msvc",
+      "alias_profiles": [
+        "msvc"
+      ],
+      "vs_toolset": "14.44.35207",
+      "recipe_commits": {
+        "levimc-repo": "f45901f92386eb485a394f691f5fc3e7b599469b",
+        "oeotyan-repo": "f582a823b89d34c27daa51083c42023ee7cd0125",
+        "xmake-repo": "384db22e3c1c8de46af0568f86c1efe8c701c36a"
+      },
+      "platform": {
+        "plat": "windows",
+        "arch": "x64",
+        "mode": "release"
+      },
+      "built_at": "2026-10-13T10:30:17Z",
+      "artifacts": [
+        {
+          "package": "more-dimensions",
+          "version": "0.2.1",
+          "buildhash": "2b574183600e47919ebf0324a1e052e2",
+          "key": "windows-x64-vc-2b574183600e47919ebf0324a1e052e2",
+          "toolset": "14.44.35207",
+          "release": "more-dimensions_0",
+          "asset": "more-dimensions-2b574183600e47919ebf0324a1e052e2-vc1444.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/more-dimensions_0/more-dimensions-2b574183600e47919ebf0324a1e052e2-vc1444.7z",
+          "sha256": "3f66b02ad85e144787537cff1b6e25a11de4456e2a88b2ca047fdd11dc217918",
+          "size": 1704862,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "7602fd1fc82d495aa5a15b92ce11b798",
+              "key": "windows-x64-vc-7602fd1fc82d495aa5a15b92ce11b798",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ],
+      "compiled_with": "msvc"
+    }
+  }
+}

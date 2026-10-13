@@ -1,8 +1,8 @@
 {
   "package": "preloader",
   "version": "v1.6.3",
-  "built_at": "2026-10-13T09:58:11Z",
-  "xmake_version": "2.9.7",
+  "built_at": "2026-10-13T10:25:19Z",
+  "xmake_version": "2.8.9",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 5,
@@ -13,13 +13,13 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@0.12.4",
+  "produced_for": "levilamina@0.11.1",
   "entries": {
     "default": {
       "package": "preloader",
       "version": "v1.6.3",
-      "built_at": "2026-10-13T09:58:11Z",
-      "xmake_version": "2.9.7",
+      "built_at": "2026-10-13T10:25:19Z",
+      "xmake_version": "2.8.9",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 5,
@@ -30,7 +30,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@0.12.4",
+      "produced_for": "levilamina@0.11.1",
       "artifacts": [
         {
           "package": "preloader",
@@ -41,7 +41,7 @@
           "release": "preloader_0",
           "asset": "preloader-a8d66193496f482089d72704869d327c-vc1444.7z",
           "url": "https://github.com/zimuya4153/BuildCache/releases/download/preloader_0/preloader-a8d66193496f482089d72704869d327c-vc1444.7z",
-          "sha256": "7012d3f015a6e62fc7aaa1ed01bbf74ba122aff6032ca08a6d00082a816da907",
+          "sha256": "ce183ea4236b90946754ed115d225e812065260c37f9eecffc37ba55c80bb0fc",
           "size": 1180444,
           "container": "7z",
           "aliases": [
