@@ -308,9 +308,42 @@ def _referenced_assets(config: dict, ctx, manifest_lib) -> set[str]:
         package_repo,
         branch=package_cfg.get("branch"),
     )
-    gitops.sync_branch(package_repo)
-    for path in sorted((package_repo / "packages").glob("*/*/*/manifest.txt")):
-        names |= manifest_lib.asset_names(util.read_text(path))
+    # This decides what gets *deleted*, so a stale checkout is not good enough: a
+    # failed fetch would make every asset only the newest manifests name look like
+    # an orphan. Refuse instead of guessing.
+    fetched = util.run(
+        ["git", "-C", str(package_repo), "fetch", "--prune", "origin"],
+        env=util.subprocess_env(config, proxy=ctx.proxy),
+        capture=True,
+        check=False,
+        quiet=True,
+    )
+    if fetched.returncode != 0:
+        util.die(
+            "cannot read the consumer repository "
+            f"({package_cfg['owner']}/{package_cfg['repo']}); refusing to guess which "
+            "assets are orphans"
+        )
+    # Read them *from the fetched ref*, not from the working tree: this checkout is
+    # also what the last publish wrote into, and its local commits are not what
+    # consumers see.
+    branch = package_cfg.get("branch") or "main"
+    environment = util.subprocess_env(config, proxy=ctx.proxy)
+    listed = util.run_out(
+        [
+            "git", "-C", str(package_repo), "ls-tree", "-r", "--name-only",
+            f"origin/{branch}", "--", "packages",
+        ],
+        env=environment,
+        check=False,
+    )
+    for path in [line for line in listed.splitlines() if line.endswith("manifest.txt")]:
+        text = util.run_out(
+            ["git", "-C", str(package_repo), "show", f"origin/{branch}:{path}"],
+            env=environment,
+            check=False,
+        )
+        names |= manifest_lib.asset_names(text)
     return names
 
 
