@@ -1,8 +1,8 @@
 {
   "package": "snappy",
   "version": "1.2.2",
-  "built_at": "2026-10-12T22:08:55Z",
-  "xmake_version": "3.0.9",
+  "built_at": "2026-10-13T06:29:53Z",
+  "xmake_version": "3.0.8",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
   "revision": 5,
@@ -13,13 +13,13 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "bsci@0.4.0",
+  "produced_for": "bsci@0.3.1",
   "entries": {
     "default": {
       "package": "snappy",
       "version": "1.2.2",
-      "built_at": "2026-10-12T22:08:55Z",
-      "xmake_version": "3.0.9",
+      "built_at": "2026-10-13T06:29:53Z",
+      "xmake_version": "3.0.8",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
       "revision": 5,
@@ -30,7 +30,7 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "bsci@0.4.0",
+      "produced_for": "bsci@0.3.1",
       "artifacts": [
         {
           "package": "snappy",
