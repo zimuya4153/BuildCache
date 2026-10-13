@@ -1,0 +1,67 @@
+{
+  "package": "preloader",
+  "version": "v1.6.2",
+  "built_at": "2026-10-13T09:58:11Z",
+  "xmake_version": "2.9.7",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 5,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@0.12.4",
+  "entries": {
+    "default": {
+      "package": "preloader",
+      "version": "v1.6.2",
+      "built_at": "2026-10-13T09:58:11Z",
+      "xmake_version": "2.9.7",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 5,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@0.12.4",
+      "artifacts": [
+        {
+          "package": "preloader",
+          "version": "v1.6.2",
+          "buildhash": "40ac6a3f998546078c1b6727aace4669",
+          "key": "windows-x64-vc-40ac6a3f998546078c1b6727aace4669",
+          "toolset": "14.44.35207",
+          "release": "preloader_0",
+          "asset": "preloader-40ac6a3f998546078c1b6727aace4669-vc1444.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/preloader_0/preloader-40ac6a3f998546078c1b6727aace4669-vc1444.7z",
+          "sha256": "dd863e10f597ae93b076cdd62179b6ab6b2c5841ddacac68a4c4600a8681dbab",
+          "size": 1180827,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "90316bda832141e8b6499de0bfe451a0",
+              "key": "windows-x64-vc-90316bda832141e8b6499de0bfe451a0",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "9e4c47ab5c39454aadadf41a31189e7c",
+              "key": "windows-x64-vc-9e4c47ab5c39454aadadf41a31189e7c",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

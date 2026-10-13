@@ -1,11 +1,11 @@
 {
   "package": "snappy",
   "version": "1.1.10",
-  "built_at": "2026-10-11T11:08:17Z",
+  "built_at": "2026-10-13T09:58:11Z",
   "xmake_version": "2.9.7",
   "toolchain": "msvc",
   "vs_toolset": "14.44.35207",
-  "revision": 4,
+  "revision": 5,
   "configs": {
     "target_type": "server"
   },
@@ -13,16 +13,16 @@
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "levilamina@0.13.5",
+  "produced_for": "levilamina@0.12.4",
   "entries": {
     "default": {
       "package": "snappy",
       "version": "1.1.10",
-      "built_at": "2026-10-11T11:08:17Z",
+      "built_at": "2026-10-13T09:58:11Z",
       "xmake_version": "2.9.7",
       "toolchain": "msvc",
       "vs_toolset": "14.44.35207",
-      "revision": 4,
+      "revision": 5,
       "configs": {
         "target_type": "server"
       },
@@ -30,20 +30,19 @@
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "levilamina@0.13.5",
+      "produced_for": "levilamina@0.12.4",
       "artifacts": [
         {
           "package": "snappy",
-          "upstream_package": "snappy",
           "version": "1.1.10",
           "buildhash": "e45a9f0e551f4f9d8daab8a8138033d1",
           "key": "windows-x64-vc-e45a9f0e551f4f9d8daab8a8138033d1",
           "toolset": "14.44.35207",
           "release": "snappy_0",
-          "asset": "snappy-e45a9f0e551f4f9d8daab8a8138033d1.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/snappy_0/snappy-e45a9f0e551f4f9d8daab8a8138033d1.7z",
-          "sha256": "e0d14b7a00b3f3843940e80057ba15b74c9628a88ca1bbeb35614a98432ca202",
-          "size": 37109,
+          "asset": "snappy-e45a9f0e551f4f9d8daab8a8138033d1-vc1444.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/snappy_0/snappy-e45a9f0e551f4f9d8daab8a8138033d1-vc1444.7z",
+          "sha256": "b2f395f1213118fdf7257583ccbdc82a51049111eb4cd736c00d571792c37c39",
+          "size": 37143,
           "container": "7z",
           "aliases": [
             {

@@ -1,0 +1,67 @@
+{
+  "package": "bdslibrary",
+  "version": "1.20.81-r01",
+  "built_at": "2026-10-13T09:58:11Z",
+  "xmake_version": "2.9.7",
+  "toolchain": "msvc",
+  "vs_toolset": "14.44.35207",
+  "revision": 5,
+  "configs": {
+    "target_type": "server"
+  },
+  "alias_profiles": [
+    "msvc"
+  ],
+  "compiled_with": "msvc",
+  "produced_for": "levilamina@0.12.4",
+  "entries": {
+    "default": {
+      "package": "bdslibrary",
+      "version": "1.20.81-r01",
+      "built_at": "2026-10-13T09:58:11Z",
+      "xmake_version": "2.9.7",
+      "toolchain": "msvc",
+      "vs_toolset": "14.44.35207",
+      "revision": 5,
+      "configs": {
+        "target_type": "server"
+      },
+      "alias_profiles": [
+        "msvc"
+      ],
+      "compiled_with": "msvc",
+      "produced_for": "levilamina@0.12.4",
+      "artifacts": [
+        {
+          "package": "bdslibrary",
+          "version": "1.20.81-r01",
+          "buildhash": "e71ed98703964a46841b6c3c62e12625",
+          "key": "windows-x64-vc-e71ed98703964a46841b6c3c62e12625",
+          "toolset": "14.44.35207",
+          "release": "bdslibrary_0",
+          "asset": "bdslibrary-e71ed98703964a46841b6c3c62e12625-vc1444.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/bdslibrary_0/bdslibrary-e71ed98703964a46841b6c3c62e12625-vc1444.7z",
+          "sha256": "860ee5c38673bd373320597f93a2eee4ed6c72b769fe392e5102e0ea0c8d8ca4",
+          "size": 9965099,
+          "container": "7z",
+          "aliases": [
+            {
+              "id": "msvc",
+              "toolchain": "msvc",
+              "buildhash": "78e631e36ba54234bc82cf867dcd891d",
+              "key": "windows-x64-vc-78e631e36ba54234bc82cf867dcd891d",
+              "toolset": "14.44.35207"
+            },
+            {
+              "id": "clang-cl",
+              "toolchain": "clang-cl",
+              "buildhash": "78ec0104e8224c9cbdaf9427ad4546ba",
+              "key": "windows-x64-vc-78ec0104e8224c9cbdaf9427ad4546ba",
+              "toolset": "14.44.35207"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

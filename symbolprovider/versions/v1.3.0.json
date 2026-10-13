@@ -1,36 +1,36 @@
 {
   "package": "symbolprovider",
   "version": "v1.3.0",
-  "built_at": "2026-10-13T06:22:31Z",
-  "xmake_version": "3.1.1",
+  "built_at": "2026-10-13T09:58:11Z",
+  "xmake_version": "2.9.7",
   "toolchain": "msvc",
-  "vs_toolset": "14.51.36231",
+  "vs_toolset": "14.44.35207",
   "revision": 5,
   "configs": {
-    "target_type": "client"
+    "target_type": "server"
   },
   "alias_profiles": [
     "msvc"
   ],
   "compiled_with": "msvc",
-  "produced_for": "bsci@26.32.0",
+  "produced_for": "levilamina@0.12.4",
   "entries": {
     "default": {
       "package": "symbolprovider",
       "version": "v1.3.0",
-      "built_at": "2026-10-13T06:22:31Z",
-      "xmake_version": "3.1.1",
+      "built_at": "2026-10-13T09:58:11Z",
+      "xmake_version": "2.9.7",
       "toolchain": "msvc",
-      "vs_toolset": "14.51.36231",
+      "vs_toolset": "14.44.35207",
       "revision": 5,
       "configs": {
-        "target_type": "client"
+        "target_type": "server"
       },
       "alias_profiles": [
         "msvc"
       ],
       "compiled_with": "msvc",
-      "produced_for": "bsci@26.32.0",
+      "produced_for": "levilamina@0.12.4",
       "artifacts": [
         {
           "package": "symbolprovider",
@@ -39,10 +39,10 @@
           "key": "windows-x64-vc-8ef9d781a7854895b90a561f7f9be0ea",
           "toolset": "14.44.35207",
           "release": "symbolprovider_0",
-          "asset": "symbolprovider-8ef9d781a7854895b90a561f7f9be0ea.7z",
-          "url": "https://github.com/zimuya4153/BuildCache/releases/download/symbolprovider_0/symbolprovider-8ef9d781a7854895b90a561f7f9be0ea.7z",
-          "sha256": "f604b34b0cf47a0feb898dccb51e41b93af46255bfa08c266a06b9b1775f4ff7",
-          "size": 5077,
+          "asset": "symbolprovider-8ef9d781a7854895b90a561f7f9be0ea-vc1444.7z",
+          "url": "https://github.com/zimuya4153/BuildCache/releases/download/symbolprovider_0/symbolprovider-8ef9d781a7854895b90a561f7f9be0ea-vc1444.7z",
+          "sha256": "484e4e5e9920360ecdeff14122edbfe93a30ab24ca2be0ea166d22bacaacea8c",
+          "size": 5078,
           "container": "7z",
           "aliases": [
             {
