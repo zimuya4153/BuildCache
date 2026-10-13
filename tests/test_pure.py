@@ -1486,6 +1486,25 @@ def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):
     assert build.extra_requires(config, ctx, [("levimc-repo", repo)], []) == []
 
 
+def test_orphan_assets_are_what_nothing_points_at(tmp_path: Path):
+    """An artifact replaced by a newer build leaves a file no manifest names.
+
+    The build hash does not carry the MSVC generation and a revision bump replaces
+    a record, so a release shard keeps archives that nothing addresses any more --
+    listed as downloads that no manifest will ever ask for. What the *ledger* still
+    names must survive: `finalize` regenerates the consumer manifests from it.
+    """
+    assert cache.orphan_assets({"a-1.7z"}, {"a-1.7z": 10, "a-2.7z": 20, "b-9.7z": 30}) == [
+        "b-9.7z",
+        "a-2.7z",
+    ]
+    # a referenced asset is never an orphan, and the package filter is by name
+    assert cache.orphan_assets({"a-1.7z"}, {"a-1.7z": 10}, "a") == []
+    assert cache.orphan_assets(set(), {"a-1.7z": 10, "b-9.7z": 30}, "a") == ["a-1.7z"]
+    # nothing to do is not an error
+    assert cache.orphan_assets({"x.7z"}, {"x.7z": 1}) == []
+
+
 def _index_fixture(root: Path, package: str, version: str, toolset: str, revision: int = 5):
     """A ledger with one artifact, the way the index branch stores it."""
     folder = root / package / "versions"

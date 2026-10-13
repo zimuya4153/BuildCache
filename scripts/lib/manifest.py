@@ -9,6 +9,7 @@ URL plus sha256.
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 from . import util
 
@@ -59,6 +60,14 @@ def write_all(repo_root: Path, package: str, version: str, entries: dict[str, di
 def read(repo_root: Path, package: str, version: str) -> dict[str, dict]:
     path = manifest_path(repo_root, package, version)
     return _parse(util.read_text(path)) if path.is_file() else {}
+
+
+def asset_names(text: str) -> set[str]:
+    """The archive names a manifest mentions, from the URLs it lists."""
+    return {
+        match.group(1)
+        for match in re.finditer(r'"([^"/]+\.(?:7z|tar\.zst))"', text or "")
+    }
 
 
 def entries_for(artifacts: list[dict]) -> dict[str, dict]:

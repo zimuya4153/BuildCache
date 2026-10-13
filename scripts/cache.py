@@ -78,6 +78,14 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="push the index after requeueing stale entries",
     )
+
+    orphans = sub.add_parser(
+        "orphan-assets",
+        help="assets no manifest and no index entry points at any more",
+    )
+    orphans.add_argument("--package", default="", help="only assets of this package")
+    orphans.add_argument("--dry-run", action="store_true", help="only print the plan (default)")
+    orphans.add_argument("--yes", action="store_true", help="actually delete")
     return parser.parse_args()
 
 
@@ -107,6 +115,8 @@ def main() -> int:
         return cmd_remove(config, ctx, args)
     if args.command == "trigger":
         return cmd_trigger(config, ctx, args)
+    if args.command == "orphan-assets":
+        return cmd_orphan_assets(config, ctx, args)
     return 1
 
 
@@ -209,6 +219,130 @@ def _closure(roots: set[str], graph: dict[str, set[str]], reverse: bool, recursi
         result |= nxt
         frontier = nxt if recursive else set()
     return result
+
+
+def orphan_assets(referenced: set[str], assets: dict[str, int], package: str = "") -> list[str]:
+    """Release assets nothing points at any more, newest name first.
+
+    ``referenced`` is every asset name the ledger and the consumer manifests name;
+    ``assets`` is what the release shards actually hold, with sizes. An asset that
+    only the *ledger* names is kept as well -- `finalize` regenerates the consumer
+    manifests from it, so deleting one would take the file out from under an entry
+    that is still meant to be reachable.
+    """
+    found = [name for name in assets if name not in referenced]
+    if package:
+        found = [name for name in found if name.split("-", 1)[0] == package]
+    return sorted(found, key=lambda name: (-assets.get(name, 0), name))
+
+
+def cmd_orphan_assets(config: dict, ctx, args) -> int:
+    """Delete release assets no longer referenced by the index or a manifest.
+
+    An artifact replaced by a newer build of the same version (another MSVC
+    generation, or the same build published again after a revision bump) stops
+    being addressed by anything, but its file stays in the shard: the release then
+    lists downloads that no manifest will ever ask for.
+    """
+    from lib import manifest as manifest_lib
+
+    cache_cfg = config["repos"]["cache"]
+    owner, repo = cache_cfg["owner"], cache_cfg["repo"]
+    referenced = _referenced_assets(config, ctx, manifest_lib)
+    assets = _release_assets(owner, repo, config, ctx.proxy)
+    found = orphan_assets(referenced, assets, args.package)
+    if not found:
+        util.log(f"no orphan assets ({len(assets)} asset(s) checked, all referenced)")
+        return 0
+    total = sum(assets[name] for name in found)
+    util.log(f"plan: {len(found)} orphan asset(s), {total / 1e6:.1f} MB of {len(assets)}")
+    for name in found[:20]:
+        util.log(f"  {name}  {assets[name] / 1e6:.1f} MB")
+    if len(found) > 20:
+        util.log(f"  ... and {len(found) - 20} more")
+    if not args.yes:
+        util.log("dry run (pass --yes to delete)")
+        return 0
+    by_shard = _assets_by_shard(owner, repo, config)
+    shards = {shard: names for shard, names in by_shard.items() if names.keys() & set(found)}
+    for shard, names in shards.items():
+        for name in sorted(names.keys() & set(found)):
+            _delete_asset(config, ctx, owner, repo, shard, name)
+    import finalize  # a body lists what its shard holds
+
+    finalize.refresh_release_notes(config, ctx)
+    util.log(f"deleted {len(found)} orphan asset(s) from {len(shards)} shard(s)")
+    return 0
+
+
+def _delete_asset(config: dict, ctx, owner: str, repo: str, shard: str, name: str) -> None:
+    util.run(
+        ["gh", "release", "delete-asset", shard, name, "--repo", f"{owner}/{repo}", "--yes"],
+        env=util.subprocess_env(config, proxy=ctx.proxy),
+        capture=True,
+        check=False,
+        quiet=True,
+    )
+
+
+def _referenced_assets(config: dict, ctx, manifest_lib) -> set[str]:
+    """Every asset name the ledger or a consumer manifest still points at."""
+    names: set[str] = set()
+    ctx.ensure_index()
+    for directory in sorted(ctx.index_root.iterdir()):
+        if not directory.is_dir() or directory.name.startswith("."):
+            continue
+        for meta in index_store.all_version_meta(ctx.index_root, directory.name):
+            for entry in index_store.entries(meta).values():
+                for artifact in entry.get("artifacts") or []:
+                    if artifact.get("asset"):
+                        names.add(artifact["asset"])
+                    for alias in artifact.get("aliases") or []:
+                        if alias.get("asset"):
+                            names.add(alias["asset"])
+    package_cfg = config["repos"]["package"]
+    package_repo = Path(ctx.package_repo)
+    gitops.ensure_checkout(
+        config,
+        f"https://github.com/{package_cfg['owner']}/{package_cfg['repo']}.git",
+        package_repo,
+        branch=package_cfg.get("branch"),
+    )
+    gitops.sync_branch(package_repo)
+    for path in sorted((package_repo / "packages").glob("*/*/*/manifest.txt")):
+        names |= manifest_lib.asset_names(util.read_text(path))
+    return names
+
+
+def _release_assets(owner: str, repo: str, config: dict, proxy) -> dict[str, int]:
+    """``{asset name: size}`` for every asset in every release of the cache."""
+    found: dict[str, int] = {}
+    for shard, names in _assets_by_shard(owner, repo, config).items():
+        found.update({name: size for name, size in names.items()})
+    return found
+
+
+def _assets_by_shard(owner: str, repo: str, config: dict) -> dict[str, dict[str, int]]:
+    """``{release tag: {asset name: size}}``, page by page."""
+    found: dict[str, dict[str, int]] = {}
+    for page in range(1, 11):
+        batch = gh.api(
+            f"repos/{owner}/{repo}/releases?per_page=100&page={page}", config=config
+        )
+        if not batch:
+            break
+        for release in batch:
+            tag = release.get("tag_name") or ""
+            if not tag:
+                continue
+            found[tag] = {
+                asset.get("name"): int(asset.get("size") or 0)
+                for asset in release.get("assets") or []
+                if asset.get("name")
+            }
+        if len(batch) < 100:
+            break
+    return found
 
 
 # ------------------------------------------------------------------------- remove
