@@ -12,6 +12,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import json  # noqa: E402
+import types  # noqa: E402
+
 import build  # noqa: E402
 import cache  # noqa: E402
 import discover  # noqa: E402
@@ -382,7 +385,7 @@ def test_an_sdk_the_ledger_lacks_is_built_ahead_of_its_plugins():
     jobs = [plan.job({}, None, md, "0.13.0", "bbb", {"id": "default"})]
 
     first, dependencies, waiting, notes = plan.split(
-        {}, None, [ll, md], jobs, lambda package, version: False
+        {}, None, [ll, md], jobs, lambda package, version, image: False
     )
 
     assert notes == []
@@ -401,7 +404,7 @@ def test_a_published_sdk_is_reused_and_nothing_waits():
     jobs = [plan.job({}, None, md, "0.13.0", "bbb", {"id": "default"})]
 
     first, dependencies, waiting, notes = plan.split(
-        {}, None, [ll, md], jobs, lambda package, version: package == "levilamina"
+        {}, None, [ll, md], jobs, lambda package, version, image: package == "levilamina"
     )
 
     assert notes == []
@@ -420,7 +423,7 @@ def test_two_dependents_share_one_sdk_build():
     ]
 
     first, dependencies, waiting, _notes = plan.split(
-        {}, None, [ll, one, two], jobs, lambda p, v: False
+        {}, None, [ll, one, two], jobs, lambda p, v, image: False
     )
 
     assert first == []
@@ -447,7 +450,7 @@ def test_a_build_a_dependent_waits_for_is_not_run_beside_it():
     ]
 
     first, dependencies, waiting, _notes = plan.split(
-        {}, None, [ll, md], jobs, lambda package, version: False
+        {}, None, [ll, md], jobs, lambda package, version, image: False
     )
 
     assert first == []
@@ -470,7 +473,7 @@ def test_a_dependency_that_cannot_be_resolved_does_not_block_anything():
     jobs = [plan.job({}, None, md, "0.13.0", "bbb", {"id": "default"})]
 
     first, dependencies, waiting, notes = plan.split(
-        {}, None, [ll, md], jobs, lambda package, version: False
+        {}, None, [ll, md], jobs, lambda package, version, image: False
     )
 
     assert waiting == []
@@ -1483,6 +1486,115 @@ def test_the_extra_closure_is_built_not_only_declared(tmp_path: Path):
     assert build.extra_requires(config, ctx, [("levimc-repo", repo)], []) == []
 
 
+def _index_fixture(root: Path, package: str, version: str, toolset: str, revision: int = 5):
+    """A ledger with one artifact, the way the index branch stores it."""
+    folder = root / package / "versions"
+    folder.mkdir(parents=True, exist_ok=True)
+    (root / package / "index.json").write_text(
+        json.dumps({"package": package, "latest": version, "versions": [version]}),
+        encoding="utf-8",
+    )
+    (folder / f"{version}.json").write_text(
+        json.dumps(
+            {
+                "package": package,
+                "version": version,
+                "revision": revision,
+                "entries": {
+                    "default": {
+                        "revision": revision,
+                        "artifacts": [
+                            {
+                                "package": package,
+                                "version": version,
+                                "buildhash": "deadbeef",
+                                "toolset": toolset,
+                                "release": f"{package}_0",
+                                "asset": f"{package}-deadbeef.7z",
+                                "url": f"https://example.invalid/{package}-deadbeef.7z",
+                                "sha256": "0" * 64,
+                            }
+                        ],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_an_artifact_of_a_newer_msvc_cannot_serve_an_older_image(tmp_path: Path):
+    """xmake keeps only artifacts whose toolset is not newer than the consumer's.
+
+    The build hash does not carry the MSVC generation, so "the ledger has this
+    version" is not the same as "the job that needs it can link it": an artifact
+    built on windows-latest (14.51) is invisible to a windows-2022 job (14.44),
+    which then compiles the SDK itself -- against the recipes of today. Planning has
+    to see the difference, or it keeps planning nothing while a dependent rebuilds
+    the SDK inline.
+    """
+    root = tmp_path / "index"
+    _index_fixture(root, "fmt", "11.2.0", "14.51.36231")
+    assert index_store.has_artifacts(root, "fmt", "11.2.0", 5) is True
+    assert index_store.has_usable_artifacts(root, "fmt", "11.2.0", 5, "windows-latest") is True
+    assert index_store.has_usable_artifacts(root, "fmt", "11.2.0", 5, "windows-2022") is False
+    # an artifact of the same generation -- even a patch-newer build of it -- is fine
+    _index_fixture(root, "zlib", "1.3.1", "14.44.35300")
+    assert index_store.has_usable_artifacts(root, "zlib", "1.3.1", 5, "windows-2022") is True
+    # and the other direction works: an era's artifacts serve a newer image
+    assert index_store.has_usable_artifacts(root, "zlib", "1.3.1", 5, "windows-latest") is True
+
+
+def test_the_same_sources_built_twice_are_two_artifacts(tmp_path: Path):
+    """The MSVC generation is part of an artifact's identity and of its name.
+
+    The build hash does not carry it, so the same sources really do get built with
+    two generations (a version built before eras had their own image, and again on
+    the era's image). Treating those as one published artifact would either reuse
+    something the job cannot link or upload two different archives under one name --
+    which is where the "unmatched checksum" failures came from.
+    """
+    root = tmp_path / "index"
+    _index_fixture(root, "fmt", "11.2.0", "14.51.36231")
+    ctx = types.SimpleNamespace(index_root=root)
+    assert build.cached_artifact(ctx, "fmt", "11.2.0", "deadbeef", 5, "14.51.36231")
+    assert build.cached_artifact(ctx, "fmt", "11.2.0", "deadbeef", 5, "14.44.35207") is None
+    assert build.artifact_name("fmt", "deadbeef", "14.44.35207", "7z") == "fmt-deadbeef-vc1444.7z"
+    assert build.artifact_name("fmt", "deadbeef", "", "7z") == "fmt-deadbeef-vcany.7z"
+
+
+def test_an_era_recipe_that_named_the_project_differently_is_adopted(tmp_path: Path):
+    """A renamed package has to answer under today's name in an old snapshot.
+
+    The recipe repository renamed `moredimensions` to `more-dimensions`, so the era
+    snapshot of an old version only carries the old name and the era plan cannot
+    resolve the version at all ("not found in any repository ... maybe
+    moredimensions 0.3.0 in levimc-repo").
+    """
+    import importlib.util
+
+    path = ROOT / "plugins" / "upstream.py"
+    spec = importlib.util.spec_from_file_location("upstream_plugin_test3", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    snapshot = tmp_path / "levimc-repo@0.3.1"
+    legacy = snapshot / "packages" / "m" / "moredimensions"
+    (legacy / "versions").mkdir(parents=True)
+    (legacy / "xmake.lua").write_text(
+        'package("moredimensions")\n    add_versions("0.3.0", "' + "ab" * 20 + '")\n',
+        encoding="utf-8",
+    )
+    (legacy / "versions" / "0_3_0.lua").write_text("-- era\n", encoding="utf-8")
+    settings = {"legacyRecipeNames": ["moredimensions"]}
+    notes = module._adopt_legacy_recipe(snapshot, "more-dimensions", settings)
+    assert notes and "adopted" in notes[0], notes
+    modern = snapshot / "packages" / "m" / "more-dimensions"
+    assert (modern / "xmake.lua").read_text(encoding="utf-8").startswith('package("more-dimensions")\n')
+    assert (modern / "versions" / "0_3_0.lua").is_file()
+    # idempotent, and a snapshot that only has today's name is left alone
+    assert module._adopt_legacy_recipe(snapshot, "more-dimensions", settings) == []
+
+
 class _StubPlugin:
     """The smallest plugin the planning and version logic ever asks anything."""
 
@@ -1779,7 +1891,7 @@ def test_the_planned_sdk_is_the_version_the_project_pins():
     owner = _StubPlugin("ll", "levilamina", versions=["1.8.0-rc.2", "1.7.7", "1.7.6"])
     jobs = [plan.job(config, ctx, project, "0.12.1", "25db4b93", {"id": "default", "configs": {}})]
     first, dependencies, waiting, notes = plan.split(
-        config, ctx, [project, owner], jobs, lambda package, version: False
+        config, ctx, [project, owner], jobs, lambda package, version, image: False
     )
     assert [item["version"] for item in dependencies] == ["1.7.6"], (dependencies, notes)
     assert waiting and waiting[0]["waits_for"] == ["levilamina@1.7.6"], waiting

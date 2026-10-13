@@ -98,6 +98,42 @@ def has_artifacts(index_root: Path, package: str, version: str, revision: int | 
     return False
 
 
+def has_usable_artifacts(
+    index_root: Path,
+    package: str,
+    version: str,
+    revision: int | None,
+    image: str,
+) -> bool:
+    """Is there an artifact this *image* can actually link?
+
+    A static library built with a newer MSVC cannot be used by an older one (xmake
+    refuses it: ``_select_artifacts_for_msvc`` keeps only artifacts whose toolset is
+    not newer than the consumer's), and the build hash does not carry the toolset
+    generation -- so "the ledger has this version" is not the same as "the job that
+    needs it can use it". Without this distinction a round plans nothing, the
+    dependent then compiles the SDK itself against the recipes of *today* (fmt 12
+    for a 2024 project, in practice), and the SDK is published a second time under
+    the same name with different bytes.
+    """
+    from . import semver, xmake_env
+
+    # Compare generations, not full builds: 14.44.35207 belongs to the 14.44
+    # generation, and an image's own toolset is only known to that precision.
+    def generation(toolset: str) -> str:
+        return ".".join(str(toolset).split(".")[:2])
+
+    ceiling = generation(xmake_env.image_toolset(image))
+    for entry in entries(version_meta(index_root, package, version)).values():
+        if revision is not None and int(entry.get("revision") or 0) != int(revision):
+            continue
+        for artifact in entry.get("artifacts") or []:
+            toolset = str(artifact.get("toolset") or "")
+            if not toolset or semver.compare(generation(toolset), ceiling) <= 0:
+                return True
+    return False
+
+
 def versions_with_artifacts(
     index_root: Path, package: str, revision: int | None = None
 ) -> set[str]:

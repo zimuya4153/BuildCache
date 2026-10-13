@@ -88,7 +88,28 @@ def main() -> int:
             if skipped:
                 util.log(f"[{plugin.name}] upstream tags not tracked by the recipe repo (skipped): "
                          + ", ".join(skipped))
-        built = set() if args.rebuild_all else index_store.built_versions(ctx.index_root, package)
+        # "Published" is not the same as "the job that needs it can use it": a static
+        # library built with a newer MSVC generation is refused by an older one (see
+        # index_store.has_usable_artifacts), and the version then has to be built
+        # again -- on the image its own era asks for.
+        built = (
+            set()
+            if args.rebuild_all
+            else {
+                item["version"]
+                for item in entries
+                if index_store.has_usable_artifacts(
+                    ctx.index_root,
+                    package,
+                    item["version"],
+                    None,
+                    (plugin.call("toolchain_plan", ctx, item["version"], item["commit"]) or {}).get(
+                        "image"
+                    )
+                    or "",
+                )
+            }
+        )
         if args.version:
             pending = [item for item in entries if item["version"] == args.version]
             if not pending:
@@ -153,8 +174,8 @@ def main() -> int:
     revision = int(config.get("revision", 1))
     first, dependencies, waiting, notes = plan.split(
         config, ctx, available, matrix,
-        lambda package, version: index_store.has_artifacts(
-            ctx.index_root, package, version, revision
+        lambda package, version, image: index_store.has_usable_artifacts(
+            ctx.index_root, package, version, revision, image
         ),
     )
     for note in notes:

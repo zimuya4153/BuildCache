@@ -791,8 +791,19 @@ def should_publish(name: str, root_package: str, hash_dir: Path) -> bool:
     return has_build_output(hash_dir)
 
 
+def artifact_name(name: str, buildhash: str, toolset: str, suffix: str) -> str:
+    """The default asset name: package, build hash and the MSVC generation.
+
+    The hash covers plat/arch/toolchain/configs and the source revision, but not the
+    generation of the compiler -- and the same sources really do get built with two
+    of them (see :func:`cached_artifact`). Two archives, two names.
+    """
+    generation = "".join(ch for ch in str(toolset or "").split(".")[0:2] if ch.isdigit()) or "any"
+    return f"{name}-{buildhash}-vc{generation}.{suffix}"
+
+
 def cached_artifact(
-    ctx, package: str, version: str, buildhash: str, revision: int
+    ctx, package: str, version: str, buildhash: str, revision: int, toolset: str = ""
 ) -> dict | None:
     """The published artifact for this exact build, if the ledger still holds one.
 
@@ -805,8 +816,17 @@ def cached_artifact(
     The record has to come from the current ``revision``: that number is how a
     change in this framework -- a repair, a different packing -- says "everything
     built before me is stale".
+
+    The MSVC *generation* is not part of the hash, but it does decide whether an
+    artifact can be linked at all (xmake keeps only artifacts whose toolset is not
+    newer than the consumer's). A version whose artifact was built with another
+    generation is therefore not "already published": rebuilding it on the era's own
+    image is the point, and its archive has to be addressable next to the other one.
     """
     from lib import index_store
+
+    def generation(value) -> str:
+        return ".".join(str(value or "").split(".")[:2])
 
     meta = index_store.version_meta(ctx.index_root, package, version)
     for entry in index_store.entries(meta).values():
@@ -814,6 +834,10 @@ def cached_artifact(
             continue
         for artifact in entry.get("artifacts") or []:
             if artifact.get("buildhash") == buildhash:
+                if toolset and generation(artifact.get("toolset")) != generation(toolset):
+                    # The same sources built with another MSVC generation: a
+                    # different archive, and one that may not be linkable here.
+                    continue
                 return artifact
     return None
 
@@ -853,22 +877,25 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         return None
     if not dry_run and not force:
         reused = cached_artifact(
-            ctx, name, version, hash_dir.name, int(config.get("revision", 1))
+            ctx, name, version, hash_dir.name, int(config.get("revision", 1)), toolset or ""
         )
         if reused:
             util.log(f"reuse {name} {version} ({hash_dir.name}): already published")
             return reused
     container = container_for(config, name)
     suffix = "tar.zst" if container == "tar.zst" else "7z"
-    # The build hash already encodes plat/arch/toolchain/configs and the source
-    # revision, and shards are per package, so the asset name only needs the name
-    # plus the hash.
+    # The build hash encodes plat/arch/toolchain/configs and the source revision but
+    # *not* the MSVC generation, and the same sources do get built with two
+    # generations (an era built by the image of its own day, a version built before
+    # that policy existed by windows-latest). The generation is therefore part of the
+    # name: two archives, both linkable by whoever can use their toolset, instead of
+    # one name whose bytes depend on which upload happened to be last.
     asset = None
     if plugin is not None:
         asset = plugin.call(
             "asset_name", ctx, name, version, toolset, hash_dir.name, container
         )
-    asset = asset or f"{name}-{hash_dir.name}.{suffix}"
+    asset = asset or artifact_name(name, hash_dir.name, toolset or "", suffix)
     archive = dist / asset
     util.log(f"pack {name} {version} ({hash_dir.name})")
     # xmake strips one level while extracting precompiled artifacts, so the

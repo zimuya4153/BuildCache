@@ -351,7 +351,9 @@ def split(config: dict, ctx, plugins_list, jobs: list[dict], built):
                     notes.append(
                         f"{name}: declared as {', '.join(sorted(versions))}, planning {version}"
                     )
-                if built(name, version):
+                # "Published" is not enough: this job's image has to be able to use
+                # what was published (see index_store.has_usable_artifacts).
+                if built(name, version, item.get("image") or ""):
                     continue
                 if (owner.name, version) not in queued:
                     found = _owner_jobs(config, ctx, owner, version)

@@ -283,12 +283,15 @@ class _UpstreamPlugin:
         if source_name != self.settings.get("recipe_source"):
             return []
         package = self.settings["recipe_package"]
+        # Before anything looks for today's name: an era's recipe may only carry the
+        # old one, and then the version is not resolvable at all.
+        notes = _adopt_legacy_recipe(snapshot, package, self.settings)
         recipe = (
             Path(snapshot) / "packages" / package[0].lower() / package / "xmake.lua"
         )
         if not recipe.is_file():
-            return []
-        notes = recipefix.pin_project_requires(recipe)
+            return notes
+        notes += recipefix.pin_project_requires(recipe)
         for edit in self.settings.get("recipeEdits") or []:
             find = str(edit.get("find") or "")
             replace = str(edit.get("replace") or "")
@@ -305,6 +308,42 @@ class _UpstreamPlugin:
             util.write_text(recipe, text.replace(find, replace))
             notes.append(f"{package}: repaired recipe ({find!r} -> {replace!r})")
         return notes
+
+
+def _adopt_legacy_recipe(snapshot, package: str, settings: dict) -> list[str]:
+    """Also answer to the name an era's recipe used for this project.
+
+    Recipe repositories rename packages along the way -- `moredimensions` became
+    `more-dimensions` -- and an era snapshot of an old version then only carries the
+    old name, so the era plan cannot resolve the version at all ("the following
+    packages were not found in any repository ... maybe moredimensions 0.3.0 in
+    levimc-repo") while the plan that uses today's recipes resolves the project but
+    builds it against today's dependencies.
+
+    The declaration is project knowledge (``legacyRecipeNames``), the work is
+    mechanical: copy the directory under today's name and rename the package it
+    declares inside.
+    """
+    import shutil
+
+    names = [str(item) for item in (settings.get("legacyRecipeNames") or []) if str(item)]
+    if not names:
+        return []
+    snapshot = Path(snapshot)
+    target = snapshot / "packages" / package[0].lower() / package
+    notes: list[str] = []
+    for name in names:
+        source = snapshot / "packages" / name[0].lower() / name
+        if not (source / "xmake.lua").is_file() or (target / "xmake.lua").is_file():
+            continue
+        shutil.copytree(source, target)
+        recipe = target / "xmake.lua"
+        text = util.read_text(recipe)
+        util.write_text(recipe, text.replace(f'package("{name}")', f'package("{package}")', 1))
+        notes.append(
+            f"{snapshot.name}/{package}: adopted the name of that era's recipe ({name})"
+        )
+    return notes
 
 
 def _in_version_range(version: str, low: str, high: str) -> bool:

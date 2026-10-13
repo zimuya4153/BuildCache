@@ -265,6 +265,24 @@ def era_image(era: str) -> tuple[str, str]:
     return "windows-2022", "win22"
 
 
+#: The MSVC generation each image carries, used to answer "can a job on image A use
+#: an artifact built on image B?". xmake says no when the artifact's toolset is
+#: *newer* than the consumer's for static libraries (they are backwards compatible,
+#: not forwards), so a windows-latest artifact is invisible to a windows-2022 job --
+#: which then compiles the SDK itself, against the recipes of today. Kept
+#: deliberately *low*: underestimating an image makes us rebuild more, overestimating
+#: would make us reuse something the job cannot link.
+IMAGE_TOOLSETS = {
+    "windows-latest": "14.51",
+    "windows-2022": "14.44",
+}
+
+
+def image_toolset(label: str) -> str:
+    """The MSVC generation of an image label; the oldest known one by default."""
+    return IMAGE_TOOLSETS.get(label or "", min(IMAGE_TOOLSETS.values()))
+
+
 #: Per release line: the oldest xmake of that line that works with the images we
 #: can actually get. 2.9.0-2.9.3 ask CMake for the platform toolset ``v144`` when
 #: they see MSVC 14.4x -- but v144 belongs to Visual Studio 2026 and the
