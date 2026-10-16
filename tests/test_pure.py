@@ -2447,3 +2447,46 @@ def test_pre_2_9_4_xmake_gets_the_toolset_fix_backported(tmp_path: Path):
     newer_cmake.write_text("-- 2.9.4 already maps v144 back\n", encoding="utf-8")
     assert xmake_env.patch_cmake_toolset_family(newer) is False
     assert newer_cmake.read_text(encoding="utf-8") == "-- 2.9.4 already maps v144 back\n"
+
+
+# --------------------------------------------------------------- release bodies
+def test_a_release_body_never_travels_through_the_command_line(tmp_path: Path, monkeypatch):
+    """A shard's table outgrows what Windows accepts as one argument.
+
+    Fifteen cached LL versions were enough to cross the ~32k command-line limit
+    (``WinError 206``) and kill the finalize step of a round whose builds had all
+    succeeded, so the body goes through ``--notes-file`` on the way to ``gh``.
+    """
+    config = dict(util.load_config())
+    config["paths"] = {"sandboxRoot": str(tmp_path / "sandbox")}
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append([str(part) for part in cmd])
+        return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(gh.util, "run", fake_run)
+
+    def body_of(argv: list[str]) -> str:
+        assert "--notes" not in argv, argv
+        assert "--notes-file" in argv, argv
+        # no single argument carries the document
+        assert max(len(part) for part in argv) < 260, argv
+        return Path(argv[argv.index("--notes-file") + 1]).read_text(encoding="utf-8")
+
+    table = "\n".join(f"| 26.{index}.0 | xyz |" for index in range(3000))
+    assert gh.update_release_notes("o", "r", "levilamina_0", table, config=config) is True
+    assert body_of(calls[-1]) == table
+
+    monkeypatch.setattr(gh, "release_assets", lambda *args, **kwargs: None)
+    gh.ensure_release("o", "r", "fmt_0", config=config)
+    created = calls[-1]
+    assert created[0] == "gh" and created[2] == "create"
+    assert "Cached builds" not in created
+    assert "BuildCache" in body_of(created)
+
+    # a shard that refuses the edit is reported, not silently left stale
+    monkeypatch.setattr(
+        gh.util, "run", lambda cmd, **kwargs: types.SimpleNamespace(returncode=1, stdout="", stderr="boom")
+    )
+    assert gh.update_release_notes("o", "r", "fmt_0", table, config=config) is False

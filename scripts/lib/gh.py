@@ -74,19 +74,36 @@ def ensure_release(
     """Create the release (and its tag) on ``target`` so ``main`` stays clean."""
     if release_assets(owner, repo, tag, config=config) is not None:
         return
+    config = config or util.load_config()
     title = title or release_title(tag)
     notes = notes or release_notes(tag)
     args = ["gh", "release", "create", tag, "--repo", f"{owner}/{repo}",
-            "--title", title, "--notes", notes]
+            "--title", title, "--notes-file", str(stage_notes(config, tag, notes))]
     if target:
         args += ["--target", target]
     util.run(
         args,
-        env=util.subprocess_env(config or util.load_config()),
+        env=util.subprocess_env(config),
         capture=True,
         check=False,
         quiet=True,
     )
+
+
+def stage_notes(config: dict, tag: str, notes: str) -> Path:
+    """Write a release body to a file for ``gh`` to read.
+
+    A shard's body is a table that grows with every version it caches, and
+    Windows refuses a command line past roughly 32k characters (``WinError
+    206: The filename or extension is too long``) -- which is exactly how the
+    finalize step of a full round died once the LL shard reached fifteen
+    versions. ``--notes-file`` has no such limit, so the body never travels
+    through argv.
+    """
+    directory = util.ensure_dir(util.sandbox_root(config) / "notes")
+    path = directory / f"{tag}.md"
+    util.write_text(path, notes)
+    return path
 
 
 def upload_asset(owner: str, repo: str, tag: str, path: Path, config: dict | None = None) -> None:
@@ -163,14 +180,24 @@ def release_notes(tag: str, rows: list[dict] | None = None, table=None) -> str:
     return "\n".join(lines)
 
 
-def update_release_notes(owner: str, repo: str, tag: str, notes: str, config: dict | None = None) -> None:
-    util.run(
-        ["gh", "release", "edit", tag, "--repo", f"{owner}/{repo}", "--notes", notes],
-        env=util.subprocess_env(config or util.load_config()),
+def update_release_notes(
+    owner: str, repo: str, tag: str, notes: str, config: dict | None = None
+) -> bool:
+    """Replace a release body. Returns whether the shard accepted it."""
+    config = config or util.load_config()
+    path = stage_notes(config, tag, notes)
+    result = util.run(
+        ["gh", "release", "edit", tag, "--repo", f"{owner}/{repo}", "--notes-file", str(path)],
+        env=util.subprocess_env(config),
         capture=True,
         check=False,
         quiet=True,
     )
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "").strip().splitlines()
+        util.warn(f"{tag}: could not refresh the release body: {detail[-1][:160] if detail else ''}")
+        return False
+    return True
 
 
 def assign_release(
