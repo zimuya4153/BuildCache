@@ -260,8 +260,9 @@ def refresh_release_notes(config: dict, ctx) -> None:
     # plugin; a column that is empty in every row of a shard is not rendered.
     table = reports.for_plugins(config, ctx, plugins.load_all(config))
     shards = release_rows(config, ctx)
+    failed = []
     for shard, rows in sorted(shards.items()):
-        gh.update_release_notes(
+        written = gh.update_release_notes(
             owner,
             repo,
             shard,
@@ -272,8 +273,16 @@ def refresh_release_notes(config: dict, ctx) -> None:
             ),
             config=config,
         )
+        if not written:
+            failed.append(shard)
     if shards:
-        util.log(f"refreshed release notes for {len(shards)} shard(s)")
+        # A body that could not be rewritten describes an older shard content, and
+        # nothing else in the round would ever correct it: say so, and keep the
+        # rest of the round's work.
+        util.log(
+            f"refreshed release notes for {len(shards) - len(failed)} shard(s)"
+            + (f", {len(failed)} left stale: {', '.join(failed)}" if failed else "")
+        )
 
 
 def release_rows(config: dict, ctx) -> dict[str, list[dict]]:

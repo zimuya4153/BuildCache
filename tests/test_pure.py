@@ -2490,3 +2490,44 @@ def test_a_release_body_never_travels_through_the_command_line(tmp_path: Path, m
         gh.util, "run", lambda cmd, **kwargs: types.SimpleNamespace(returncode=1, stdout="", stderr="boom")
     )
     assert gh.update_release_notes("o", "r", "fmt_0", table, config=config) is False
+
+
+def test_a_shard_that_refuses_its_body_is_named_in_the_finalize_summary(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """The body is the only thing that says what a shard holds.
+
+    When one cannot be rewritten, the round must still publish everything else --
+    but it has to say which body is now describing older content.
+    """
+    config = dict(util.load_config())
+    config["_index_dir"] = str(tmp_path / "index")
+    ctx = plugins.Context(config)
+    index_store.write_entry(
+        ctx.index_root,
+        "fmt",
+        "11.2.0",
+        "default",
+        {
+            "package": "fmt",
+            "version": "11.2.0",
+            "artifacts": [
+                {
+                    "package": "fmt",
+                    "version": "11.2.0",
+                    "buildhash": "ee1902dd7cff4195a287949f80dbce70",
+                    "key": "windows-x64-vc-ee1902dd7cff4195a287949f80dbce70",
+                    "toolset": "14.44.35207",
+                    "url": "https://example.invalid/fmt.7z",
+                    "sha256": "ab" * 32,
+                    "aliases": [],
+                    "release": "fmt_0",
+                }
+            ],
+        },
+    )
+    monkeypatch.setattr(gh, "update_release_notes", lambda *args, **kwargs: False)
+
+    finalize.refresh_release_notes(config, ctx)
+
+    assert "left stale: fmt_0" in capsys.readouterr().out
