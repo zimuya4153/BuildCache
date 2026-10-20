@@ -2210,6 +2210,52 @@ def test_repaired_versions_are_renamed_where_the_resolver_reads_them(tmp_path: P
     )
 
 
+def test_a_recipe_that_maps_its_versions_follows_the_rename(tmp_path: Path):
+    """`bedrockdata` maps a version to the `prelink` tool of that release.
+
+    Its ``on_load`` looks the map up with the version string xmake sees, so a
+    four-component version that only got renamed everywhere *except* the map
+    silently loses its dependency: LeviLamina then compiles to 100% and dies in
+    the install step with ``Cannot find prelink.exe``.
+    """
+    ll = next(
+        item for item in plugins.load_all(util.load_config()) if item.name == "ll"
+    )
+    snapshot = tmp_path / "levimc-repo@test"
+    root = snapshot / "packages" / "b" / "bedrockdata"
+    root.mkdir(parents=True)
+    (root / "versions.txt").write_text(
+        "1.21.60.10-server 0123456789abcdef0123456789abcdef01234567\n",
+        encoding="utf-8",
+    )
+    (root / "xmake.lua").write_text(
+        'package("bedrockdata")\n'
+        '    add_urls("https://example.invalid/$(version)/bedrock.zip")\n'
+        '    add_versionfiles("versions.txt")\n'
+        "    local deps = {\n"
+        '        ["1.21.60.10-server"] = {"prelink v0.3.0"},\n'
+        "    }\n"
+        "    on_load(function (package)\n"
+        "        local version = tostring(package:version_str())\n"
+        "        if deps[version] then package:add(\"deps\", deps[version]) end\n"
+        "    end)\n",
+        encoding="utf-8",
+    )
+
+    notes = ll.module._repair_legacy_versions(snapshot)
+
+    assert any("bedrockdata" in note for note in notes), notes
+    repaired = (root / "xmake.lua").read_text(encoding="utf-8")
+    # the map is looked up by the repaired version, so its key has to say so
+    assert '["1.21.60-r10-server"] = {"prelink v0.3.0"}' in repaired
+    assert 'add_versions("legacy0:1.21.60-r10-server"' in repaired
+    # the tag itself stays in the URL, otherwise the release cannot be fetched
+    assert "https://example.invalid/1.21.60.10-server/bedrock.zip" in repaired
+    assert 'add_versions("legacy0:1.21.60-r10-server", "0123456789' in repaired
+    # the renamed version is declared explicitly now, so the listing drops it
+    assert "1.21.60.10-server" not in (root / "versions.txt").read_text(encoding="utf-8")
+
+
 def test_a_declared_recipe_edit_repairs_what_xmake_cannot_import(tmp_path: Path):
     """`more-dimensions` asks to import `package.tools.*make`, which never resolves.
 

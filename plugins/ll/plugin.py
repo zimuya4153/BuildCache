@@ -735,6 +735,14 @@ def _repair_legacy_versions(snapshot) -> list[str]:
                 updated = updated.replace(
                     f'add_versions("{original}", "{shas[version]}")', ""
                 )
+        # A recipe may keep its own version table -- ``bedrockdata`` maps a
+        # version to the ``prelink`` tool that belongs to it. The table is looked
+        # up with the version string xmake sees, so once the version is renamed
+        # the lookup misses and the dependency is never installed at all, which
+        # surfaces much later as ``Cannot find prelink.exe`` while LeviLamina
+        # installs. Rename the references next to the version itself.
+        for old, new in mapping.items():
+            updated = updated.replace(f'"{old}"', f'"{new}"')
         updated = updated.rstrip("\n") + "\n\n    -- BuildCache: legacy versions repaired\n" + "\n".join(additions) + "\n"
         util.write_text(recipe, updated)
         for match in _ADD_VERSIONFILES.finditer(text):
