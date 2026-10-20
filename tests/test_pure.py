@@ -1095,11 +1095,92 @@ def test_a_failed_upload_is_retried(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(gh.util, "run", fake_run)
     monkeypatch.setattr(gh.time, "sleep", lambda _seconds: None)
     monkeypatch.setattr(gh, "ensure_release", lambda *args, **kwargs: None)
+    monkeypatch.setattr(gh, "release_assets", lambda *args, **kwargs: None)
     asset = tmp_path / "fmt.7z"
     asset.write_bytes(b"archive")
 
     gh.upload_asset("owner", "repo", "fmt_0", asset, config=util.load_config())
     assert calls["n"] == 3
+
+
+def test_an_archive_is_never_published_a_second_time(tmp_path: Path, monkeypatch):
+    """The name is the identity, so the first published bytes stay.
+
+    Two builds of one build hash can still differ (another era's xmake, the other
+    half of a round). Clobbering the shard leaves every manifest naming the old
+    checksum until the next finalize -- and a job that fails before finalize never
+    repairs it, which is what a consumer sees as "unmatched checksum".
+    """
+    config = util.load_config()
+    asset = tmp_path / "fmt-ee1902dd7cff4195a287949f80dbce70-vc1444.7z"
+    asset.write_bytes(b"this build")
+    published = {
+        "digest": "sha256:" + "c2" * 32,
+        "size": 1234,
+    }
+    monkeypatch.setattr(
+        gh, "release_assets", lambda *args, **kwargs: {asset.name: published}
+    )
+
+    def never(*args, **kwargs):
+        raise AssertionError("the published archive must not be uploaded again")
+
+    monkeypatch.setattr(gh.util, "run", never)
+
+    found = gh.upload_asset("owner", "repo", "fmt_0", asset, config=config)
+
+    assert found == {"sha256": "c2" * 32, "size": 1234}
+
+    # A revision bump is exactly the case that asks for the new bytes.
+    uploaded = {"n": 0}
+
+    def fake_run(*args, **kwargs):
+        uploaded["n"] += 1
+        return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(gh.util, "run", fake_run)
+    fresh = gh.upload_asset("owner", "repo", "fmt_0", asset, config=config, replace=True)
+    assert uploaded["n"] == 1
+    assert fresh["sha256"] == util.sha256_file(asset)
+
+
+def test_a_dependency_is_not_re_packed_when_the_ledger_holds_it(tmp_path: Path):
+    """The dependency pass publishes what is missing, not the whole closure again.
+
+    It used to bypass the reuse check, so every round packed and uploaded every
+    shared dependency under names that were already published.
+    """
+    config = dict(util.load_config())
+    config["_index_dir"] = str(tmp_path / "index")
+    config["revision"] = 5
+    ctx = plugins.Context(config)
+    index_store.write_entry(
+        ctx.index_root,
+        "symbolprovider",
+        "v1.3.0",
+        "default",
+        {
+            "package": "symbolprovider",
+            "version": "v1.3.0",
+            "revision": 5,
+            "artifacts": [
+                {
+                    "package": "symbolprovider",
+                    "version": "v1.3.0",
+                    "buildhash": "8ef9d781a7854895b90a561f7f9be0ea",
+                    "key": "windows-x64-vc-8ef9d781a7854895b90a561f7f9be0ea",
+                    "toolset": "14.44.35207",
+                    "url": "https://example.invalid/symbolprovider.7z",
+                    "sha256": "ab" * 32,
+                }
+            ],
+        },
+    )
+    buildhash = "8ef9d781a7854895b90a561f7f9be0ea"
+
+    assert build.cached_artifact(ctx, "symbolprovider", "v1.3.0", buildhash, 5, "14.44.35207")
+    assert build.published_buildhash(ctx, "symbolprovider", "v1.3.0", buildhash) is True
+    assert build.published_buildhash(ctx, "symbolprovider", "v1.3.0", "deadbeef") is False
 
 
 def test_an_artifact_already_published_is_not_packed_again(tmp_path: Path):

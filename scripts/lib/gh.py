@@ -106,28 +106,78 @@ def stage_notes(config: dict, tag: str, notes: str) -> Path:
     return path
 
 
-def upload_asset(owner: str, repo: str, tag: str, path: Path, config: dict | None = None) -> None:
-    """Attach an archive to its shard, retrying what a hiccup deserves.
+def asset_info(asset: dict | None) -> dict:
+    """``{sha256, size}`` for a release asset, empty when GitHub reports none."""
+    if not asset:
+        return {}
+    digest = str(asset.get("digest") or "")
+    return {
+        "sha256": digest.split(":", 1)[1] if ":" in digest else digest,
+        "size": asset.get("size"),
+    }
 
-    A round shares its dependencies with the rounds around it, so an upload can
-    meet a shard that another job is creating at that very moment ("HTTP 404" on
-    the upload endpoint) or a flaky connection. Re-resolve the release and try
-    again instead of failing a build that has already compiled everything.
+
+def upload_asset(
+    owner: str,
+    repo: str,
+    tag: str,
+    path: Path,
+    config: dict | None = None,
+    replace: bool = False,
+) -> dict:
+    """Attach an archive to its shard; return what consumers will download.
+
+    The name *is* the identity -- package, build hash and MSVC generation -- and
+    two builds of one identity can still differ byte for byte (another era's
+    xmake, a round that re-packs a shared dependency). Replacing the published
+    file leaves the index and every manifest naming the previous checksum until
+    the next finalize, and a consumer that downloads in between fails with
+    ``unmatched checksum``. So the archive that is already published wins: a
+    caller that builds it again adopts that digest instead of overwriting it.
+
+    ``replace`` is for the deliberate case -- a revision bump exists to publish
+    the bytes of a new framework revision -- and only then may an existing name
+    be clobbered.
+
+    A round also shares its dependencies with the rounds around it, so an upload
+    can meet a shard another job is creating at that very moment ("HTTP 404" on
+    the upload endpoint), a flaky connection, or the same artifact that job has
+    just published. Re-resolve the shard and try again rather than fail a build
+    that has already compiled everything.
     """
     config = config or util.load_config()
+    local = {"sha256": util.sha256_file(path), "size": Path(path).stat().st_size}
+    if not replace:
+        published = asset_info((release_assets(owner, repo, tag, config=config) or {}).get(path.name))
+        if published.get("sha256"):
+            if published["sha256"] != local["sha256"]:
+                util.warn(
+                    f"{tag}: {path.name} is already published with a different archive "
+                    f"({published['sha256'][:8]} vs this build's {local['sha256'][:8]}); "
+                    "keeping the published one"
+                )
+            return published
+
     env = util.subprocess_env(config)
+    args = ["gh", "release", "upload", tag, str(path), "--repo", f"{owner}/{repo}"]
+    if replace:
+        args.append("--clobber")
     attempts = 3
     result = None
     for attempt in range(1, attempts + 1):
-        result = util.run(
-            ["gh", "release", "upload", tag, str(path), "--repo", f"{owner}/{repo}", "--clobber"],
-            env=env,
-            capture=True,
-            check=False,
-            quiet=True,
-        )
+        result = util.run(args, env=env, capture=True, check=False, quiet=True)
         if result.returncode == 0:
-            return
+            return local
+        # Another job may have published this very artifact while this one was
+        # packing it. Its bytes are the ones the manifests will name.
+        published = asset_info((release_assets(owner, repo, tag, config=config) or {}).get(path.name))
+        if published.get("sha256"):
+            if published["sha256"] != local["sha256"]:
+                util.warn(
+                    f"{tag}: {path.name} went online while this job was uploading it "
+                    f"({published['sha256'][:8]}); keeping the published one"
+                )
+            return published
         util.warn(
             f"{tag}: upload of {path.name} failed (attempt {attempt}/{attempts}): "
             + (result.stderr or result.stdout or "").strip().splitlines()[-1][:160]

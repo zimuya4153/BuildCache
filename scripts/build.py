@@ -485,7 +485,7 @@ def build_dependency_pass(config, ctx, plugin, args, plat, arch, toolchain, vs_t
         published = publish(
             config, args, ctx, sandbox, plat, arch, toolchain, vs_toolset, newest,
             commit, "", {}, {"id": "default", "configs": {}}, {}, "",
-            plugin_name=plugin.name, plugin=plugin, repo_order=repos_here, force=True,
+            plugin_name=plugin.name, plugin=plugin, repo_order=repos_here,
             dry_run=dry_run,
         )
         return published["artifacts"]
@@ -842,6 +842,23 @@ def cached_artifact(
     return None
 
 
+def published_buildhash(ctx, package: str, version: str, buildhash: str) -> bool:
+    """Whether the ledger lists this build at *any* revision.
+
+    Such a build already owns its asset name, and the bytes under it belong to an
+    older revision of this framework. Replacing them is exactly what a revision
+    bump asks for -- and the one case where an upload may clobber.
+    """
+    from lib import index_store
+
+    meta = index_store.version_meta(ctx.index_root, package, version)
+    for entry in index_store.entries(meta).values():
+        for artifact in entry.get("artifacts") or []:
+            if artifact.get("buildhash") == buildhash:
+                return True
+    return False
+
+
 def _retry_failed_packages(config: dict, sandbox, attempts: int) -> None:
     """Report what failed before the step is retried as a whole.
 
@@ -875,6 +892,7 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         # consumer nothing, so it does not get one.
         util.log(f"skip {name} {version}: nothing was compiled, nothing to precompile")
         return None
+    replace = bool(force)
     if not dry_run and not force:
         reused = cached_artifact(
             ctx, name, version, hash_dir.name, int(config.get("revision", 1)), toolset or ""
@@ -882,6 +900,10 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         if reused:
             util.log(f"reuse {name} {version} ({hash_dir.name}): already published")
             return reused
+        # The name is already taken by an older revision of this same build: the
+        # bump is what asks for those bytes to be replaced. A build the ledger has
+        # never seen must not clobber whoever publishes it first in this round.
+        replace = published_buildhash(ctx, name, version, hash_dir.name)
     container = container_for(config, name)
     suffix = "tar.zst" if container == "tar.zst" else "7z"
     # The build hash encodes plat/arch/toolchain/configs and the source revision but
@@ -903,6 +925,7 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
     store_as = f"{name[0].lower()}/{name}/{version}/{hash_dir.name}"
     packer.pack(hash_dir, archive, store_as=store_as, container=container)
     digest = util.sha256_file(archive)
+    size = archive.stat().st_size
     key = manifest_lib.build_id(plat, arch, toolset, hash_dir.name)
     # The same artifact is reachable for other consumer toolchains; the plugin
     # decides which ones, the hash is recomputed offline (never rebuilt).
@@ -927,7 +950,19 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         # the release body instead of in a longer name.
         release = gh.assign_release(name, [asset], owner, repo, max_assets, config=config)
         gh.ensure_release(owner, repo, release, target=target_branch, config=config)
-        gh.upload_asset(owner, repo, release, archive, config=config)
+        published = gh.upload_asset(
+            owner, repo, release, archive, config=config, replace=replace
+        )
+        if published.get("sha256") and published["sha256"] != digest:
+            # Two builds of one identity are not byte identical (another era's
+            # xmake, the other half of this round). Consumers download whatever
+            # the shard serves, so that is what the ledger has to name.
+            util.log(
+                f"{asset}: this build differs from the published archive "
+                f"({published['sha256'][:8]}); recording the published one"
+            )
+            digest = published["sha256"]
+            size = int(published.get("size") or size)
         url = gh.asset_url(owner, repo, release, asset)
     return {
         "package": name,
@@ -939,7 +974,7 @@ def _publish_one(config, ctx, sandbox, dist, owner, repo, max_assets, plugin,
         "asset": asset,
         "url": url,
         "sha256": digest,
-        "size": archive.stat().st_size,
+        "size": size,
         "container": container,
         "aliases": derived,
     }
